@@ -1,0 +1,36 @@
+services:
+  my-home-transformer:
+    build: 
+      dockerfile: MyHome.Transformer/Dockerfile
+      context: .
+    container_name: my-home-transformer
+    restart: unless-stopped
+    depends_on: 
+      - cache
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_ENVIRONMENT=Production
+    ports:
+      - 8081:8080
+
+  my-home-state:
+    build: 
+      dockerfile: MyHome/Dockerfile
+      context: .
+    container_name: my-home-state
+    restart: unless-stopped
+    depends_on: 
+      - cache
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DOTNET_ENVIRONMENT=Production
+    ports:
+      - 8082:8080
+
+  cache:
+    image: redis:alpine
+    container_name: my-home-cache
+    restart: unless-stopped
+    command: redis-server
+    ports:
+      - 6379:6379

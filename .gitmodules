@@ -1,0 +1,3 @@
+[submodule "ha-kafka-net"]
+	path = ha-kafka-net
+	url = https://github.com/leosperry/ha-kafka-net.git
