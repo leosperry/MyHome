@@ -17,7 +17,7 @@ public class GarageService : IGarageService
     public const string GARAGE2_TILT = "binary_sensor.garage_door_2_tilt_sensor_state_any";
     public const string GARAGE1_DOOR_OPENER = "switch.garage_door_opener";
     public const string GARAGE2_DOOR_OPENER = "switch.garage_door_opener_2";
-    public const string BACK_HALL_LIGHT = "";
+    public const string BACK_HALL_LIGHT = "switch.back_hall_light";
 
     private IHaStateCache _cache;
     private readonly IHaApiProvider _api;
@@ -48,7 +48,7 @@ public class GarageService : IGarageService
                 await Task.WhenAll(
                     _api.SwitchTurnOn(opener, cancellationToken), // close the door
                     _api.SwitchTurnOn(BACK_HALL_LIGHT, cancellationToken), // turn onn the back hall light
-                    _api.GroupNotify("my_notify_group", $"Attempting to close {doorName}", cancellationToken),
+                    _api.NotifyGroupOrDevice("my_notify_group", $"Attempting to close {doorName}", cancellationToken),
                     Task.Delay(TimeSpan.FromSeconds(15)) // wait for door to close
                 );
 
@@ -56,14 +56,14 @@ public class GarageService : IGarageService
                 var doorState = await getGarageDoorState(contact, tilt);
                 if (doorState != GarageDoorState.Closed)
                 {
-                    await _api.GroupNotify("my_notify_group", $"Could not verify {doorName} is closed", cancellationToken);
+                    await _api.NotifyGroupOrDevice("my_notify_group", $"Could not verify {doorName} is closed", cancellationToken);
                 }
 
                 break;
             case GarageDoorState.Unknown:
                 // alert
                 await Task.WhenAll(
-                    _api.GroupNotify("my_notify_group", $"{doorName} is in an unknown state", cancellationToken),
+                    _api.NotifyGroupOrDevice("my_notify_group", $"{doorName} is in an unknown state", cancellationToken),
                     _api.SwitchTurnOn(BACK_HALL_LIGHT, cancellationToken));
                 break;
         }

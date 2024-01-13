@@ -53,7 +53,7 @@ public class GarageServiceTests
 
         //assert
         api.Verify(a => a.SwitchTurnOn(GarageService.GARAGE1_DOOR_OPENER, default), Times.Once);
-        api.Verify(a => a.GroupNotify(It.IsAny<string>(), It.IsAny<string>(), default), Times.Once);
+        api.Verify(a => a.NotifyGroupOrDevice(It.IsAny<string>(), It.IsAny<string>(), default), Times.Once);
         cache.Verify(c => c.Get(GarageService.GARAGE1_CONTACT, default), Times.Exactly(2));
     }
 
@@ -76,7 +76,7 @@ public class GarageServiceTests
 
         //assert
         api.Verify(a => a.SwitchTurnOn(GarageService.GARAGE1_DOOR_OPENER, default), Times.Once);
-        api.Verify(a => a.GroupNotify(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(2));
+        api.Verify(a => a.NotifyGroupOrDevice(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(2));
         cache.Verify(c => c.Get(GarageService.GARAGE1_CONTACT, default), Times.Exactly(2));
     }
 
@@ -104,7 +104,7 @@ public class GarageServiceTests
 
         //assert
         api.Verify(a => a.SwitchTurnOn(It.IsAny<string>(), default), Times.Exactly(4)); //twice for the garage doors, twice for the light
-        api.Verify(a => a.GroupNotify(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(3));
+        api.Verify(a => a.NotifyGroupOrDevice(It.IsAny<string>(), It.IsAny<string>(), default), Times.Exactly(3));
         cache.Verify(c => c.Get(It.IsAny<string>(), default), Times.Exactly(8));    
     }
 
@@ -126,7 +126,7 @@ public class GarageServiceTests
         await sut.EnsureGarageClosed(default);
 
         //assert
-        api.Verify(a => a.GroupNotify("my_notify_group", It.IsAny<string>(), default), Times.Once);
+        api.Verify(a => a.NotifyGroupOrDevice("my_notify_group", It.IsAny<string>(), default), Times.Once);
         api.Verify(a => a.SwitchTurnOn(GarageService.GARAGE1_DOOR_OPENER, default), Times.Never);
         api.Verify(a => a.SwitchTurnOn(GarageService.BACK_HALL_LIGHT, default), Times.Once);
     }

@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyHome.Transformer", "MyHom
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.ExampleApp", "ha-kafka-net\example\HaKafkaNet.ExampleApp\HaKafkaNet.ExampleApp.csproj", "{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.ExampleApp.Tests", "ha-kafka-net\example\HaKafkaNet.ExampleApp.Tests\HaKafkaNet.ExampleApp.Tests.csproj", "{76DAE567-5F3F-44F5-A541-547CBA92B6C7}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.Tests", "ha-kafka-net\src\HaKafkaNet.Tests\HaKafkaNet.Tests.csproj", "{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -41,6 +45,14 @@ Global
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Release|Any CPU.Build.0 = Release|Any CPU
+		{76DAE567-5F3F-44F5-A541-547CBA92B6C7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{76DAE567-5F3F-44F5-A541-547CBA92B6C7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{76DAE567-5F3F-44F5-A541-547CBA92B6C7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{76DAE567-5F3F-44F5-A541-547CBA92B6C7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -48,5 +60,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{84CC3258-BEE7-493C-B88E-79C0381AAAD6} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
+		{76DAE567-5F3F-44F5-A541-547CBA92B6C7} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
+		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
 	EndGlobalSection
 EndGlobal

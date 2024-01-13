@@ -4,16 +4,17 @@ namespace MyHome;
 
 public class TestAutomation : IAutomation
 {
-    private readonly IGarageService _garageService;
+    private readonly IHaApiProvider _api;
 
-    public TestAutomation(IGarageService garageService)
+    public TestAutomation(IHaApiProvider api)
     {
-        this._garageService = garageService;
+        this._api = api;
     }
 
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
         //await _garageService.EnsureGarageClosed(cancellationToken);
+        return _api.NotifyAlexaMedia("test", ["Office"], cancellationToken);
     }
 
     public IEnumerable<string> TriggerEntityIds()
