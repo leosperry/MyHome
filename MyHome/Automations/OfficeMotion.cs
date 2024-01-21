@@ -2,6 +2,13 @@
 
 namespace MyHome;
 
+    /// <summary>
+    /// Lights in my office are dynamically adjusted based on the amount of ambient light
+    /// The lights are trigger by a motion sensor which has an integrated luminocity sensor
+    /// which unfortunately picks up light from the office lights themselves.
+    /// This automation uses a DynamicLightAdjuster object which takes into account 
+    /// the brightness from the lights themselves
+    /// </summary>
 public class OfficeMotion : IAutomation
 {
     public const string OFFICE_MOTION = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion";
@@ -66,7 +73,6 @@ public class OfficeMotion : IAutomation
 
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("setting office brightness");
         var officeLights = await _cache.Get<SimpleLightModel>(OFFICE_LIGHTS);
 
         var oldBrightness = officeLights!.Attributes!.Brightness ?? 0;

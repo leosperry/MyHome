@@ -2,6 +2,10 @@
 
 namespace MyHome;
 
+/// <summary>
+/// most of the automations for bed time run in Home Assistant
+/// One of the more complicated routines is ensuring the garage doors are closed
+/// </summary>
 public class BedTime : IAutomation
 {
     private readonly IGarageService _garageService;
