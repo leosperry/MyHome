@@ -1,24 +1,25 @@
 ﻿using HaKafkaNet;
 
-namespace MyHome;
+namespace MyHome.Dev;
 
 public class TestAutomation : IAutomation
 {
-    private readonly IHaApiProvider _api;
+    private IHaServices _services;
 
-    public TestAutomation(IHaApiProvider api)
+    public TestAutomation(IHaServices services)
     {
-        this._api = api;
+        _services = services;
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        //await _garageService.EnsureGarageClosed(cancellationToken);
-        return _api.NotifyAlexaMedia("test", ["Office"], cancellationToken);
+        return _services.Api.LightTurnOff(["light.office_lights","light.office_led_light"]);
+        //return Task.CompletedTask;
     }
 
     public IEnumerable<string> TriggerEntityIds()
     {
+        //yield return "sun.sun";
         yield return "input_button.test_button";
     }
 }

@@ -15,10 +15,10 @@ public class BedTime : IAutomation
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        _logger.LogInformation("bed time triggered");
         if (stateChange.New.State == "on")
         {
-            return _garageService.EnsureGarageClosed(cancellationToken);
+            _logger.LogInformation("bed time triggered");
+            return RunBedtimeRoutine(cancellationToken);
         }
         return Task.CompletedTask;
     }
@@ -26,5 +26,12 @@ public class BedTime : IAutomation
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return "input_boolean.bedtime_switch";
+    }
+
+    Task RunBedtimeRoutine(CancellationToken cancellationToken)
+    {
+        return Task.WhenAll(
+            _garageService.EnsureGarageClosed(cancellationToken)
+        );
     }
 }

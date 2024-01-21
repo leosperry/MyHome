@@ -43,9 +43,6 @@ public class OfficeMotion : IAutomation
         var officeMotion = await _cache.Get(OFFICE_MOTION);
         if (officeMotion?.State == "off")
         {
-            //turn off the lights
-            // need to pick a pattern to wait some more time
-            //await _api.LightTurnOff(OFFICE_LIGHTS);
             return;
         }
 
