@@ -22,6 +22,6 @@ var app = builder.Build();
 
 await app.StartHaKafkaNet(config);
 
-app.MapGet("/", () => "Hello World!");
+app.MapGet("/", () => Results.Redirect("dashboard.html"));
 
 app.Run();

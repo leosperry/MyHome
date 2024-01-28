@@ -2,7 +2,7 @@
 
 namespace MyHome.Dev;
 
-public class TestAutomation : IAutomation
+public class TestAutomation : IAutomation, IAutomationMeta
 {
     private IHaServices _services;
 
@@ -15,6 +15,17 @@ public class TestAutomation : IAutomation
     {
         return _services.Api.LightTurnOff(["light.office_lights","light.office_led_light"]);
         //return Task.CompletedTask;
+    }
+
+    public AutomationMetaData GetMetaData()
+    {
+        return new()
+        {
+            Name = "Test Automamtion",
+            Description = "Used for testing quick scenarios",
+            Enabled = false,
+            Id = Guid.NewGuid()
+        };
     }
 
     public IEnumerable<string> TriggerEntityIds()
