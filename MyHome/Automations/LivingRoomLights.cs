@@ -8,7 +8,7 @@ namespace MyHome;
 ///     gradually turn on the lights in the living room
 ///     using a parabolic curve so that it is not jarring
 /// </summary>
-public class LivingRoomLights : IAutomation
+public class LivingRoomLights : IAutomation, IAutomationMeta
 {
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entityProvider;
@@ -61,5 +61,17 @@ public class LivingRoomLights : IAutomation
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return TRIGGER;
+    }
+
+    public AutomationMetaData GetMetaData()
+    {
+        return new AutomationMetaData()
+        {
+            Name = "Living Room Lights",
+            Description = "set lights based on solar power generation",
+            AdditionalEntitiesToTrack = [
+                "light.wiz_rgbw_tunable_79a59c", "light.wiz_rgbw_tunable_79aab4", "light.wiz_rgbw_tunable_79aab4", "light.living_lamp_1", "light.living_lamp_2"
+            ]
+        };
     }
 }

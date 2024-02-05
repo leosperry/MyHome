@@ -10,7 +10,7 @@ namespace MyHome;
 /// The ceramic heater gives off no light at night so we can not visually seen when it burns out
 /// Additional sensors are used to make sure he has good conditions
 /// </summary>
-public class KazulAlerts : IAutomation
+public class KazulAlerts : IAutomation, IAutomationMeta
 {
     public const string TEMP = "sensor.kazul_temp_humidity_air_temperature";
     public const string TEMP_BATTERY = "sensor.kazul_temp_humidity_battery_level";
@@ -90,5 +90,17 @@ public class KazulAlerts : IAutomation
                 _api.NotifyGroupOrDevice(NOTIFY_GROUP, $"problem with kazul {_powerToSwitchMapping[state.EntityId].name}"),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
+    }
+
+    public AutomationMetaData GetMetaData()
+    {
+        return new AutomationMetaData()
+        {
+            Name = "Kazul alerts",
+            Description = "Ensure Kazul's environment is healthy",
+            AdditionalEntitiesToTrack = [
+                CERAMIC_SWITCH, HALOGEN_SWITCH
+            ]
+        };
     }
 }

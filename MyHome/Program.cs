@@ -22,8 +22,8 @@ services.AddHaKafkaNet(config);
 
 var app = builder.Build();
 
-await app.StartHaKafkaNet(config);
+await app.StartHaKafkaNet();
 
-app.MapGet("/", () => "State Manager is running");
+app.MapGet("/", () => Results.Redirect("dashboard.html"));
 
 app.Run();

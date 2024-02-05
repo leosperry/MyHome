@@ -11,9 +11,10 @@ public class TestAutomation : IAutomation, IAutomationMeta
         _services = services;
     }
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        return _services.Api.LightTurnOff(["light.office_lights","light.office_led_light"]);
+        var state = await _services.Api.GetEntityState("button.back_door_contact_identify");
+        Console.WriteLine(state);
         //return Task.CompletedTask;
     }
 
@@ -23,8 +24,7 @@ public class TestAutomation : IAutomation, IAutomationMeta
         {
             Name = "Test Automamtion",
             Description = "Used for testing quick scenarios",
-            Enabled = false,
-            Id = Guid.NewGuid()
+            Enabled = true
         };
     }
 

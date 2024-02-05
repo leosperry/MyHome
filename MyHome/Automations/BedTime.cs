@@ -6,7 +6,7 @@ namespace MyHome;
 /// most of the automations for bed time run in Home Assistant
 /// One of the more complicated routines is ensuring the garage doors are closed
 /// </summary>
-public class BedTime : IAutomation
+public class BedTime : IAutomation, IAutomationMeta
 {
     private readonly IGarageService _garageService;
     private readonly ILogger<BedTime> _logger;
@@ -25,6 +25,24 @@ public class BedTime : IAutomation
             return RunBedtimeRoutine(cancellationToken);
         }
         return Task.CompletedTask;
+    }
+
+    public AutomationMetaData GetMetaData()
+    {
+        return new AutomationMetaData()
+        {
+            Name = "Bed Time",
+            Description = "Ensure garage closed",
+            AdditionalEntitiesToTrack = [
+                GarageService.BACK_HALL_LIGHT,
+                GarageService.GARAGE1_CONTACT,
+                GarageService.GARAGE1_DOOR_OPENER,
+                GarageService.GARAGE1_TILT,
+                GarageService.GARAGE2_CONTACT,
+                GarageService.GARAGE2_DOOR_OPENER,
+                GarageService.GARAGE2_TILT
+            ]
+        };
     }
 
     public IEnumerable<string> TriggerEntityIds()
