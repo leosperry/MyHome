@@ -51,8 +51,18 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
                 // convert to byte
                 var unmodifiedValue = Math.Pow((THRESHOLD - currentPower)/ THRESHOLD, 2) * 255;
                 await Task.WhenAll(
-                    _api.LightSetBrightness(TV_BACKLIGHT, (byte)Math.Round(unmodifiedValue * 0.6)),
-                    _api.LightSetBrightness(COUCH_OVERHEAD, (byte)Math.Round(unmodifiedValue * 0.25))
+                    _api.LightTurnOn(new LightTurnOnModel()
+                    {
+                        EntityId = [TV_BACKLIGHT],
+                        Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
+                        RgbColor = (255, 142, 28),
+                    },cancellationToken),
+                    _api.LightTurnOn(new LightTurnOnModel()
+                    {
+                        EntityId = [COUCH_OVERHEAD],
+                        Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
+                        RgbColor = (255, 146, 39)
+                    }, cancellationToken)
                 );
             }
         }

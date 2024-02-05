@@ -104,7 +104,8 @@ public class LivingRoomLightsTests
         provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
         api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
-        api.Verify(a => a.LightSetBrightness(It.IsAny<string>(), It.Is<byte>(b => b < 10), default), Times.Exactly(2));    
+        api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness < 10)
+            , default), Times.Exactly(2));    
     }
 
     [Fact]
@@ -129,6 +130,8 @@ public class LivingRoomLightsTests
         provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
         api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
-        api.Verify(a => a.LightSetBrightness(It.IsAny<string>(), It.Is<byte>(b => b >= 60), default), Times.Exactly(2));    
+        api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness >= 60)
+            , default), Times.Exactly(2));    
+  
     }
 }

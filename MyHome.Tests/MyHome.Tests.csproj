@@ -27,6 +27,7 @@
     <ProjectReference Include="..\MyHome\MyHome.csproj" />
     <ProjectReference Include="..\MyHome.Dev\MyHome.Dev.csproj" />
     <ProjectReference Include="..\ha-kafka-net\src\HaKafkaNet.Tests\HaKafkaNet.Tests.csproj" />
+    <!-- <ProjectReference Include="..\ha-kafka-net\src\HaKafkaNet.TestHarness\HaKafkaNet.TestHarness.csproj" /> -->
   </ItemGroup>
 
 </Project>
