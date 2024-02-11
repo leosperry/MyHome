@@ -55,13 +55,13 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
                     {
                         EntityId = [TV_BACKLIGHT],
                         Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
-                        RgbColor = (255, 142, 28),
+                        Kelvin = 2202,
                     },cancellationToken),
                     _api.LightTurnOn(new LightTurnOnModel()
                     {
                         EntityId = [COUCH_OVERHEAD],
                         Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
-                        RgbColor = (255, 146, 39)
+                        RgbColor = (255, 146, 39),
                     }, cancellationToken)
                 );
             }

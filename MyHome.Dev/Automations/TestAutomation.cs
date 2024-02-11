@@ -13,8 +13,8 @@ public class TestAutomation : IAutomation, IAutomationMeta
 
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        var state = await _services.Api.GetEntityState("button.back_door_contact_identify");
-        Console.WriteLine(state);
+        var log = await _services.Api.GetErrorLog(cancellationToken);
+        Console.WriteLine(await log.Content.ReadAsStringAsync());
         //return Task.CompletedTask;
     }
 

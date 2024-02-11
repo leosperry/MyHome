@@ -54,4 +54,6 @@ public class PulseSwitch : IConditionalAutomation
         // turns off the light in 3 minutes
         return _services.Api.LightTurnOff(LIGHT, cancellationToken); 
     }
+
+
 }

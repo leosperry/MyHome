@@ -4,22 +4,19 @@ namespace MyHome;
 
 public class AutomationRegistry : IAutomationRegistry
 {
+    readonly IHaServices _services;
     readonly IAutomationFactory _factory;
 
-    public AutomationRegistry(IAutomationFactory factory)
+    public AutomationRegistry(IHaServices services, IAutomationFactory factory)
     {
+        _services = services;
         _factory = factory;
     }
 
-    public IEnumerable<IAutomation> Register()
+    public void Register(IRegistrar reg)
     {
-        return Enumerable.Empty<IAutomation>();
-    }
-
-    public IEnumerable<IConditionalAutomation> RegisterContitionals()
-    {
-        yield return _factory.LightOffOnNoMotion(
+        reg.Register(_factory.LightOffOnNoMotion(
             ["binary_sensor.lumi_lumi_sensor_motion_aq2_motion"],
-            ["light.office_led_light", "light.office_lights"], TimeSpan.FromMinutes(10));
+            ["light.office_led_light", "light.office_lights"], TimeSpan.FromMinutes(10)));
     }
 }
