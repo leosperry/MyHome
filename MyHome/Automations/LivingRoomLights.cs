@@ -39,7 +39,7 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
             if (currentPower > THRESHOLD)
             {
                 // turn off when we have plenty of light
-                await _api.LightTurnOff([TV_BACKLIGHT, COUCH_OVERHEAD]);
+                await _api.TurnOff([TV_BACKLIGHT, COUCH_OVERHEAD]);
             }
             else
             {

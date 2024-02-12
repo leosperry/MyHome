@@ -28,7 +28,7 @@ public class PulseSwitch : IConditionalAutomation
             var lightState = await _services.EntityProvider.GetEntityState(LIGHT, cancellationToken);
             if (lightState!.State == "off")
             {
-                await _services.Api.LightTurnOn(LIGHT);
+                await _services.Api.TurnOn(LIGHT);
                 return true;
             }
             else
@@ -37,7 +37,7 @@ public class PulseSwitch : IConditionalAutomation
                 {
                     // light is on, but after the capture time
                     // is the expected behavior to turn it off?
-                    await _services.Api.LightTurnOff(LIGHT, cancellationToken);
+                    await _services.Api.TurnOn(LIGHT, cancellationToken);
                 }
                 return false; //cancels the delayed task to turn it off
                 //either we turned it off already or we don't want to turn it off in 3 minutes
@@ -52,7 +52,7 @@ public class PulseSwitch : IConditionalAutomation
     public Task Execute(CancellationToken cancellationToken)
     {
         // turns off the light in 3 minutes
-        return _services.Api.LightTurnOff(LIGHT, cancellationToken); 
+        return _services.Api.TurnOff(LIGHT, cancellationToken); 
     }
 
 

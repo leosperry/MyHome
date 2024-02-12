@@ -9,7 +9,7 @@ namespace MyHome;
     /// This automation uses a DynamicLightAdjuster object which takes into account 
     /// the brightness from the lights themselves
     /// </summary>
-public class OfficeMotion : IAutomation
+public class OfficeMotion : IAutomation, IAutomationMeta
 {
     public const string OFFICE_MOTION = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion";
     public const string OFFICE_ILLUMINANCE = "sensor.lumi_lumi_sensor_motion_aq2_illuminance";
@@ -81,4 +81,13 @@ public class OfficeMotion : IAutomation
 
         await _api.LightSetBrightness(OFFICE_LIGHTS, newBrightness, cancellationToken);
     }
+
+    AutomationMetaData? _meta;
+    public AutomationMetaData GetMetaData() => 
+        _meta ??= new AutomationMetaData()
+        {
+            Name = "Office lights",
+            Description = "Dynamically set office light brightness based on luminance and take into account luminance from lights themselves",
+        };
+
 }

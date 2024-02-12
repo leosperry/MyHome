@@ -43,9 +43,9 @@ public class SystemMonitor : ISystemMonitor
             if (match.Success)
             {   
                 Console.WriteLine($"Home Assistant kafka error detected at {DateTime.Parse(match.Groups[1].Value)}");
-                await _services.Api.PersistentNotification("attempting restart because of Kafka integration error");
+                await _services.Api.PersistentNotification("Kafka Error detected");
                 await Task.Delay(1000); // attempt to let the notification persist before restart
-                await _services.Api.RestartHomeAssistant();
+                //await _services.Api.RestartHomeAssistant();
             }
         }
     }
