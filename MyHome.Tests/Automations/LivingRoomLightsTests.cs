@@ -77,8 +77,8 @@ public class LivingRoomLightsTests
         // Then
         provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
         provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Once);
-        api.Verify(a => a.LightTurnOn(It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Once);
+        api.Verify(a => a.TurnOff(It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
