@@ -14,9 +14,6 @@ These are some of the things I use in my set up
   * HaKafkaNet State Manager
 * Home Assistant Yellow
 
-
-[This](https://github.com/leosperry/MyHome/tree/main/MyHome/Automations) folder has my working automations.
-
 Join me on the new [Discord Server](https://discord.gg/RaGu72RbCt) for HaKafkaNet.
 
 You may also note that I have set up the Transformer and StateManager to run in seperate projects. There are a few benefits to this approach.
