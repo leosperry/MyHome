@@ -46,8 +46,8 @@ public class GarageService : IGarageService
             case GarageDoorState.Open:
                 //notify and close the door
                 await Task.WhenAll(
-                    _api.SwitchTurnOn(opener, cancellationToken), // close the door
-                    _api.SwitchTurnOn(BACK_HALL_LIGHT, cancellationToken), // turn onn the back hall light
+                    _api.TurnOn(opener, cancellationToken), // close the door
+                    _api.TurnOn(BACK_HALL_LIGHT, cancellationToken), // turn onn the back hall light
                     _api.NotifyGroupOrDevice("my_notify_group", $"Attempting to close {doorName}", cancellationToken),
                     Task.Delay(TimeSpan.FromSeconds(15)) // wait for door to close
                 );
@@ -64,7 +64,7 @@ public class GarageService : IGarageService
                 // alert
                 await Task.WhenAll(
                     _api.NotifyGroupOrDevice("my_notify_group", $"{doorName} is in an unknown state", cancellationToken),
-                    _api.SwitchTurnOn(BACK_HALL_LIGHT, cancellationToken));
+                    _api.TurnOn(BACK_HALL_LIGHT, cancellationToken));
                 break;
         }
     }

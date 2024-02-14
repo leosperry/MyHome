@@ -22,11 +22,11 @@ public class AutomationRegistry : IAutomationRegistry
             ["binary_sensor.lumi_lumi_sensor_motion_aq2_motion"],
             ["light.office_led_light", "light.office_lights"], TimeSpan.FromMinutes(10)));
         
-        reg.Register(_factory.EntityAutoOff("switch.back_flood", 30).WithMeta("auto off back flood"));
-        reg.Register(_factory.EntityAutoOff("switch.back_porch_light", 30).WithMeta("auto off back porch"));
-        reg.Register(_factory.EntityAutoOff("switch.back_hall_light", 10).WithMeta("auto off back hall"));
-        reg.Register(_factory.EntityAutoOff("light.front_porch", 10).WithMeta("auto off front porch"));
-        reg.Register(_factory.EntityAutoOff("light.upstairs_hall", 30).WithMeta("auto off upstairs hall"));
+        reg.Register(_factory.EntityAutoOff("switch.back_flood", 30).WithMeta("auto off back flood","30 min"));
+        reg.Register(_factory.EntityAutoOff("switch.back_porch_light", 30).WithMeta("auto off back porch","30 min"));
+        reg.Register(_factory.EntityAutoOff("switch.back_hall_light", 10).WithMeta("auto off back hall","10 min"));
+        reg.Register(_factory.EntityAutoOff("light.front_porch", 10).WithMeta("auto off front porch","10 min"));
+        reg.Register(_factory.EntityAutoOff("light.upstairs_hall", 30).WithMeta("auto off upstairs hall","30 min"));
 
         reg.Register(WhenDoorStaysOpen_Alert("binary_sensor.inside_garage_door_contact_opening", "Inside Garage Door"));
         reg.Register(WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"));
@@ -36,17 +36,17 @@ public class AutomationRegistry : IAutomationRegistry
 
         reg.Register(_builder.CreateSimple()
             .WithName("Lyra Brush Hair")
-            .WithTriggers("input_datetime.lyra_brush_hair", "input_datetime.lyra_brush_hair_2")
+            .WithTriggers("binary_sensor.lyra_brush_hair")
             .WithExecution((sc, ct) => _services.Api.NotifyAlexaMedia("Time to brush Lyra's hair", ["Living Room", "Kitchen"], ct))
             .Build());
     }
 
     private IConditionalAutomation WhenDoorStaysOpen_Alert(string doorId, string doorName)
     {
-        const int seconds = 7;
+        const int seconds = 8;
         return _builder.CreateConditional()
             .WithName($"{doorName} Alert")
-            .WithDescription($"Notify when {doorName} stays open for 7 seconds")
+            .WithDescription($"Notify when {doorName} stays open for {seconds} seconds")
             .WithTriggers(doorId)
             .When((stateChange) => stateChange.New.State == "on")
             .ForSeconds(seconds)

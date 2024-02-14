@@ -15,6 +15,7 @@ RUN dotnet publish -c Release -o out ./MyHome/MyHome.csproj
 
 # Build runtime image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
+ENV TZ="US/Eastern"
 WORKDIR /app
 COPY --from=build-env /app/out .
 ENTRYPOINT ["dotnet", "MyHome.dll"]
