@@ -4,9 +4,9 @@ namespace MyHome;
 
 public class TutorialRegistry : IAutomationRegistry
 {
-    IAutomationFactory _factory;
-    IAutomationBuilder _builder;
-    IHaServices _services;
+    readonly IAutomationFactory _factory;
+    readonly IAutomationBuilder _builder;
+    readonly IHaServices _services;
 
     public TutorialRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services)
     {

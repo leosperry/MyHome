@@ -11,11 +11,12 @@ public class TestAutomation : IAutomation, IAutomationMeta
         _services = services;
     }
 
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        var log = await _services.Api.GetErrorLog(cancellationToken);
-        Console.WriteLine(await log.Content.ReadAsStringAsync());
-        //return Task.CompletedTask;
+
+        //var log = await _services.Api.GetErrorLog(cancellationToken);
+        //Console.WriteLine(await log.Content.ReadAsStringAsync());
+        return Task.CompletedTask;
     }
 
     public AutomationMetaData GetMetaData()
