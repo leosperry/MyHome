@@ -1,4 +1,5 @@
 ﻿using System.Security.Cryptography;
+using System.Text.Json;
 using HaKafkaNet;
 using HaKafkaNet.Tests;
 using Moq;
@@ -80,8 +81,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.CERAMIC_SWITCH, "on"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.CERAMIC_SWITCH, OnOff.On));
         Mock<IHaApiProvider> api = new();
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object);
@@ -91,7 +92,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
     }
 
@@ -100,8 +101,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.CERAMIC_SWITCH, "off"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.CERAMIC_SWITCH, OnOff.Off));
         Mock<IHaApiProvider> api = new();
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object);
@@ -111,7 +112,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
     }
 
@@ -120,8 +121,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.CERAMIC_SWITCH, "on"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.CERAMIC_SWITCH, OnOff.On));
         Mock<IHaApiProvider> api = new();
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object);
@@ -131,7 +132,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.CERAMIC_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, It.IsAny<CancellationToken>()));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
     }
 
@@ -140,8 +141,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.HALOGEN_SWITCH, "on"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.HALOGEN_SWITCH, OnOff.On));
         Mock<IHaApiProvider> api = new();
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object);
@@ -151,7 +152,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.HALOGEN_SWITCH, It.IsAny<CancellationToken>()));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
     }
 
@@ -160,8 +161,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.HALOGEN_SWITCH, "on"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.HALOGEN_SWITCH, OnOff.On));
         Mock<IHaApiProvider> api = new();
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object);
@@ -171,7 +172,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff, JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
     }
 
@@ -180,8 +181,8 @@ public class KazulAlertsTests
     {
         // Given
         Mock<IHaEntityProvider> entities = new();
-        entities.Setup(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default))
-            .ReturnsAsync(TestHelpers.GetState(KazulAlerts.HALOGEN_SWITCH, "off"));
+        entities.Setup(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff,JsonElement>(KazulAlerts.HALOGEN_SWITCH, OnOff.Off));
 
         Mock<IHaApiProvider> api = new();
     
@@ -192,13 +193,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        entities.Verify(e => e.GetEntityState(KazulAlerts.HALOGEN_SWITCH, default));
+        entities.Verify(e => e.GetEntity<HaEntityState<OnOff, JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default));
         api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
     }
-
-    
-
-    
-
-
 }

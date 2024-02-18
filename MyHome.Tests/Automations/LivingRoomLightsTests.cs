@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 using HaKafkaNet.Tests;
 using Moq;
 
@@ -11,10 +12,10 @@ public class LivingRoomLightsTests
     {
         // Given
         Mock<IHaEntityProvider> provider = new();
-        var sun = TestHelpers.GetSunState(SunState.BelowHorizon, -10);
-        provider.Setup(p => p.GetEntityState<SunAttributes>("sun.sun", default))
+        var sun = TestHelpers.GetSun(SunState.Below_Horizon, -10);
+        provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default))
+        provider.Setup(p => p.GetEntity(LivingRoomLights.OVERRIDE, default))
             .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"off"));
             
         Mock<IHaApiProvider> api = new();
@@ -25,10 +26,10 @@ public class LivingRoomLightsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
-        provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
-        api.Verify(a => a.LightTurnOn(It.IsAny<string>(), default), Times.Never);
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
+        api.Verify(a => a.TurnOn(It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -36,10 +37,10 @@ public class LivingRoomLightsTests
     {
         // Given
         Mock<IHaEntityProvider> provider = new();
-        var sun = TestHelpers.GetSunState(SunState.AboveHorizon);
-        provider.Setup(p => p.GetEntityState<SunAttributes>("sun.sun", default))
+        var sun = TestHelpers.GetSun(SunState.Above_Horizon);
+        provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default))
+        provider.Setup(p => p.GetEntity(LivingRoomLights.OVERRIDE, default))
             .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"on"));
             
         Mock<IHaApiProvider> api = new();
@@ -50,10 +51,10 @@ public class LivingRoomLightsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
-        provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
-        api.Verify(a => a.LightTurnOn(It.IsAny<string>(), default), Times.Never);
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
+        api.Verify(a => a.TurnOn(It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -61,11 +62,11 @@ public class LivingRoomLightsTests
     {
         // Given
         Mock<IHaEntityProvider> provider = new();
-        var sun = TestHelpers.GetSunState(SunState.AboveHorizon);
-        provider.Setup(p => p.GetEntityState<SunAttributes>("sun.sun", default))
+        var sun = TestHelpers.GetSun(SunState.Above_Horizon);
+        provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"off"));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -75,10 +76,10 @@ public class LivingRoomLightsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
-        provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Once);
-        api.Verify(a => a.TurnOff(It.IsAny<string>(), default), Times.Never);
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Once);
+        api.Verify(a => a.TurnOff(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
     [Fact]
@@ -86,11 +87,11 @@ public class LivingRoomLightsTests
     {
         // Given
         Mock<IHaEntityProvider> provider = new();
-        var sun = TestHelpers.GetSunState(SunState.AboveHorizon);
-        provider.Setup(p => p.GetEntityState<SunAttributes>("sun.sun", default))
+        var sun = TestHelpers.GetSun(SunState.Above_Horizon);
+        provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"off"));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -100,9 +101,9 @@ public class LivingRoomLightsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
-        provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
         api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness < 10)
             , default), Times.Exactly(2));    
@@ -112,11 +113,11 @@ public class LivingRoomLightsTests
     public async Task WhenSunIsUp_andNoLight_TurnOnToMax()
     {
         Mock<IHaEntityProvider> provider = new();
-        var sun = TestHelpers.GetSunState(SunState.AboveHorizon);
-        provider.Setup(p => p.GetEntityState<SunAttributes>("sun.sun", default))
+        var sun = TestHelpers.GetSun(SunState.Above_Horizon);
+        provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"off"));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -126,9 +127,9 @@ public class LivingRoomLightsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntityState<SunAttributes>("sun.sun", default));
-        provider.Verify(p => p.GetEntityState(LivingRoomLights.OVERRIDE, default));
-        api.Verify(a => a.LightTurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
         api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness >= 60)
             , default), Times.Exactly(2));    

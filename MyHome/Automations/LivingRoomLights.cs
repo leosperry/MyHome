@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -26,14 +27,14 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
 
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        Task<HaEntityState<SunAttributes>?> sunTask = null!;
-        Task<HaEntityState?> overrideTask = null!;
+        Task<SunModel?> sunTask = null!;
+        Task<HaEntityState<OnOff, JsonElement>?> overrideTask = null!;
         await Task.WhenAll(
-            sunTask = _entityProvider.GetEntityState<SunAttributes>("sun.sun"),
-            overrideTask = _entityProvider.GetEntityState(OVERRIDE));
+            sunTask = _entityProvider.GetSun(),//.GetEntityState<SunAttributes>("sun.sun"),
+            overrideTask = _entityProvider.GetOnOffEntity(OVERRIDE));
 
         // only run when the sun is up and the override is off
-        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == "off"
+        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off
             && float.TryParse(stateChange.New.State, out var currentPower))
         {
             if (currentPower > THRESHOLD)

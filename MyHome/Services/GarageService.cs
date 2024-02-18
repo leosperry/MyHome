@@ -71,8 +71,8 @@ public class GarageService : IGarageService
 
     private async Task<GarageDoorState> getGarageDoorState(string garageContact, string garageTilt)
     {
-        var contact = await _cache.Get(garageContact);
-        var tilt = await _cache.Get(garageTilt);
+        var contact = await _cache.GetEntity(garageContact);
+        var tilt = await _cache.GetEntity(garageTilt);
 
         return (contact, tilt) switch
         {

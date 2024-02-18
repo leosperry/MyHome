@@ -25,7 +25,7 @@ public class PulseSwitch : IConditionalAutomation
     {
         try
         {
-            var lightState = await _services.EntityProvider.GetEntityState(LIGHT, cancellationToken);
+            var lightState = await _services.EntityProvider.GetEntity(LIGHT, cancellationToken);
             if (lightState!.State == "off")
             {
                 await _services.Api.TurnOn(LIGHT);

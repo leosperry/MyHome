@@ -47,23 +47,23 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        var officeMotion = await _cache.Get(OFFICE_MOTION);
+        var officeMotion = await _cache.GetEntity(OFFICE_MOTION);
         if (officeMotion?.State == "off")
         {
             return;
         }
 
-        var officeOverride = await _cache.Get(OFFICE_OVERRIDE, cancellationToken);
+        var officeOverride = await _cache.GetEntity(OFFICE_OVERRIDE, cancellationToken);
         if (officeOverride?.State == "on")
         {
             return;
         }
 
-        var currentIlluminationEntity = await _cache.Get(OFFICE_ILLUMINANCE);
-        int currentIllumination;
-        if (currentIlluminationEntity is not null && int.TryParse(currentIlluminationEntity.State, out currentIllumination))
+        var currentIlluminationEntity = await _cache.GetIntegerEntity(OFFICE_ILLUMINANCE);
+        var currentIllumination = currentIlluminationEntity?.State;
+        if (currentIllumination is not null)
         {
-            await SetBrightness(currentIllumination, cancellationToken);
+            await SetBrightness(currentIllumination.Value, cancellationToken);
         }
         else
         {
@@ -73,9 +73,9 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
-        var officeLights = await _cache.Get<SimpleLightModel>(OFFICE_LIGHTS);
+        var officeLights = await _cache.GetOnOffEntity<SimpleLightModel>(OFFICE_LIGHTS);
 
-        var oldBrightness = officeLights!.Attributes!.Brightness ?? 0;
+        var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
 

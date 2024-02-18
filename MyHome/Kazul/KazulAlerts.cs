@@ -59,9 +59,9 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         };
     }
 
-    private Task BatteryCheck(HaEntityState bateryState, CancellationToken cancellationToken)
+    private Task BatteryCheck(HaEntityState state, CancellationToken cancellationToken)
     {
-        if (!float.TryParse(bateryState.State, out var batteryLevel) || batteryLevel < 50f)
+        if (state.Bad() || state.GetState<float?>() < 50f)
         {
             return Task.WhenAll(
                 _api.NotifyGroupOrDevice(NOTIFY_GROUP, "check Kazul temp sensor battery", cancellationToken),
@@ -70,9 +70,9 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         return Task.CompletedTask;
     }
 
-    private Task CheckTemp(HaEntityState temperatureState, CancellationToken cancellationToken)
+    private Task CheckTemp(HaEntityState state, CancellationToken cancellationToken)
     {
-        if(!float.TryParse(temperatureState.State, out var temperature) || temperature < 65f)
+        if(state.Bad() || state.GetState<float?>() < 65f)
         {
             return Task.WhenAll(
                 _api.NotifyGroupOrDevice(NOTIFY_GROUP, "Kazul's enclosure temerature either can't be read or is below 60"),
@@ -83,11 +83,12 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     private async Task CheckPower(HaEntityState state, CancellationToken cancellationToken)
     {
-        var switchState = await _entities.GetEntityState(_powerToSwitchMapping[state.EntityId].id, cancellationToken);
-        if (switchState is null || (switchState.State == "on" && (!float.TryParse(state.State, out var powerReading) || powerReading < 75)))
+        var switchState = await _entities.GetOnOffEntity(_powerToSwitchMapping[state.EntityId].id, cancellationToken);
+
+        if (switchState.Bad() || (switchState?.State == OnOff.On && state.GetState<double?>() < 75))
         {
             await Task.WhenAll(
-                _api.NotifyGroupOrDevice(NOTIFY_GROUP, $"problem with kazul {_powerToSwitchMapping[state.EntityId].name}"),
+                _api.NotifyGroupOrDevice(NOTIFY_GROUP, $"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}"),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
     }
