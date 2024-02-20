@@ -28,7 +28,7 @@ public class AutomationRegistry : IAutomationRegistry
             _factory.EntityAutoOff("switch.back_hall_light", 10).WithMeta("auto off back hall","10 min"),
             _factory.EntityAutoOff("light.front_porch", 10).WithMeta("auto off front porch","10 min"),
             _factory.EntityAutoOff("light.upstairs_hall", 30).WithMeta("auto off upstairs hall","30 min"),
-            _factory.EntityAutoOff("light.entry_light", 30).WithMeta("auto off upstairs hall","30 min")
+            _factory.EntityAutoOff("light.entry_light", 30).WithMeta("auto off entry light","30 min")
         );
 
         reg.RegisterMultiple(
@@ -51,7 +51,7 @@ public class AutomationRegistry : IAutomationRegistry
             .WithName($"{doorName} Alert")
             .WithDescription($"Notify when {doorName} stays open for {seconds} seconds")
             .WithTriggers(doorId)
-            .When((stateChange) => stateChange.New.State == "on")
+            .When((stateChange) => stateChange.New.GetStateEnum<OnOff>() == OnOff.On)
             .ForSeconds(seconds)
             .Then(async ct => 
             {

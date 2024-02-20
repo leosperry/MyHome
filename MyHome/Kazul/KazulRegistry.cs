@@ -41,9 +41,9 @@ public class KazulRegistry : IAutomationRegistry
             .WithTimings(EVENT_TIMINGS)
             .WithAdditionalEntitiesToTrack(KAZUL_UVB)
             .WithExecution((stateChange, ct) =>
-                stateChange.New.State switch{
-                    "on" => _services.Api.TurnOn(KAZUL_UVB, ct),
-                    "off" => _services.Api.TurnOff(KAZUL_UVB, ct),
+                stateChange.New.GetStateEnum<OnOff>() switch{
+                    OnOff.On => _services.Api.TurnOn(KAZUL_UVB, ct),
+                    OnOff.Off => _services.Api.TurnOff(KAZUL_UVB, ct),
                     _ => _services.Api.PersistentNotification("cannot set kazul UVB")
                 }
             )

@@ -47,14 +47,14 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        var officeMotion = await _cache.GetEntity(OFFICE_MOTION);
-        if (officeMotion?.State == "off")
+        var officeMotion = await _cache.GetOnOffEntity(OFFICE_MOTION);
+        if (officeMotion?.State == OnOff.Off)
         {
             return;
         }
 
-        var officeOverride = await _cache.GetEntity(OFFICE_OVERRIDE, cancellationToken);
-        if (officeOverride?.State == "on")
+        var officeOverride = await _cache.GetOnOffEntity(OFFICE_OVERRIDE, cancellationToken);
+        if (officeOverride?.State == OnOff.On)
         {
             return;
         }
@@ -73,7 +73,8 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
-        var officeLights = await _cache.GetOnOffEntity<SimpleLightModel>(OFFICE_LIGHTS);
+        var officeLights = await _cache.GetColorLightEntity(OFFICE_LIGHTS);
+        Console.WriteLine($"Office Lights:{officeLights?.Attributes}");
 
         var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 

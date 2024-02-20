@@ -12,9 +12,6 @@ public class BedTime : IAutomation, IAutomationMeta
     private readonly IGarageService _garageService;
     private readonly ILogger<BedTime> _logger;
 
-    const string 
-        ENTRY_LIGHT = "light.entry_light";
-
     public BedTime(IHaServices services, IGarageService garageService, ILogger<BedTime> logger)
     {
         this._services = services;
@@ -24,12 +21,53 @@ public class BedTime : IAutomation, IAutomationMeta
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        if (stateChange.New.State == "on")
+        if (stateChange.New.GetStateEnum<OnOff>() == OnOff.On)
         {
-            _logger.LogInformation("bed time triggered");
             return RunBedtimeRoutine(cancellationToken);
         }
         return Task.CompletedTask;
+    }
+
+    public IEnumerable<string> TriggerEntityIds()
+    {
+        yield return Helpers.BedTime;
+    }
+
+    async Task RunBedtimeRoutine(CancellationToken ct)
+    {
+        IEnumerable<Task> taskList = [
+            _garageService.EnsureGarageClosed(ct),
+            EnsureOfficeClosed(ct),
+            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._40pct ,ct),
+            _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
+            _services.Api.TurnOff([
+                Lights.FrontRoomLight, Lights.LoungeCeiling, Lights.UpstairsHall, 
+                Lights.Couch2, Lights.Couch3, Lights.TvBacklight, Lights.PeacockLamp, Devices.Roku,
+                Lights.KitchenLights, Lights.DiningRoomLights,
+                Lights.OfficeLeds, Lights.OfficeLights, Devices.OfficeFan,
+                Lights.BackFlood, Lights.BackPorch, Lights.FrontPorchLight
+            ], ct)];
+        
+        try
+        {
+            await Task.WhenAll(taskList);
+        }
+        catch (System.Exception ex)
+        {
+            _logger.LogError(ex, "Bedtime failure.");
+            throw;
+        }
+    }
+
+    async Task EnsureOfficeClosed(CancellationToken ct)
+    {
+        var officeDoor = await _services.EntityProvider.GetOnOffEntity(Devices.OfficeDoor, ct);
+        if (officeDoor.Bad() || officeDoor!.State == OnOff.On)
+        {
+            await Task.WhenAll(
+                _services.Api.NotifyAlexaMedia("The office is open", [Alexa.MainBedroom, Alexa.Kitchen]),
+                _services.Api.TurnOn(Lights.BackHallLight, ct));
+        }
     }
 
     public AutomationMetaData GetMetaData()
@@ -37,7 +75,7 @@ public class BedTime : IAutomation, IAutomationMeta
         return new AutomationMetaData()
         {
             Name = "Bed Time",
-            Description = "Ensure garage closed, Turn on entryway light.",
+            Description = "Ensure garage and office are closed, Turn on entryway light. Turn off all other lights/devices",
             AdditionalEntitiesToTrack = [
                 GarageService.BACK_HALL_LIGHT,
                 GarageService.GARAGE1_CONTACT,
@@ -46,21 +84,7 @@ public class BedTime : IAutomation, IAutomationMeta
                 GarageService.GARAGE2_CONTACT,
                 GarageService.GARAGE2_DOOR_OPENER,
                 GarageService.GARAGE2_TILT,
-                ENTRY_LIGHT
+                Lights.EntryLight
             ]
         };
-    }
-
-    public IEnumerable<string> TriggerEntityIds()
-    {
-        yield return "input_boolean.bedtime_switch";
-    }
-
-    Task RunBedtimeRoutine(CancellationToken cancellationToken)
-    {
-        return Task.WhenAll(
-            _garageService.EnsureGarageClosed(cancellationToken),
-            _services.Api.TurnOn(ENTRY_LIGHT ,cancellationToken)
-        );
-    }
-}
+    }}

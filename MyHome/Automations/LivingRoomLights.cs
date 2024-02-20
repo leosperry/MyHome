@@ -15,8 +15,6 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
     private readonly IHaEntityProvider _entityProvider;
     public const string TRIGGER = "sensor.solaredge_current_power";
     public const string OVERRIDE = "input_boolean.living_room_override";
-    public const string COUCH_OVERHEAD = "light.couch_overhead";
-    const string TV_BACKLIGHT = "light.tv_backlight";
     const double THRESHOLD = 700;
 
     public LivingRoomLights(IHaApiProvider api, IHaEntityProvider entityProvider)
@@ -25,8 +23,17 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
         this._entityProvider = entityProvider;
     }
 
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
+        var powerState = stateChange.ToDoubleTyped();
+        var currentPower = powerState.New.State;
+
+        if (currentPower is null)
+        {
+            //can't calculate; do nothing
+            return;
+        }
+
         Task<SunModel?> sunTask = null!;
         Task<HaEntityState<OnOff, JsonElement>?> overrideTask = null!;
         await Task.WhenAll(
@@ -34,13 +41,12 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
             overrideTask = _entityProvider.GetOnOffEntity(OVERRIDE));
 
         // only run when the sun is up and the override is off
-        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off
-            && float.TryParse(stateChange.New.State, out var currentPower))
+        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off)
         {
             if (currentPower > THRESHOLD)
             {
                 // turn off when we have plenty of light
-                await _api.TurnOff([TV_BACKLIGHT, COUCH_OVERHEAD]);
+                await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
             }
             else
             {
@@ -50,20 +56,20 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
                 // raise to power of 2 for parabolic
                 // set maximum for each light
                 // convert to byte
-                var unmodifiedValue = Math.Pow((THRESHOLD - currentPower)/ THRESHOLD, 2) * 255;
+                var unmodifiedValue = Math.Pow((THRESHOLD - currentPower.Value)/ THRESHOLD, 2) * 255;
                 await Task.WhenAll(
                     _api.LightTurnOn(new LightTurnOnModel()
                     {
-                        EntityId = [TV_BACKLIGHT],
+                        EntityId = [Lights.TvBacklight],
                         Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
                         Kelvin = 2202,
-                    },cancellationToken),
+                    },ct),
                     _api.LightTurnOn(new LightTurnOnModel()
                     {
-                        EntityId = [COUCH_OVERHEAD],
+                        EntityId = [Lights.CounchOverhead],
                         Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
                         RgbColor = (255, 146, 39),
-                    }, cancellationToken)
+                    }, ct)
                 );
             }
         }
@@ -81,7 +87,8 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
             Name = "Living Room Lights",
             Description = "set lights based on solar power generation",
             AdditionalEntitiesToTrack = [
-                "light.wiz_rgbw_tunable_79a59c", "light.wiz_rgbw_tunable_79aab4", "light.wiz_rgbw_tunable_79aab4", "light.living_lamp_1", "light.living_lamp_2"
+                Lights.Couch1, Lights.Couch2, Lights.Couch3, 
+                Lights.LivingLamp1, Lights.LivingLamp2
             ]
         };
     }

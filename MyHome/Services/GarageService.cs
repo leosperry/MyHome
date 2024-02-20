@@ -1,4 +1,5 @@
 ﻿
+using System.Text.Json;
 using Confluent.Kafka;
 using HaKafkaNet;
 
@@ -71,22 +72,29 @@ public class GarageService : IGarageService
 
     private async Task<GarageDoorState> getGarageDoorState(string garageContact, string garageTilt)
     {
-        var contact = await _cache.GetEntity(garageContact);
-        var tilt = await _cache.GetEntity(garageTilt);
+        Task<HaEntityState<OnOff,JsonElement>?> contactTask;
+        Task<HaEntityState<OnOff,JsonElement>?> tiltTask;
+        
+        contactTask = _cache.GetOnOffEntity(garageContact);
+        tiltTask = _cache.GetOnOffEntity(garageTilt);
 
-        return (contact, tilt) switch
+        await Task.WhenAll(contactTask, tiltTask);
+        
+        if (contactTask.Result.Bad() || tiltTask.Result.Bad())
         {
-            {contact.State: "on", tilt.State: "on"} => GarageDoorState.Open,
-            {contact.State: "off", tilt.State: "off"} => GarageDoorState.Closed,
+            return GarageDoorState.Unknown;
+        }
+
+        return (contactTask.Result , tiltTask.Result) switch
+        {
+            {Item1.State: OnOff.On, Item2.State: OnOff.On} => GarageDoorState.Open,
+            {Item1.State: OnOff.Off, Item2.State: OnOff.Off} => GarageDoorState.Closed,
             _ => GarageDoorState.Unknown
         };
-
     }
 
     enum GarageDoorState
     {
         Open, Closed, Unknown
     }
-
-
 }

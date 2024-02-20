@@ -18,7 +18,6 @@ public class KazulAlerts : IAutomation, IAutomationMeta
     public const string CERAMIC_POWER = "sensor.kazul_power_strip_electric_consumption_w_1";
     public const string HALOGEN_SWITCH = "switch.kazul_power_strip_2";
     public const string HALOGEN_POWER = "sensor.kazul_power_strip_electric_consumption_w_2";
-    public const string NOTIFY_GROUP = "critical_notification_group";
 
     Dictionary<string, (string id, string name)> _powerToSwitchMapping = new()
     {
@@ -28,7 +27,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     LightTurnOnModel _lightAlert = new LightTurnOnModel()
     {
-        EntityId = ["light.living_lamp_1"],
+        EntityId = [Lights.LivingLamp1],
         RgbColor = (255, 0, 255),
         Flash = Flash.Long
     };
@@ -64,7 +63,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         if (state.Bad() || state.GetState<float?>() < 50f)
         {
             return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NOTIFY_GROUP, "check Kazul temp sensor battery", cancellationToken),
+                _api.NotifyGroupOrDevice(NotificationGroups.Critical, "check Kazul temp sensor battery", cancellationToken),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
         return Task.CompletedTask;
@@ -75,7 +74,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         if(state.Bad() || state.GetState<float?>() < 65f)
         {
             return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NOTIFY_GROUP, "Kazul's enclosure temerature either can't be read or is below 60"),
+                _api.NotifyGroupOrDevice(NotificationGroups.Critical, "Kazul's enclosure temerature either can't be read or is below 60"),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
         return Task.CompletedTask;
@@ -88,7 +87,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         if (switchState.Bad() || (switchState?.State == OnOff.On && state.GetState<double?>() < 75))
         {
             await Task.WhenAll(
-                _api.NotifyGroupOrDevice(NOTIFY_GROUP, $"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}"),
+                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}"),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
     }
