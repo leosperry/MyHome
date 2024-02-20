@@ -21,12 +21,12 @@ public class LivingRoomLightsTests
         Mock<IHaApiProvider> api = new();
 
         LivingRoomLights sut = new LivingRoomLights(api.Object, provider.Object);
-        var fakeState = TestHelpers.GetStateChange();
+        var fakeState = TestHelpers.GetStateChange(LivingRoomLights.TRIGGER, "50");
         // When
         await sut.Execute(fakeState, default);
     
         // Then
-        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
+        provider.Verify(a => a.GetEntity<SunModel>("sun.sun", It.IsAny<CancellationToken>()));
         provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
         api.Verify(a => a.TurnOn(It.IsAny<string>(), default), Times.Never);
@@ -46,7 +46,7 @@ public class LivingRoomLightsTests
         Mock<IHaApiProvider> api = new();
 
         LivingRoomLights sut = new LivingRoomLights(api.Object, provider.Object);
-        var fakeState = TestHelpers.GetStateChange();
+        var fakeState = TestHelpers.GetStateChange(LivingRoomLights.TRIGGER, "50");
         // When
         await sut.Execute(fakeState, default);
     

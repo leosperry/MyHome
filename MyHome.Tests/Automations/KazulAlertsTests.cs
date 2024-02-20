@@ -22,7 +22,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default));
     }
 
     [Fact]
@@ -39,7 +39,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -56,7 +56,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -93,7 +93,7 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default));
     }
 
     [Fact]
@@ -113,7 +113,7 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, default));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -133,7 +133,7 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.CERAMIC_SWITCH, It.IsAny<CancellationToken>()));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -153,7 +153,7 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff,JsonElement>>(KazulAlerts.HALOGEN_SWITCH, It.IsAny<CancellationToken>()));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default));
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default));
     }
 
     [Fact]
@@ -173,7 +173,7 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff, JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 
     [Fact]
@@ -194,6 +194,6 @@ public class KazulAlertsTests
     
         // Then
         entities.Verify(e => e.GetEntity<HaEntityState<OnOff, JsonElement>>(KazulAlerts.HALOGEN_SWITCH, default));
-        api.Verify(a => a.NotifyGroupOrDevice(KazulAlerts.NOTIFY_GROUP, It.IsAny<string>(), default), Times.Never);
+        api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default), Times.Never);
     }
 }
