@@ -36,9 +36,12 @@ public class BedTime : IAutomation, IAutomationMeta
     async Task RunBedtimeRoutine(CancellationToken ct)
     {
         IEnumerable<Task> taskList = [
+            _services.Api.TurnOff(Helpers.BedTime),
+            _services.Api.LockLock(Devices.FrontDoorLock, ct),
             _garageService.EnsureGarageClosed(ct),
             EnsureOfficeClosed(ct),
-            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._40pct ,ct),
+            _services.Api.TurnOn(Helpers.LivingRoomOverride),
+            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._30pct ,ct),
             _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
             _services.Api.TurnOff([
                 Lights.FrontRoomLight, Lights.LoungeCeiling, Lights.UpstairsHall, 
@@ -47,7 +50,6 @@ public class BedTime : IAutomation, IAutomationMeta
                 Lights.OfficeLeds, Lights.OfficeLights, Devices.OfficeFan,
                 Lights.BackFlood, Lights.BackPorch, Lights.FrontPorchLight
             ], ct)];
-        
         try
         {
             await Task.WhenAll(taskList);
@@ -55,13 +57,14 @@ public class BedTime : IAutomation, IAutomationMeta
         catch (System.Exception ex)
         {
             _logger.LogError(ex, "Bedtime failure.");
+            await _services.Api.NotifyAlexaMedia("Bedtime routine failure", [Alexa.LivingRoom, Alexa.Kitchen], ct);
             throw;
         }
     }
 
     async Task EnsureOfficeClosed(CancellationToken ct)
     {
-        var officeDoor = await _services.EntityProvider.GetOnOffEntity(Devices.OfficeDoor, ct);
+        var officeDoor = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeDoor, ct);
         if (officeDoor.Bad() || officeDoor!.State == OnOff.On)
         {
             await Task.WhenAll(

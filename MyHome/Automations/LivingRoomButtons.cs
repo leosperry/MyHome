@@ -1,6 +1,6 @@
-﻿using System.Collections;
-using System.Text.Json;
+﻿
 using HaKafkaNet;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MyHome;
 
@@ -29,8 +29,10 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        Console.WriteLine($"living buttons {stateChange}");
         var sceneEvent = stateChange.ToSceneControllerEvent();
+        
+        if(!sceneEvent.New.StateAndLastUpdatedWithin1Second()) return Task.CompletedTask;
+
         var button = sceneEvent.EntityId.Last();
         var keypress = sceneEvent.New.Attributes?.GetKeyPress();
         return (button,keypress) switch 
@@ -42,18 +44,12 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
             {button: '2', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Lights.CounchOverhead, ct),
             {button: '2', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Lights.CounchOverhead, ct),
             {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Lights.KitchenLights, Lights.DiningRoomLights, Lights.FrontRoomLight],ct),
-            {button: '4', keypress: KeyPress.KeyPressed2x}  => _services.Api.RemoteSendCommand(Devices.Roku, "find_remote"),
-            {button: '4', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, "play"),
+            {button: '4', keypress: KeyPress.KeyPressed2x}  => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString()),
+            {button: '4', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString()),
             {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
-            {button: '8', keypress: KeyPress.KeyPressed}    => FrontPortchMotion(false, ct), //  disable,
-            {button: '8', keypress: KeyPress.KeyPressed2x}  => FrontPortchMotion(true, ct), // temp disable
+            {button: '8', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.select.ToString()),
             _ => Task.CompletedTask //unassigned 
         };    
-    }
-
-    private Task FrontPortchMotion(bool temporary, CancellationToken ct)
-    {
-        return Task.CompletedTask;
     }
 
     private async Task ToggleLight(string lightId, CancellationToken ct)
@@ -123,6 +119,6 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         yield return "event.living_room_buttons_scene_005";
         //yield return "event.living_room_buttons_scene_006";
         //yield return "event.living_room_buttons_scene_007";
-        //yield return "event.living_room_buttons_scene_008";
+        yield return "event.living_room_buttons_scene_008";
     }
 }

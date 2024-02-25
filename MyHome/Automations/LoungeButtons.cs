@@ -30,6 +30,9 @@ public class LoungeButtons : IAutomation, IAutomationMeta
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
         var sceneEvent = stateChange.ToSceneControllerEvent();
+
+        if(!sceneEvent.New.StateAndLastUpdatedWithin1Second()) return Task.CompletedTask;
+
         var button = sceneEvent.EntityId.Last();
         var keypress = sceneEvent.New.Attributes?.GetKeyPress();
         return (button,keypress) switch 

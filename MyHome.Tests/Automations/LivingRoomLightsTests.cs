@@ -15,8 +15,8 @@ public class LivingRoomLightsTests
         var sun = TestHelpers.GetSun(SunState.Below_Horizon, -10);
         provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntity(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"off"));
+        provider.Setup(p => p.GetEntity(Helpers.LivingRoomOverride, default))
+            .ReturnsAsync(TestHelpers.GetState(Helpers.LivingRoomOverride,"off"));
             
         Mock<IHaApiProvider> api = new();
 
@@ -27,7 +27,7 @@ public class LivingRoomLightsTests
     
         // Then
         provider.Verify(a => a.GetEntity<SunModel>("sun.sun", It.IsAny<CancellationToken>()));
-        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
         api.Verify(a => a.TurnOn(It.IsAny<string>(), default), Times.Never);
     }
@@ -40,8 +40,8 @@ public class LivingRoomLightsTests
         var sun = TestHelpers.GetSun(SunState.Above_Horizon);
         provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntity(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState(LivingRoomLights.OVERRIDE,"on"));
+        provider.Setup(p => p.GetEntity(Helpers.LivingRoomOverride, default))
+            .ReturnsAsync(TestHelpers.GetState(Helpers.LivingRoomOverride,"on"));
             
         Mock<IHaApiProvider> api = new();
 
@@ -52,7 +52,7 @@ public class LivingRoomLightsTests
     
         // Then
         provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
-        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
         api.Verify(a => a.TurnOn(It.IsAny<string>(), default), Times.Never);
     }
@@ -65,8 +65,8 @@ public class LivingRoomLightsTests
         var sun = TestHelpers.GetSun(SunState.Above_Horizon);
         provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(Helpers.LivingRoomOverride, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -77,7 +77,7 @@ public class LivingRoomLightsTests
     
         // Then
         provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
-        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), It.IsAny<CancellationToken>()), Times.Once);
         api.Verify(a => a.TurnOff(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
     }
@@ -90,8 +90,8 @@ public class LivingRoomLightsTests
         var sun = TestHelpers.GetSun(SunState.Above_Horizon);
         provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(Helpers.LivingRoomOverride, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -102,7 +102,7 @@ public class LivingRoomLightsTests
     
         // Then
         provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
-        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
         api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness < 10)
@@ -116,8 +116,8 @@ public class LivingRoomLightsTests
         var sun = TestHelpers.GetSun(SunState.Above_Horizon);
         provider.Setup(p => p.GetEntity<SunModel>("sun.sun", default))
             .ReturnsAsync(sun);
-        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default))
-            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(LivingRoomLights.OVERRIDE, OnOff.Off));
+        provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default))
+            .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(Helpers.LivingRoomOverride, OnOff.Off));
             
         Mock<IHaApiProvider> api = new();
 
@@ -128,7 +128,7 @@ public class LivingRoomLightsTests
     
         // Then
         provider.Verify(a => a.GetEntity<SunModel>("sun.sun", default));
-        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(LivingRoomLights.OVERRIDE, default));
+        provider.Verify(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default));
         api.Verify(a => a.TurnOff(It.IsAny<IEnumerable<string>>(), default), Times.Never);
 
         api.Verify(a => a.LightTurnOn(It.Is<LightTurnOnModel>(m => m.Brightness >= 60)

@@ -15,9 +15,14 @@ public class SystemMonitor : ISystemMonitor
 
     public Task BadEntityStateDiscovered(IEnumerable<BadEntityState> badStates)
     {
+        var filteredStates = badStates.Where(bs => !bs.EntityId.StartsWith("event"));
+        if (!filteredStates.Any())
+        {
+            return Task.CompletedTask;
+        }
         StringBuilder sb = new();
         sb.AppendLine("bad entity states");
-        foreach (var item in badStates)
+        foreach (var item in filteredStates)
         {
             if (item.State is null)
             {
@@ -31,23 +36,24 @@ public class SystemMonitor : ISystemMonitor
         return _services.Api.PersistentNotification(sb.ToString());
     }
 
-    public async Task StateHandlerInitialized()
+    public Task StateHandlerInitialized()
     {
+        return Task.CompletedTask;
         // this is jenky and will not handle all circumstances
-        var logResponse = await _services.Api.GetErrorLog();
-        if (logResponse.StatusCode == System.Net.HttpStatusCode.OK)
-        {
-            Regex kafkaErrorCheck = new Regex(@"(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\sERROR.*/apache_kafka/.*/aiokafka/", RegexOptions.Singleline);
+        // var logResponse = await _services.Api.GetErrorLog();
+        // if (logResponse.StatusCode == System.Net.HttpStatusCode.OK)
+        // {
+        //     Regex kafkaErrorCheck = new Regex(@"(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2}\.\d{3})\sERROR.*/apache_kafka/.*/aiokafka/", RegexOptions.Singleline);
 
-            var match = kafkaErrorCheck.Match(await logResponse.Content.ReadAsStringAsync());
-            if (match.Success)
-            {   
-                Console.WriteLine($"Home Assistant kafka error detected at {DateTime.Parse(match.Groups[1].Value)}");
-                await _services.Api.PersistentNotification("Kafka Error detected");
-                await Task.Delay(1000); // attempt to let the notification persist before restart
-                //await _services.Api.RestartHomeAssistant();
-            }
-        }
+        //     var match = kafkaErrorCheck.Match(await logResponse.Content.ReadAsStringAsync());
+        //     if (match.Success)
+        //     {   
+        //         Console.WriteLine($"Home Assistant kafka error detected at {DateTime.Parse(match.Groups[1].Value)}");
+        //         await _services.Api.PersistentNotification("Kafka Error detected");
+        //         await Task.Delay(1000); // attempt to let the notification persist before restart
+        //         //await _services.Api.RestartHomeAssistant();
+        //     }
+        // }
     }
 
     public Task UnhandledException(AutomationMetaData automationMetaData, Exception exception)

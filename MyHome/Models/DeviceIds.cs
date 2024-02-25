@@ -35,8 +35,17 @@ public static class Lights
 public static class Devices
 {
     public const string
+        FrontDoorLock = "lock.aqara_smart_lock_u100",
         Roku = "remote.roku_ultra",
-        OfficeFan = "automation.office_fan",
+        OfficeFan = "automation.office_fan";
+}
+
+public static class Sensors
+{
+    public const string
+        BasementMotion = "binary_sensor.basement_motion_motion_detection",
+        BasementStairMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_2",
+        FrontPorchMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_3",
         OfficeDoor = "binary_sensor.office_door_opening";
 }
 
@@ -50,7 +59,7 @@ public static class Alexa
 {
     public const string 
         Office = "Office",
-        LivingRoome = "Living Room",
+        LivingRoom = "Living Room",
         Kitchen = "Kitchen",
         Asher = "Asher",
         Logan = "Logan",
@@ -61,5 +70,7 @@ public static class Alexa
 public static class Helpers
 {
     public const string
-        BedTime = "input_boolean.bedtime_switch";
+        BedTime = "input_boolean.bedtime_switch",
+        LivingRoomOverride = "input_boolean.living_room_override",
+        PorchMotionEnable = "input_boolean.front_porch_motion_enable";
 }

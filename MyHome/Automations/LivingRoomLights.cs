@@ -14,7 +14,6 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entityProvider;
     public const string TRIGGER = "sensor.solaredge_current_power";
-    public const string OVERRIDE = "input_boolean.living_room_override";
     const double THRESHOLD = 700;
 
     public LivingRoomLights(IHaApiProvider api, IHaEntityProvider entityProvider)
@@ -38,7 +37,7 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
         Task<HaEntityState<OnOff, JsonElement>?> overrideTask = null!;
         await Task.WhenAll(
             sunTask = _entityProvider.GetSun(),//.GetEntityState<SunAttributes>("sun.sun"),
-            overrideTask = _entityProvider.GetOnOffEntity(OVERRIDE));
+            overrideTask = _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride));
 
         // only run when the sun is up and the override is off
         if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off)

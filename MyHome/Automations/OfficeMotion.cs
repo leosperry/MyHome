@@ -30,7 +30,7 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
         _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
             //MinIllumination = 7,
-            TargetIllumination = 100,
+            TargetIllumination = 117,
             MinBrightness = 3,
             MaxLightBrightness = 40,
             IlluminationAddedAtMin = 2,
@@ -74,7 +74,7 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
         var officeLights = await _cache.GetColorLightEntity(OFFICE_LIGHTS);
-        Console.WriteLine($"Office Lights:{officeLights?.Attributes}");
+        //Console.WriteLine($"Office Lights:{officeLights?.Attributes}");
 
         var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 

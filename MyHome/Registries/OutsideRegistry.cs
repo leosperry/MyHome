@@ -3,45 +3,34 @@ using HaKafkaNet;
 
 namespace MyHome;
 
-public class AutomationRegistry : IAutomationRegistry
+public class OutsideRegistry : IAutomationRegistry
 {
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
 
-    public AutomationRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
+    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
-    }
-
+    }    
     public void Register(IRegistrar reg)
     {
-        reg.Register(_factory.LightOffOnNoMotion(
-            ["binary_sensor.lumi_lumi_sensor_motion_aq2_motion"],
-            ["light.office_led_light", "light.office_lights"], TimeSpan.FromMinutes(10)).WithMeta("Office Light Off","10 minutes"));
-        
         reg.RegisterMultiple(
-            _factory.EntityAutoOff("switch.back_flood", 30).WithMeta("auto off back flood","30 min"),
-            _factory.EntityAutoOff("switch.back_porch_light", 30).WithMeta("auto off back porch","30 min"),
-            _factory.EntityAutoOff("switch.back_hall_light", 10).WithMeta("auto off back hall","10 min"),
-            _factory.EntityAutoOff("light.front_porch", 10).WithMeta("auto off front porch","10 min"),
-            _factory.EntityAutoOff("light.upstairs_hall", 30).WithMeta("auto off upstairs hall","30 min"),
-            _factory.EntityAutoOff("light.entry_light", 30).WithMeta("auto off entry light","30 min")
+            _factory.DurableAutoOff("switch.back_flood", TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
+            _factory.DurableAutoOff("switch.back_porch_light", TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
+            _factory.DurableAutoOff("light.front_porch", TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min")
         );
 
+        //door open alerts
         reg.RegisterMultiple(
             WhenDoorStaysOpen_Alert("binary_sensor.inside_garage_door_contact_opening", "Inside Garage Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door")
         );
-
-        reg.Register(_builder.CreateSimple()
-            .WithName("Lyra Brush Hair")
-            .WithTriggers("binary_sensor.lyra_brush_hair")
-            .WithExecution((sc, ct) => _services.Api.NotifyAlexaMedia("Time to brush Lyra's hair", ["Living Room", "Kitchen"], ct))
-            .Build());
+        
+        reg.Register(_factory.DurableAutoOn(Helpers.PorchMotionEnable, TimeSpan.FromHours(1)).WithMeta("Auto enable front porch motion","1 hour"));
     }
 
     private IConditionalAutomation WhenDoorStaysOpen_Alert(string doorId, string doorName)
