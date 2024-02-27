@@ -11,9 +11,7 @@ namespace MyHome;
     /// </summary>
 public class OfficeMotion : IAutomation, IAutomationMeta
 {
-    public const string OFFICE_MOTION = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion";
     public const string OFFICE_ILLUMINANCE = "sensor.lumi_lumi_sensor_motion_aq2_illuminance";
-    public const string OFFICE_OVERRIDE = "input_boolean.office_override";
     public const string OFFICE_LIGHTS = "light.office_lights";
     private readonly IHaApiProvider _api;
     private readonly IHaStateCache _cache;
@@ -41,19 +39,18 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return OFFICE_ILLUMINANCE;
-        yield return OFFICE_MOTION;
+        yield return Sensors.OfficeMotion;
     }
-
     
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        var officeMotion = await _cache.GetOnOffEntity(OFFICE_MOTION);
+        var officeMotion = await _cache.GetOnOffEntity(Sensors.OfficeMotion);
         if (officeMotion?.State == OnOff.Off)
         {
             return;
         }
 
-        var officeOverride = await _cache.GetOnOffEntity(OFFICE_OVERRIDE, cancellationToken);
+        var officeOverride = await _cache.GetOnOffEntity(Helpers.OfficeOverride, cancellationToken);
         if (officeOverride?.State == OnOff.On)
         {
             return;
@@ -74,7 +71,6 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
         var officeLights = await _cache.GetColorLightEntity(OFFICE_LIGHTS);
-        //Console.WriteLine($"Office Lights:{officeLights?.Attributes}");
 
         var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 

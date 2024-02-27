@@ -21,18 +21,15 @@ public class PeriodicRegistry : IAutomationRegistry
             .WithMeta("periodic", "ensure switches are off"));
 
         reg.RegisterMultiple(
-            _factory.SunRiseAutomation(this.Sunrise).WithMeta("Sunrise", "turn off couch 1")
-            //_factory.SunSetAutomation(this.SunSet),
-            //_factory.SunMidnightAutomation(this.SolarMidnight, TimeSpan.FromHours(4))
+            _factory.SunRiseAutomation(this.Sunrise).WithMeta("Sunrise", "turn off couch 1"),
+            _factory.SunDawnAutomation(
+                ct => _services.Api.TurnOff(Helpers.LivingRoomOverride, ct), 
+                TimeSpan.FromHours(1))
+                .WithMeta("re-enable living room lights","1 hour after sunrise")
         );
     }
 
     Task Sunrise(CancellationToken ct) => _services.Api.TurnOff([Lights.Couch1], ct);
-
-    //Task SunSet(CancellationToken ct) => Task.CompletedTask;
-
-    //Task SolarMidnight(CancellationToken ct) => Task.CompletedTask;
-   
     
     Task Periodic(HaEntityStateChange stateChange, CancellationToken ct)
     {

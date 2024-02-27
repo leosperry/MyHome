@@ -41,7 +41,7 @@ public class BedTime : IAutomation, IAutomationMeta
             _garageService.EnsureGarageClosed(ct),
             EnsureOfficeClosed(ct),
             _services.Api.TurnOn(Helpers.LivingRoomOverride),
-            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._30pct ,ct),
+            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._25pct ,ct),
             _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
             _services.Api.TurnOff([
                 Lights.FrontRoomLight, Lights.LoungeCeiling, Lights.UpstairsHall, 

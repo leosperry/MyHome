@@ -18,16 +18,16 @@ public class MainRegistry : IAutomationRegistry
     public void Register(IRegistrar reg)
     {
         SetupKitcheLights(reg);
-
-        reg.Register(_factory.LightOffOnNoMotion(
-            ["binary_sensor.lumi_lumi_sensor_motion_aq2_motion"],
-            ["light.office_led_light", "light.office_lights"], TimeSpan.FromMinutes(10)).WithMeta("Office Light Off","10 minutes"));
         
         // lights auto off
         reg.RegisterMultiple(
             _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
             _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
-            _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min")
+            _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
+            _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
+                .WithMeta("mainbedroom off on no motion","10 minutes"),
+            GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
+            GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT)
         );
 
         //brush lyra hair
@@ -45,6 +45,14 @@ public class MainRegistry : IAutomationRegistry
                     : Task.CompletedTask).WithMeta("Garage Door switches auto-off")
             .WithMeta("Garage door swtiches","turn them off immediately")
         );
+
+        reg.Register(_builder.CreateSimple()
+            .WithName("Rachel Phone Battery")
+            .WithDescription("Alert when her battery is low")
+            .WithTriggers(Helpers.RachelPhoneBatteryHelper)
+            .WithExecution((sc, ct) => sc.ToOnOff().New.State == OnOff.On ? _services.Api.NotifyAlexaMedia("Rachel, your phone battery is low", [Alexa.LivingRoom], ct) : Task.CompletedTask)
+            .Build());
+
     }
 
     private void SetupKitcheLights(IRegistrar reg)
@@ -96,5 +104,24 @@ public class MainRegistry : IAutomationRegistry
                 BrightnessStepPct = 10
             });
         }
+    }
+
+    ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
+    {
+        return _builder.CreateSchedulable(true)
+            .WithName($"{name} alert")
+            .WithDescription("notify when garage door stays open")
+            .WithTriggers(garageContact)
+            .MakeDurable()
+            .GetNextScheduled((sc, _) => {
+                var openCloseState = sc.ToOnOff();
+                if (openCloseState.New.State == OnOff.On)
+                {
+                    return Task.FromResult<DateTime?>(openCloseState.New.LastUpdated.AddHours(1));
+                }
+                return Task.FromResult<DateTime?>(default);
+            })
+            .WithExecution(ct => _services.Api.NotifyAlexaMedia($"{name} has been open for an hour", [Alexa.Kitchen, Alexa.LivingRoom]))
+            .Build();
     }
 }

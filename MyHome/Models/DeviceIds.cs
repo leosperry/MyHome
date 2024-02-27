@@ -37,7 +37,7 @@ public static class Devices
     public const string
         FrontDoorLock = "lock.aqara_smart_lock_u100",
         Roku = "remote.roku_ultra",
-        OfficeFan = "automation.office_fan";
+        OfficeFan = "switch.office_fan_switch";
 }
 
 public static class Sensors
@@ -46,7 +46,10 @@ public static class Sensors
         BasementMotion = "binary_sensor.basement_motion_motion_detection",
         BasementStairMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_2",
         FrontPorchMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_3",
-        OfficeDoor = "binary_sensor.office_door_opening";
+        MainBedroom4in1Motion = "binary_sensor.4_in_1_sensor_motion_detection",
+        OfficeDoor = "binary_sensor.office_door_opening",
+        OfficeMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion",
+        OfficeTemp = "sensor.lumi_lumi_sensor_motion_aq2_device_temperature";
 }
 
 public static class NotificationGroups
@@ -72,5 +75,7 @@ public static class Helpers
     public const string
         BedTime = "input_boolean.bedtime_switch",
         LivingRoomOverride = "input_boolean.living_room_override",
-        PorchMotionEnable = "input_boolean.front_porch_motion_enable";
+        OfficeOverride = "input_boolean.office_override",
+        PorchMotionEnable = "input_boolean.front_porch_motion_enable",
+        RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper";
 }
