@@ -12,7 +12,6 @@ namespace MyHome;
 public class OfficeMotion : IAutomation, IAutomationMeta
 {
     public const string OFFICE_ILLUMINANCE = "sensor.lumi_lumi_sensor_motion_aq2_illuminance";
-    public const string OFFICE_LIGHTS = "light.office_lights";
     private readonly IHaApiProvider _api;
     private readonly IHaStateCache _cache;
 
@@ -28,7 +27,7 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
         _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
             //MinIllumination = 7,
-            TargetIllumination = 117,
+            TargetIllumination = 115,
             MinBrightness = 3,
             MaxLightBrightness = 40,
             IlluminationAddedAtMin = 2,
@@ -42,7 +41,7 @@ public class OfficeMotion : IAutomation, IAutomationMeta
         yield return Sensors.OfficeMotion;
     }
     
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public async Task Execute(HaEntityStateChange _, CancellationToken cancellationToken)
     {
         var officeMotion = await _cache.GetOnOffEntity(Sensors.OfficeMotion);
         if (officeMotion?.State == OnOff.Off)
@@ -70,13 +69,13 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
-        var officeLights = await _cache.GetColorLightEntity(OFFICE_LIGHTS);
+        var officeLights = await _cache.GetColorLightEntity(Lights.OfficeLights);
 
         var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
 
-        await _api.LightSetBrightness(OFFICE_LIGHTS, newBrightness, cancellationToken);
+        await _api.LightSetBrightness(Lights.OfficeLights, newBrightness, cancellationToken);
     }
 
     AutomationMetaData? _meta;

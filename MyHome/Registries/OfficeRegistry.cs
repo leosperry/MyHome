@@ -38,9 +38,9 @@ public class OfficeRegistry : IAutomationRegistry
 
     private async Task OfficeFan(HaEntityStateChange change, CancellationToken token)
     {
-        var tempState = change.ToDoubleTyped();
+        var tempState = change.ToFloatTyped();
         var officeMotion = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeMotion, token);
-        if (tempState.New.State > 83 && officeMotion?.State == OnOff.On)
+        if (tempState.BecameGreaterThan(83f) && officeMotion?.State == OnOff.On)
         {
             await _services.Api.TurnOn(Devices.OfficeFan);
         }

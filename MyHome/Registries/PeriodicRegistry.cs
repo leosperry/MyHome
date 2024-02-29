@@ -22,7 +22,7 @@ public class PeriodicRegistry : IAutomationRegistry
 
         reg.RegisterMultiple(
             _factory.SunRiseAutomation(this.Sunrise).WithMeta("Sunrise", "turn off couch 1"),
-            _factory.SunDawnAutomation(
+            _factory.SunRiseAutomation(
                 ct => _services.Api.TurnOff(Helpers.LivingRoomOverride, ct), 
                 TimeSpan.FromHours(1))
                 .WithMeta("re-enable living room lights","1 hour after sunrise")

@@ -65,7 +65,7 @@ public class LoungeButtons : IAutomation, IAutomationMeta
     private async Task<HaEntityState<OnOff, ColorLightModel>> GetLoungeLights(CancellationToken cancellationToken)
     {
         var lights = await _services.EntityProvider.GetEntity<OnOff, ColorLightModel>(LOUNG_LIGHTS, cancellationToken);
-        if (lights.Bad() == true)
+        if (lights.Bad())
         {
             throw new Exception("lounge lights unavailable");
         }

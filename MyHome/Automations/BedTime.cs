@@ -35,13 +35,13 @@ public class BedTime : IAutomation, IAutomationMeta
 
     async Task RunBedtimeRoutine(CancellationToken ct)
     {
-        IEnumerable<Task> taskList = [
+        Task[] taskList = [
             _services.Api.TurnOff(Helpers.BedTime),
             _services.Api.LockLock(Devices.FrontDoorLock, ct),
             _garageService.EnsureGarageClosed(ct),
             EnsureOfficeClosed(ct),
             _services.Api.TurnOn(Helpers.LivingRoomOverride),
-            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._25pct ,ct),
+            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._20pct ,ct),
             _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
             _services.Api.TurnOff([
                 Lights.FrontRoomLight, Lights.LoungeCeiling, Lights.UpstairsHall, 
@@ -54,7 +54,7 @@ public class BedTime : IAutomation, IAutomationMeta
         {
             await Task.WhenAll(taskList);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             _logger.LogError(ex, "Bedtime failure.");
             await _services.Api.NotifyAlexaMedia("Bedtime routine failure", [Alexa.LivingRoom, Alexa.Kitchen], ct);

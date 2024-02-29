@@ -16,8 +16,6 @@ public class TestRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-    _factory.DurableAutoOffOnEntityOff(
-        "light.my_light", "binary_sensor.my_motion_sensor", 
-        TimeSpan.FromMinutes(5));
+        reg.Register(_factory.DurableAutoOff("light.office_led_light", TimeSpan.FromSeconds(10)));
     }
 }

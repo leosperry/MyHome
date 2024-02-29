@@ -121,7 +121,7 @@ public class MainRegistry : IAutomationRegistry
                 }
                 return Task.FromResult<DateTime?>(default);
             })
-            .WithExecution(ct => _services.Api.NotifyAlexaMedia($"{name} has been open for an hour", [Alexa.Kitchen, Alexa.LivingRoom]))
+            .WithExecution(ct => _services.Api.NotifyGroupOrDevice(NotificationGroups.Critical, $"{name} has been open for an hour"))
             .Build();
     }
 }

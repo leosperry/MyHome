@@ -84,7 +84,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
     {
         var switchState = await _entities.GetOnOffEntity(_powerToSwitchMapping[state.EntityId].id, cancellationToken);
 
-        if (switchState.Bad() || (switchState?.State == OnOff.On && state.GetState<double?>() < 75))
+        if (switchState.Bad() || (switchState!.State == OnOff.On && state.GetState<float?>() < 75f))
         {
             await Task.WhenAll(
                 _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}"),
