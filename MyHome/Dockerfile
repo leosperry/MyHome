@@ -3,11 +3,11 @@ WORKDIR /app
 
 # Copy csproj and restore as distinct layers
 COPY *.sln ./
-COPY MyHome/*.csproj ./MyHome/
-COPY MyHome/appsettings.Production.json ./MyHome/appsettings.Production.json
+COPY MyHome/MyHome.csproj ./MyHome/MyHome.csproj
+COPY MyHome/appsettings.Production.json ./MyHome/appsettings.json
 COPY ha-kafka-net/src/HaKafkaNet/*.csproj ./ha-kafka-net/src/HaKafkaNet/
 
-RUN dotnet restore MyHome
+RUN dotnet restore MyHome/MyHome.csproj
 
 # Copy everything else and build
 COPY . ./

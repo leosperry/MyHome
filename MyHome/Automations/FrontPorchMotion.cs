@@ -37,7 +37,7 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
             await _api.CallService("media_player", "play_media", new{
                 entity_id = "media_player.kitchen",
                 media_content_type = "custom",
-                media_content_id = "Show me the doorbell camera on living room. Stop it after 15 seconds"
+                media_content_id = "Show me the doorbell camera on living room"
             }, ct);
 
             await Task.Delay(TimeSpan.FromSeconds(15));

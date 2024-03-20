@@ -1,7 +1,9 @@
 using HaKafkaNet;
 using MyHome;
+using NLog.Web;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Host.UseNLog();
 
 var services = builder.Services;
 

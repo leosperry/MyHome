@@ -1,9 +1,20 @@
 using HaKafkaNet;
+using NLog;
+using NLog.Web;
 
 var builder = WebApplication.CreateBuilder(args);
 
+builder.Host.UseNLog(); // enable tracing
 
 var services = builder.Services;
+
+//builder.Logging.ClearProviders();
+
+services.AddCors(options => {
+    options.AddPolicy("hknDev", policy => {
+        policy.WithOrigins("*");
+    });
+});
 
 HaKafkaNetConfig config = new HaKafkaNetConfig();
 builder.Configuration.GetSection("HaKafkaNet").Bind(config);
@@ -18,10 +29,18 @@ services.AddStackExchangeRedisCache(options =>
 
 services.AddHaKafkaNet(config);
 
+
+NLog.LogManager.Setup()
+    .LoadConfigurationFromAppSettings();
+
+services.AddSingleton(sp => sp.GetRequiredService<ILoggerFactory>().CreateLogger("DefaultLogger"));
+
 var app = builder.Build();
 
 await app.StartHaKafkaNet();
 
-app.MapGet("/", () => Results.Redirect("dashboard.html"));
+app.MapGet("/", () => Results.Redirect("hakafkanet"));
+
+app.UseCors("hknDev");
 
 app.Run();
