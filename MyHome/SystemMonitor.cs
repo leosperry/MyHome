@@ -33,7 +33,9 @@ public class SystemMonitor : ISystemMonitor
                 sb.AppendLine($"{item.EntityId} has a state of {item.State.State}");
             }
         }
-        return _services.Api.PersistentNotification(sb.ToString());
+        return Task.WhenAll(
+            _services.Api.PersistentNotification(sb.ToString()),
+            _services.Api.NotifyGroupOrDevice(NotificationGroups.LeonardPhone, "Bad Entity Discovered."));
     }
 
     public Task StateHandlerInitialized()
@@ -58,6 +60,8 @@ public class SystemMonitor : ISystemMonitor
 
     public Task UnhandledException(AutomationMetaData automationMetaData, Exception exception)
     {
-        return _services.Api.PersistentNotification($"automation of type: [{automationMetaData.UnderlyingType}] failed with [{exception.Message}]");
+        return Task.WhenAll(
+            _services.Api.PersistentNotification($"automation: [{automationMetaData.Name}] failed with [{exception.Message}]"),
+            _services.Api.NotifyGroupOrDevice(NotificationGroups.LeonardPhone, $"Uncaught Automation Error in {automationMetaData.Name}"));
     }
 }

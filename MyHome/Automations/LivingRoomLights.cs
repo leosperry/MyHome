@@ -11,15 +11,14 @@ namespace MyHome;
 /// </summary>
 public class LivingRoomLights : IAutomation, IAutomationMeta
 {
-    private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entityProvider;
+    private readonly ILivingRoomService _livingRoom;
     public const string TRIGGER = "sensor.solaredge_current_power";
-    const double THRESHOLD = 700;
 
-    public LivingRoomLights(IHaApiProvider api, IHaEntityProvider entityProvider)
+    public LivingRoomLights(IHaEntityProvider entityProvider, ILivingRoomService livingRoomService)
     {
-        this._api = api;
         this._entityProvider = entityProvider;
+        this._livingRoom = livingRoomService;
     }
 
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -43,35 +42,7 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
         // only run when the sun is up and the override is off
         if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off)
         {
-            if (currentPower > THRESHOLD)
-            {
-                // turn off when we have plenty of light
-                await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
-            }
-            else
-            {
-                // crazy calc time
-                // get the difference
-                // divide by threshold to get decimal percentage
-                // raise to power of 2 for parabolic
-                // set maximum for each light
-                // convert to byte
-                var unmodifiedValue = Math.Pow((THRESHOLD - currentPower.Value)/ THRESHOLD, 2) * 255;
-                await Task.WhenAll(
-                    _api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Lights.TvBacklight],
-                        Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
-                        Kelvin = 2202,
-                    },ct),
-                    _api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Lights.CounchOverhead],
-                        Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
-                        RgbColor = (255, 146, 39),
-                    }, ct)
-                );
-            }
+            await _livingRoom.SetLightsBasedOnPower(currentPower, ct);
         }
     }
 

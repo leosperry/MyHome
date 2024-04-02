@@ -13,6 +13,7 @@ var services = builder.Services;
 services.AddCors(options => {
     options.AddPolicy("hknDev", policy => {
         policy.WithOrigins("*");
+        policy.AllowAnyHeader();
     });
 });
 

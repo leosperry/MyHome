@@ -39,10 +39,16 @@ public class OfficeMotion : IAutomation, IAutomationMeta
     {
         yield return OFFICE_ILLUMINANCE;
         yield return Sensors.OfficeMotion;
+        yield return Helpers.OfficeOverride;
     }
     
-    public async Task Execute(HaEntityStateChange _, CancellationToken cancellationToken)
+    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
+        if (stateChange.EntityId == Helpers.OfficeOverride && stateChange.ToOnOff().IsOn())
+        {
+            return;
+        }
+
         var officeMotion = await _cache.GetOnOffEntity(Sensors.OfficeMotion);
         if (officeMotion?.State == OnOff.Off)
         {

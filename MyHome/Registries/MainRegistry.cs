@@ -8,11 +8,14 @@ public class MainRegistry : IAutomationRegistry
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
 
-    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
+    readonly ILivingRoomService _livingRoomService;
+
+    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILivingRoomService livingRoomService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
+        _livingRoomService = livingRoomService;
     }
 
     public void Register(IRegistrar reg)
@@ -51,6 +54,20 @@ public class MainRegistry : IAutomationRegistry
             .WithDescription("Alert when her battery is low")
             .WithTriggers(Helpers.RachelPhoneBatteryHelper)
             .WithExecution((sc, ct) => sc.ToOnOff().New.State == OnOff.On ? _services.Api.NotifyAlexaMedia("Rachel, your phone battery is low", [Alexa.LivingRoom], ct) : Task.CompletedTask)
+            .Build());
+
+        reg.Register(_builder.CreateSimple()
+            .WithName("Living Room - Set lights when override disabled")
+            .WithDescription("When the living room override is turned off, set the lights based on power reading")
+            .WithTriggers(Helpers.LivingRoomOverride)
+            .WithExecution((sc, ct) =>{
+                var onOff = sc.ToOnOff();
+                return sc.ToOnOff().IsOff() switch
+                {
+                    true => _livingRoomService.SetLightsBasedOnPower(),
+                    _ => Task.CompletedTask
+                };
+            })
             .Build());
 
     }

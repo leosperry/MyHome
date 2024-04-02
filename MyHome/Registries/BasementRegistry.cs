@@ -63,7 +63,7 @@ public class BasementRegistry : IAutomationRegistry
     {
         var average = await GetBasementAverageBrighness(ct);
         await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2, Lights.BasementWork], average);
-        while (average > Bytes._25pct && !ct.IsCancellationRequested)
+        while (average > Bytes._30pct && !ct.IsCancellationRequested)
         {
             await Task.Delay(TimeSpan.FromMinutes(1), ct);
             var newB = (byte)(average - Bytes._10pct);

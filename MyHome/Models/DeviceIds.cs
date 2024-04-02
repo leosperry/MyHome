@@ -37,7 +37,8 @@ public static class Devices
     public const string
         FrontDoorLock = "lock.aqara_smart_lock_u100",
         Roku = "remote.roku_ultra",
-        OfficeFan = "switch.office_fan_switch";
+        OfficeFan = "switch.office_fan_switch",
+        SolarPower = "sensor.solaredge_current_power";
 }
 
 public static class Sensors
@@ -55,7 +56,8 @@ public static class Sensors
 public static class NotificationGroups
 {
     public const string
-        Critical = "critical_notification_group";
+        Critical = "critical_notification_group",
+        LeonardPhone = "mobile_app_leonardphone";
 }
 
 public static class Alexa
