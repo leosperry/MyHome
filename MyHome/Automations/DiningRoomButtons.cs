@@ -4,7 +4,7 @@ using HaKafkaNet;
 
 namespace MyHome;
 
-public class DiningRoomButtons : IAutomation
+public class DiningRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
     public DiningRoomButtons(IHaServices servcies)
@@ -33,6 +33,13 @@ public class DiningRoomButtons : IAutomation
             _ => Task.CompletedTask
         };
     }
+
+    AutomationMetaData _meta = new()
+    {
+        Name = nameof(DiningRoomButtons),
+        Description = "Front Door, Living Room Override, Asher button",
+    };
+    public AutomationMetaData GetMetaData() => _meta;
 
     public IEnumerable<string> TriggerEntityIds()
     {
@@ -88,27 +95,22 @@ public class DiningRoomButtons : IAutomation
         return _services.Api.NotifyAlexaMedia(messages[r.Next(0, messages.Length)], [Alexa.Asher], ct);
     }
 
-    Task SetHelperState(HaEntityState<OnOff, JsonElement>? currentHelperState, CancellationToken ct)
+    Task SetHelperState(HaEntityState<OnOff, JsonElement>? helperState, CancellationToken ct)
     {
-        ZoozColor color = currentHelperState?.State switch
+        (ZoozColor color, int parameter) settings = helperState switch
         {
-            OnOff.On => ZoozColor.Red,
-            OnOff.Off => ZoozColor.Green,
-            _ => ZoozColor.White
-        };
-
-        int parameter = currentHelperState?.EntityId switch
-        {
-            Helpers.LivingRoomOverride => 7,
-            Helpers.PorchMotionEnable => 9,
-            _ => throw new Exception("unknown helper. Tell Leonard to fix his code")
+            {State : OnOff.On, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Yellow, 7),
+            {State : OnOff.Off, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Cyan, 7),
+            {State : OnOff.On, EntityId : Helpers.PorchMotionEnable} => (ZoozColor.Red, 9),
+            {State : OnOff.Off, EntityId : Helpers.PorchMotionEnable} => (ZoozColor.Green, 9),
+            _ => throw new Exception("unknown setup for dining room LED status indicators")
         };
 
         return _services.Api.ZwaveJs_SetConfigParameter(new{
             entity_id = Lights.DiningRoomLights,
             endpoint = 0,
-            parameter,
-            value = (int)color
+            settings.parameter,
+            value = (int)settings.color
         }, ct);
     }
 
@@ -117,6 +119,9 @@ public class DiningRoomButtons : IAutomation
         White = 0,
         Blue = 1,
         Green = 2,
-        Red = 3
+        Red = 3, 
+        Magenta = 4,
+        Yellow = 5,
+        Cyan = 6
     }
 }

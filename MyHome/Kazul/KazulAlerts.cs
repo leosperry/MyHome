@@ -60,10 +60,11 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     private Task BatteryCheck(HaEntityState state, CancellationToken cancellationToken)
     {
-        if (state.Bad() || state.GetState<float?>() < 50f)
+        float? batteryLevel = null;
+        if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 40f)
         {
             return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NotificationGroups.Critical, "check Kazul temp sensor battery", cancellationToken),
+                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent", cancellationToken),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
         return Task.CompletedTask;
@@ -71,10 +72,11 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     private Task CheckTemp(HaEntityState state, CancellationToken cancellationToken)
     {
-        if(state.Bad() || state.GetState<float?>() < 65f)
+        float? temp = null;
+        if(state.Bad() || (temp = state.GetState<float?>()) < 65f)
         {
             return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NotificationGroups.Critical, "Kazul's enclosure temerature either can't be read or is below 60"),
+                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"Kazul temerature reports {temp?.ToString() ?? "unknown"} degrees"),
                 _api.LightTurnOn(_lightAlert, cancellationToken));
         }
         return Task.CompletedTask;

@@ -1,4 +1,5 @@
 ﻿
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Confluent.Kafka;
 using HaKafkaNet;
@@ -8,6 +9,7 @@ namespace MyHome;
 public interface IGarageService
 {
     Task EnsureGarageClosed(CancellationToken cancellationToken);
+    Task OpenCloseGarage1(bool open);
 }
 
 public class GarageService : IGarageService
@@ -92,6 +94,33 @@ public class GarageService : IGarageService
             _ => GarageDoorState.Unknown
         };
     }
+
+    public async Task OpenCloseGarage1(bool open)
+    {
+        var doorState = await getGarageDoorState(GARAGE1_CONTACT, GARAGE1_TILT);
+
+        switch((open, doorState))
+        {
+            case { doorState: GarageDoorState.Unknown}:
+                await AlertOffice("Door in unknown state");
+                break;
+            case {open: true, doorState : GarageDoorState.Open }:
+                await AlertOffice("The door is already open");
+                break;
+            case {open: false, doorState : GarageDoorState.Closed }:
+                await AlertOffice("The door is already closed");
+                break;
+            case {open: true, doorState : GarageDoorState.Closed }:
+            case {open: false, doorState : GarageDoorState.Open }:
+                await _api.TurnOn(GARAGE1_DOOR_OPENER);
+                break;
+            default:
+                break;
+        };
+    }
+
+    Task AlertOffice(string message)
+        => _api.Speak("tts.piper", "media_player.office", message);
 
     enum GarageDoorState
     {
