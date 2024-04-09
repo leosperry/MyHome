@@ -46,7 +46,7 @@ public class PeriodicRegistry : IAutomationRegistry
         var state = await _services.EntityProvider.GetOnOffEntity(entityId, ct);
         if (!state.Bad() && state!.State == OnOff.On)
         {
-            await _services.Api.PersistentNotification($"{entityId} was left on");
+            await _services.Api.PersistentNotification($"{entityId} was left on", ct);
             await _services.Api.TurnOff(entityId);
         }
     }

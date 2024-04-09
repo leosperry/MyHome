@@ -1,14 +1,12 @@
 ﻿
-using System.Runtime.CompilerServices;
 using System.Text.Json;
-using Confluent.Kafka;
 using HaKafkaNet;
 
 namespace MyHome;
 
 public interface IGarageService
 {
-    Task EnsureGarageClosed(CancellationToken cancellationToken);
+    Task EnsureGarageClosed(NotificationSender notify, CancellationToken cancellationToken);
     Task OpenCloseGarage1(bool open);
 }
 
@@ -25,21 +23,27 @@ public class GarageService : IGarageService
     private IHaStateCache _cache;
     private readonly IHaApiProvider _api;
 
-    public GarageService(IHaStateCache cache, IHaApiProvider api)
+    private readonly NotificationSender _notifyOffice;
+
+    public GarageService(IHaStateCache cache, IHaApiProvider api, INotificationService notificationService)
     {
         _cache = cache;
         _api = api;
+
+        var officeChannel = notificationService.CreateAudibleChannel([MediaPlayers.Office, MediaPlayers.Kitchen], Voices.Mundane);
+        _notifyOffice = notificationService.CreateNotificationSender([officeChannel]);
     }
 
-    public Task EnsureGarageClosed(CancellationToken cancellationToken)
+
+    public Task EnsureGarageClosed(NotificationSender notify, CancellationToken cancellationToken)
     {
         return Task.WhenAll(
-            EnsureDoorClosed(GARAGE1_CONTACT, GARAGE1_TILT, GARAGE1_DOOR_OPENER, "Garage Door 1", cancellationToken),
-            EnsureDoorClosed(GARAGE2_CONTACT, GARAGE2_TILT, GARAGE2_DOOR_OPENER, "Garage Door 2", cancellationToken)
+            EnsureDoorClosed(GARAGE1_CONTACT, GARAGE1_TILT, GARAGE1_DOOR_OPENER, "Garage Door 1", notify, cancellationToken),
+            EnsureDoorClosed(GARAGE2_CONTACT, GARAGE2_TILT, GARAGE2_DOOR_OPENER, "Garage Door 2", notify,  cancellationToken)
         );            
     }
 
-    private async Task EnsureDoorClosed(string contact, string tilt, string opener, string doorName, CancellationToken cancellationToken)
+    private async Task EnsureDoorClosed(string contact, string tilt, string opener, string doorName, NotificationSender notify, CancellationToken cancellationToken)
     {
         switch (await getGarageDoorState(contact, tilt))
         {
@@ -51,7 +55,7 @@ public class GarageService : IGarageService
                 await Task.WhenAll(
                     _api.TurnOn(opener, cancellationToken), // close the door
                     _api.TurnOn(BACK_HALL_LIGHT, cancellationToken), // turn onn the back hall light
-                    _api.NotifyGroupOrDevice("my_notify_group", $"Attempting to close {doorName}", cancellationToken),
+                    notify("my_notify_group", $"Attempting to close {doorName}"),
                     Task.Delay(TimeSpan.FromSeconds(15)) // wait for door to close
                 );
 
@@ -59,14 +63,14 @@ public class GarageService : IGarageService
                 var doorState = await getGarageDoorState(contact, tilt);
                 if (doorState != GarageDoorState.Closed)
                 {
-                    await _api.NotifyGroupOrDevice("my_notify_group", $"Could not verify {doorName} is closed", cancellationToken);
+                    await notify("my_notify_group", $"Could not verify {doorName} is closed");
                 }
 
                 break;
             case GarageDoorState.Unknown:
                 // alert
                 await Task.WhenAll(
-                    _api.NotifyGroupOrDevice("my_notify_group", $"{doorName} is in an unknown state", cancellationToken),
+                    notify("my_notify_group", $"{doorName} is in an unknown state"),
                     _api.TurnOn(BACK_HALL_LIGHT, cancellationToken));
                 break;
         }
@@ -102,13 +106,14 @@ public class GarageService : IGarageService
         switch((open, doorState))
         {
             case { doorState: GarageDoorState.Unknown}:
-                await AlertOffice("Door in unknown state");
+                await _notifyOffice("Door in unknown state");
                 break;
             case {open: true, doorState : GarageDoorState.Open }:
-                await AlertOffice("The door is already open");
+                await _notifyOffice("The door is already open");
                 break;
             case {open: false, doorState : GarageDoorState.Closed }:
-                await AlertOffice("The door is already closed");
+
+                await _notifyOffice("The door is already closed");
                 break;
             case {open: true, doorState : GarageDoorState.Closed }:
             case {open: false, doorState : GarageDoorState.Open }:
@@ -118,10 +123,6 @@ public class GarageService : IGarageService
                 break;
         };
     }
-
-    Task AlertOffice(string message)
-        => _api.Speak("tts.piper", "media_player.office", message);
-
     enum GarageDoorState
     {
         Open, Closed, Unknown

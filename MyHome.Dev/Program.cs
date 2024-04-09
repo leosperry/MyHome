@@ -1,4 +1,5 @@
 using HaKafkaNet;
+using MyHome;
 using NLog;
 using NLog.Web;
 
@@ -27,6 +28,11 @@ services.AddStackExchangeRedisCache(options =>
 });
 
 //my services
+services.AddSingleton<IGarageService, GarageService>();
+services.AddSingleton<ILivingRoomService, LivingRoomService>();
+services.AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster>>(model => new DynamicLightAdjuster(model));
+services.AddSingleton<INotificationService, NotificationService>();
+services.AddSingleton<LightAlertModule>();
 
 services.AddHaKafkaNet(config);
 

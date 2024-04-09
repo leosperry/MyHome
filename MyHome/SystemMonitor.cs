@@ -34,8 +34,8 @@ public class SystemMonitor : ISystemMonitor
             }
         }
         return Task.WhenAll(
-            _services.Api.PersistentNotification(sb.ToString()),
-            _services.Api.NotifyGroupOrDevice(NotificationGroups.LeonardPhone, "Bad Entity Discovered."));
+            _services.Api.PersistentNotification(sb.ToString(), default),
+            _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
     }
 
     public Task StateHandlerInitialized()
@@ -61,7 +61,7 @@ public class SystemMonitor : ISystemMonitor
     public Task UnhandledException(AutomationMetaData automationMetaData, Exception exception)
     {
         return Task.WhenAll(
-            _services.Api.PersistentNotification($"automation: [{automationMetaData.Name}] failed with [{exception.Message}]"),
-            _services.Api.NotifyGroupOrDevice(NotificationGroups.LeonardPhone, $"Uncaught Automation Error in {automationMetaData.Name}"));
+            _services.Api.PersistentNotification($"automation: [{automationMetaData.Name}] failed with [{exception.Message}]", default),
+            _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, $"Uncaught Automation Error in {automationMetaData.Name}"));
     }
 }

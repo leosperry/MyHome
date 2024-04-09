@@ -9,13 +9,28 @@ public class MainRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
 
     readonly ILivingRoomService _livingRoomService;
+    readonly INotificationService _notificationService;
+    readonly NotificationSender _notifyKitchenLivingRoom;
+    readonly NotificationSender _notifyAboutGarage;
 
-    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILivingRoomService livingRoomService)
+    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILivingRoomService livingRoomService, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
         _livingRoomService = livingRoomService;
+        _notificationService = notificationService;
+
+        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom]);
+        _notifyKitchenLivingRoom = notificationService.CreateNotificationSender([channel]);
+        var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
+        {
+            EntityId = [Lights.Monkey],
+            ColorName = "saddlebrown",
+            Brightness = Bytes._30pct
+        });
+        var phoneChannel = notificationService.CreateGroupOrDeviceChannel([Phones.LeonardPhone]);
+        _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]);
     }
 
     public void Register(IRegistrar reg)
@@ -37,7 +52,7 @@ public class MainRegistry : IAutomationRegistry
         reg.Register(_builder.CreateSimple()
             .WithName("Lyra Brush Hair")
             .WithTriggers("binary_sensor.lyra_brush_hair")
-            .WithExecution((sc, ct) => _services.Api.NotifyAlexaMedia("Time to brush Lyra's hair", [Alexa.LivingRoom, Alexa.Kitchen], ct))
+            .WithExecution((sc, ct) => _notifyKitchenLivingRoom("Time to brush Lyra's hair"))
             .Build());
         
         // make sure switches are off
@@ -53,7 +68,7 @@ public class MainRegistry : IAutomationRegistry
             .WithName("Rachel Phone Battery")
             .WithDescription("Alert when her battery is low")
             .WithTriggers(Helpers.RachelPhoneBatteryHelper)
-            .WithExecution((sc, ct) => sc.ToOnOff().New.State == OnOff.On ? _services.Api.NotifyAlexaMedia("Rachel, your phone battery is low", [Alexa.LivingRoom], ct) : Task.CompletedTask)
+            .WithExecution((sc, ct) => sc.ToOnOff().New.State == OnOff.On ? _notifyKitchenLivingRoom("Rachel, your phone battery is low") : Task.CompletedTask)
             .Build());
 
         reg.Register(_builder.CreateSimple()
@@ -69,7 +84,6 @@ public class MainRegistry : IAutomationRegistry
                 };
             })
             .Build());
-
     }
 
     private void SetupKitcheLights(IRegistrar reg)
@@ -125,20 +139,27 @@ public class MainRegistry : IAutomationRegistry
 
     ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
     {
+        var notifcationId = new NotificationId(garageContact);
         return _builder.CreateSchedulable(true)
             .WithName($"{name} alert")
             .WithDescription("notify when garage door stays open")
             .WithTriggers(garageContact)
             .MakeDurable()
-            .GetNextScheduled((sc, _) => {
+            .GetNextScheduled(async (sc, ct) => {
                 var openCloseState = sc.ToOnOff();
                 if (openCloseState.New.State == OnOff.On)
                 {
-                    return Task.FromResult<DateTime?>(openCloseState.New.LastUpdated.AddHours(1));
+                    return openCloseState.New.LastUpdated.AddHours(1);
                 }
-                return Task.FromResult<DateTime?>(default);
+                else
+                {
+                    await _notificationService.Clear(notifcationId);
+                }
+                return default;
             })
-            .WithExecution(ct => _services.Api.NotifyGroupOrDevice(NotificationGroups.Critical, $"{name} has been open for an hour"))
+            .WithExecution(async ct => { 
+                await _notifyAboutGarage($"{name} has been open for an hour", "Garage Alert", notifcationId);
+            })
             .Build();
     }
 }

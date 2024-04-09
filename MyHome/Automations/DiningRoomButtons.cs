@@ -7,9 +7,12 @@ namespace MyHome;
 public class DiningRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
-    public DiningRoomButtons(IHaServices servcies)
+    readonly NotificationSender _notifyAsher;
+    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService)
     {
         _services = servcies;
+        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Asher]);
+        _notifyAsher = notificationService.CreateNotificationSender([channel]);
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -83,16 +86,16 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     Task PlayRandom(CancellationToken ct)
     {
         string[] messages = [ 
-            "My lord. Your presence is requested in the main chamber",  
+            "My lord. Your presence is requested in the main chamber",
             "Prince Asher, the king and queen have summoned you",
             "Hey you. Yes, you. Please come upstairs",
-            "The parental units have requested of the carbon based lifeform known as Asher to vacate his domicile and return upstairs", 
+            "The parental units have requested of the carbon based lifeform known as Asher to vacate his domicile and return upstairs",
             "The crown has requested a status report from the dungeons forthwith",
             "Your assignment is as follows, collect dishes and return to base. This message will self destruct",
             "Brave knight. You have been given a valiant quest to return to the overworld" ];
         Random r = new();
         
-        return _services.Api.NotifyAlexaMedia(messages[r.Next(0, messages.Length)], [Alexa.Asher], ct);
+        return _notifyAsher(messages[r.Next(0, messages.Length)]);
     }
 
     Task SetHelperState(HaEntityState<OnOff, JsonElement>? helperState, CancellationToken ct)

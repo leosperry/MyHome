@@ -10,13 +10,20 @@ public class BedTime : IAutomation, IAutomationMeta
 {
     private readonly IHaServices _services;
     private readonly IGarageService _garageService;
+    
+    readonly NotificationSender _notify;
+
     private readonly ILogger<BedTime> _logger;
 
-    public BedTime(IHaServices services, IGarageService garageService, ILogger<BedTime> logger)
+
+    public BedTime(IHaServices services, IGarageService garageService, INotificationService notification, ILogger<BedTime> logger)
     {
         this._services = services;
         this._garageService = garageService;
         this._logger = logger;
+
+        var voiceChannel = notification.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom, MediaPlayers.Office]);
+        this._notify = notification.CreateNotificationSender([voiceChannel]);
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
@@ -38,7 +45,7 @@ public class BedTime : IAutomation, IAutomationMeta
         Task[] taskList = [
             _services.Api.TurnOff(Helpers.BedTime),
             _services.Api.LockLock(Devices.FrontDoorLock, ct),
-            _garageService.EnsureGarageClosed(ct),
+            _garageService.EnsureGarageClosed(_notify,ct),
             EnsureOfficeClosed(ct),
             _services.Api.TurnOn(Helpers.LivingRoomOverride),
             _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._20pct ,ct),
@@ -57,7 +64,7 @@ public class BedTime : IAutomation, IAutomationMeta
         catch (Exception ex)
         {
             _logger.LogError(ex, "Bedtime failure.");
-            await _services.Api.NotifyAlexaMedia("Bedtime routine failure", [Alexa.LivingRoom, Alexa.Kitchen], ct);
+            await _notify("Bedtime routine failure");
             throw;
         }
     }
@@ -68,7 +75,7 @@ public class BedTime : IAutomation, IAutomationMeta
         if (officeDoor.Bad() || officeDoor!.State == OnOff.On)
         {
             await Task.WhenAll(
-                _services.Api.NotifyAlexaMedia("The office is open", [Alexa.MainBedroom, Alexa.Kitchen]),
+                _notify("The office is open"),
                 _services.Api.TurnOn(Lights.BackHallLight, ct));
         }
     }

@@ -6,11 +6,25 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
 {
     readonly IHaApiProvider _api;
     readonly IHaEntityProvider _provider;
+    readonly INotificationService _notifications;
 
-    public FrontPorchMotion(IHaApiProvider api, IHaEntityProvider provider)
+    readonly NotificationSenderNoText _alert;
+    readonly NotificationId _porchMotionID = new NotificationId("frontportchmotion");
+
+    public FrontPorchMotion(IHaApiProvider api, IHaEntityProvider provider, INotificationService notifications)
     {
         _api = api;
         _provider = provider;
+        _notifications = notifications;
+
+        var monkey = notifications.CreateMonkeyChannel(new LightTurnOnModel()
+        {
+            EntityId = [Lights.Monkey],
+            ColorName = "darkgreen",
+            Brightness = Bytes._10pct
+        });
+        _alert = notifications.CreateNoTextNotificationSender([monkey]);
+
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -18,16 +32,30 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
         var motionState = stateChange.ToOnOff();
         if (motionState.New.State == OnOff.On)
         {
+
+            //return HandleNight(ct);
             return Task.WhenAll(
                 HandleNight(ct),
-                HandleCamera(ct)
+                _alert(_porchMotionID)
+                //HandleCamera(ct)
             );        
+        }
+        else
+        {
+            _notifications.Clear(_porchMotionID);
         }
         return Task.CompletedTask;
     }
 
     private async Task HandleCamera(CancellationToken ct)
     {
+        //this code has been disabled
+        // stupid Alexa can't do this without making an audible noise
+        // so the dog goes ape shit.
+        // If there's an amazon developer reading this,
+        // understand that this is just one more reason why I 
+        // will be abandoning your services entirely.
+        // Alexa is becoming more obtrusive and obnoxious by the day 
         var enableState = await _provider.GetOnOffEntity(Helpers.PorchMotionEnable);
         if (enableState?.State == OnOff.On)
         {

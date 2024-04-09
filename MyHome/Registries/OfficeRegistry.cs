@@ -7,12 +7,16 @@ public class OfficeRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
+    readonly NotificationSender _notifyOffice;
 
-    public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
+    public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
+
+        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Office], Voices.Mundane);
+        _notifyOffice = notificationService.CreateNotificationSender([channel]);
     }
     
     public void Register(IRegistrar reg)
@@ -32,7 +36,7 @@ public class OfficeRegistry : IAutomationRegistry
             .WithName("report office overrid status")
             .WithDescription("when office override changes, report on alexa")
             .WithTriggers(Helpers.OfficeOverride)
-            .WithExecution((sc, ct) => _services.Api.NotifyAlexaMedia($"override is {sc.New.State}", [Alexa.Office], ct))
+            .WithExecution((sc, ct) => _notifyOffice($"override is {sc.New.State}"))
             .Build());
     }
 

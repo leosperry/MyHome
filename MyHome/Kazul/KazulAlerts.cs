@@ -25,20 +25,15 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         {HALOGEN_POWER, (HALOGEN_SWITCH, "halogen lamp")}
     };
 
-    LightTurnOnModel _lightAlert = new LightTurnOnModel()
-    {
-        EntityId = [Lights.LivingLamp1],
-        RgbColor = (255, 0, 255),
-        Flash = Flash.Long
-    };
-
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entities;
+    private readonly NotificationSender _notifyCritical;
 
-    public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities)
+    public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService)
     {
         _api = api;
         _entities = entities;
+        _notifyCritical = notificationService.GetCritical();
     }
 
     public IEnumerable<string> TriggerEntityIds()
@@ -48,49 +43,43 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        return (stateChange.EntityId) switch 
+        return stateChange.EntityId switch 
         {
-            TEMP => CheckTemp(stateChange.New, cancellationToken),
-            TEMP_BATTERY => BatteryCheck(stateChange.New, cancellationToken),
-            CERAMIC_POWER => CheckPower(stateChange.New, cancellationToken),
-            HALOGEN_POWER => CheckPower(stateChange.New, cancellationToken),
+            TEMP => CheckTemp(stateChange.New),
+            TEMP_BATTERY => BatteryCheck(stateChange.New),
+            CERAMIC_POWER => CheckPower(stateChange.New),
+            HALOGEN_POWER => CheckPower(stateChange.New),
             _ => throw new Exception("Kazul Automation Fault")
         };
     }
 
-    private Task BatteryCheck(HaEntityState state, CancellationToken cancellationToken)
+    private Task BatteryCheck(HaEntityState state)
     {
         float? batteryLevel = null;
         if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 40f)
         {
-            return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent", cancellationToken),
-                _api.LightTurnOn(_lightAlert, cancellationToken));
+            return _notifyCritical($"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent");
         }
         return Task.CompletedTask;
     }
 
-    private Task CheckTemp(HaEntityState state, CancellationToken cancellationToken)
+    private Task CheckTemp(HaEntityState state)
     {
         float? temp = null;
         if(state.Bad() || (temp = state.GetState<float?>()) < 65f)
         {
-            return Task.WhenAll(
-                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"Kazul temerature reports {temp?.ToString() ?? "unknown"} degrees"),
-                _api.LightTurnOn(_lightAlert, cancellationToken));
+            return _notifyCritical($"Kazul temerature reports {temp?.ToString() ?? "unknown"} degrees");
         }
         return Task.CompletedTask;
     }
 
-    private async Task CheckPower(HaEntityState state, CancellationToken cancellationToken)
+    private async Task CheckPower(HaEntityState state)
     {
-        var switchState = await _entities.GetOnOffEntity(_powerToSwitchMapping[state.EntityId].id, cancellationToken);
+        var switchState = await _entities.GetOnOffEntity(_powerToSwitchMapping[state.EntityId].id);
 
         if (switchState.Bad() || (switchState!.State == OnOff.On && state.GetState<float?>() < 75f))
         {
-            await Task.WhenAll(
-                _api.NotifyGroupOrDevice(NotificationGroups.Critical, $"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}"),
-                _api.LightTurnOn(_lightAlert, cancellationToken));
+            await _notifyCritical($"problem with Kazul {_powerToSwitchMapping[state.EntityId].name}");
         }
     }
 

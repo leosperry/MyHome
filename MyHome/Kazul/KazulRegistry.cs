@@ -13,11 +13,14 @@ public class KazulRegistry : IAutomationRegistry
 
     string[] KAZUL_UVB = ["switch.kazul_power_strip_3", "switch.kazul_power_strip_4"];
 
-    public KazulRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
+    NotificationSender _notifyCritical;
+
+    public KazulRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
+        _notifyCritical = notificationService.GetCritical();
     }
 
     public void Register(IRegistrar reg)
@@ -35,21 +38,6 @@ public class KazulRegistry : IAutomationRegistry
         var kazulUVB =_factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", KAZUL_UVB)
             .WithMeta("Kazul UVB", "On at 8am. Off at 8pm");
 
-        // var kazulUVB = _builder.CreateSimple()
-        //     .WithName("Kazul UVB")
-        //     .WithDescription("On at 8am. Off at 8pm")
-        //     .WithTriggers("binary_sensor.kazul_light_time_sensor")
-        //     .WithTimings(EVENT_TIMINGS)
-        //     .WithAdditionalEntitiesToTrack(KAZUL_UVB)
-        //     .WithExecution((stateChange, ct) =>
-        //         stateChange.New.GetStateEnum<OnOff>() switch{
-        //             OnOff.On => _services.Api.TurnOn(KAZUL_UVB, ct),
-        //             OnOff.Off => _services.Api.TurnOff(KAZUL_UVB, ct),
-        //             _ => _services.Api.PersistentNotification("cannot set kazul UVB")
-        //         }
-        //     )
-        //     .Build();
-
         var ensureOneIsOn = _builder.CreateSimple()
             .WithName("Kazul - ensure 1 is on")
             .WithDescription("when either the ceramic or halogen change state, ensure at least 1 is on")
@@ -66,17 +54,14 @@ public class KazulRegistry : IAutomationRegistry
                         swithcStates[1]?.State != OnOff.On;
                     if (noneOn)
                     {
-                        await _services.Api.NotifyGroupOrDevice(NotificationGroups.Critical,
-                            "Kazul - Neither the ceramic nor halogen are on");
+                        await _notifyCritical("Kazul - Neither the ceramic nor halogen are on");
                     }
                 }
                 catch (System.Exception)
                 {
-                    await _services.Api.NotifyGroupOrDevice(NotificationGroups.Critical, "Could not verify Kazul power swites");
+                    await _notifyCritical("Could not verify Kazul power swites");
                     throw;
                 }
-
-
             })
             .Build();
         

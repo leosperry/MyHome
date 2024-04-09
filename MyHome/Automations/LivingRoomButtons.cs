@@ -7,6 +7,7 @@ namespace MyHome;
 public class LivingRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
+    readonly INotificationService _notificationService;
     
     LightTurnOnModel _tvBacklightPresets = new LightTurnOnModel()
     {
@@ -22,9 +23,10 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         RgbColor = (255, 146, 39)
     };
 
-    public LivingRoomButtons(IHaServices services)
+    public LivingRoomButtons(IHaServices services, INotificationService notificationService)
     {
         _services = services;
+        _notificationService = notificationService;
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -43,10 +45,11 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
             {button: '2', keypress: KeyPress.KeyPressed}    => ToggleLight(Lights.CounchOverhead, ct),
             {button: '2', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Lights.CounchOverhead, ct),
             {button: '2', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Lights.CounchOverhead, ct),
-            {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Lights.KitchenLights, Lights.DiningRoomLights, Lights.FrontRoomLight],ct),
+            {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Lights.KitchenLights, Lights.DiningRoomLights, Lights.FrontRoomLight, Lights.BackHallLight],ct),
             {button: '4', keypress: KeyPress.KeyPressed2x}  => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString()),
             {button: '4', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString()),
             {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
+            {button: '6', keypress: KeyPress.KeyPressed}    => _notificationService.ClearAll(),
             {button: '8', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.select.ToString()),
             _ => Task.CompletedTask //unassigned 
         };    
@@ -57,7 +60,7 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         var light = await _services.EntityProvider.GetColorLightEntity(lightId, ct);
         if (light.Bad())
         {
-            await _services.Api.PersistentNotification($"{lightId} is in a bad state");
+            await _services.Api.PersistentNotification($"{lightId} is in a bad state", ct);
         }
 
         if (light?.State == OnOff.On)
@@ -86,7 +89,7 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         LightTurnOnModel settings = new LightTurnOnModel()
         {
             EntityId = [lightId],
-            BrightnessStepPct = 10
+            BrightnessStepPct = 15
         };
         return _services.Api.LightTurnOn(settings);
     }
@@ -117,7 +120,7 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         yield return "event.living_room_buttons_scene_003";
         yield return "event.living_room_buttons_scene_004";
         yield return "event.living_room_buttons_scene_005";
-        //yield return "event.living_room_buttons_scene_006";
+        yield return "event.living_room_buttons_scene_006";
         //yield return "event.living_room_buttons_scene_007";
         yield return "event.living_room_buttons_scene_008";
     }
