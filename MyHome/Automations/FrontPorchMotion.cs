@@ -32,11 +32,9 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
         var motionState = stateChange.ToOnOff();
         if (motionState.New.State == OnOff.On)
         {
-
-            //return HandleNight(ct);
+            _alert(_porchMotionID);
             return Task.WhenAll(
-                HandleNight(ct),
-                _alert(_porchMotionID)
+                HandleNight(ct)
                 //HandleCamera(ct)
             );        
         }
@@ -47,36 +45,36 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
         return Task.CompletedTask;
     }
 
-    private async Task HandleCamera(CancellationToken ct)
-    {
-        //this code has been disabled
-        // stupid Alexa can't do this without making an audible noise
-        // so the dog goes ape shit.
-        // If there's an amazon developer reading this,
-        // understand that this is just one more reason why I 
-        // will be abandoning your services entirely.
-        // Alexa is becoming more obtrusive and obnoxious by the day 
-        var enableState = await _provider.GetOnOffEntity(Helpers.PorchMotionEnable);
-        if (enableState?.State == OnOff.On)
-        {
-            // tell echo to play camera
-            // wait 10 seconds
-            // turn it off
-            await _api.CallService("media_player", "play_media", new{
-                entity_id = "media_player.kitchen",
-                media_content_type = "custom",
-                media_content_id = "Show me the doorbell camera on living room"
-            }, ct);
+    // private async Task HandleCamera(CancellationToken ct)
+    // {
+    //     //this code has been disabled
+    //     // stupid Alexa can't do this without making an audible noise
+    //     // so the dog goes ape shit.
+    //     // If there's an amazon developer reading this,
+    //     // understand that this is just one more reason why I 
+    //     // will be abandoning your services entirely.
+    //     // Alexa is becoming more obtrusive and obnoxious by the day 
+    //     var enableState = await _provider.GetOnOffEntity(Helpers.PorchMotionEnable);
+    //     if (enableState?.State == OnOff.On)
+    //     {
+    //         // tell echo to play camera
+    //         // wait 10 seconds
+    //         // turn it off
+    //         await _api.CallService("media_player", "play_media", new{
+    //             entity_id = "media_player.kitchen",
+    //             media_content_type = "custom",
+    //             media_content_id = "Show me the doorbell camera on living room"
+    //         }, ct);
 
-            await Task.Delay(TimeSpan.FromSeconds(15));
+    //         await Task.Delay(TimeSpan.FromSeconds(15));
 
-            await _api.CallService("media_player", "play_media", new{
-                entity_id = "media_player.living_room",
-                media_content_type = "custom",
-                media_content_id = "stop"
-            }, ct);
-        }
-    }
+    //         await _api.CallService("media_player", "play_media", new{
+    //             entity_id = "media_player.living_room",
+    //             media_content_type = "custom",
+    //             media_content_id = "stop"
+    //         }, ct);
+    //     }
+    // }
 
     private async Task HandleNight(CancellationToken ct)
     {

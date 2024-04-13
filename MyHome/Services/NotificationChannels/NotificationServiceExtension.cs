@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -18,8 +19,9 @@ public static class NotificationServiceExtension
         {
             EntityId = [Lights.Monkey],
             RgbColor = (255, 0, 88),
-            Flash = HaKafkaNet.Flash.Short
+            Flash = HaKafkaNet.Flash.Short,
+            Brightness = Bytes.Max
         });    
-        return service.CreateNotificationSender([audible, phones],[monkey]);
+        return service.CreateNotificationSender([audible, phones, service.Persistent],[monkey]);
     }
 }

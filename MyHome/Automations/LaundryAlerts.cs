@@ -80,7 +80,8 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
 
     Task DoorAction(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        return _notifications.Clear(_laundryId);
+        _notifications.Clear(_laundryId);
+        return Task.CompletedTask;
     }
 
     Task EndOfCycle(HaEntityStateChange stateChange, CancellationToken ct)

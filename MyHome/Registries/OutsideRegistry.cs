@@ -11,15 +11,27 @@ public class OutsideRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     readonly ILogger _logger;
     readonly IGarageService _garage;
+    private INotificationService _notificationService;
+    readonly NotificationSender _notifyAboutGarage;
 
-    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILogger<OutsideRegistry> logger, IGarageService garageService)
+
+    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILogger<OutsideRegistry> logger, IGarageService garageService, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
         _logger = logger;
         _garage = garageService;
-    }    
+        _notificationService =notificationService;
+
+        var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
+        {
+            EntityId = [Lights.Monkey],
+            ColorName = "saddlebrown",
+            Brightness = Bytes.Max
+        });
+        var phoneChannel = notificationService.CreateGroupOrDeviceChannel([Phones.LeonardPhone]);
+        _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]);    }    
 
     public void Register(IRegistrar reg)
     {
@@ -36,17 +48,21 @@ public class OutsideRegistry : IAutomationRegistry
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door")
         );
         
-        reg.Register(_factory.DurableAutoOn(Helpers.PorchMotionEnable, TimeSpan.FromHours(1)).WithMeta("Auto enable front porch motion","1 hour"));
+        //reg.Register(_factory.DurableAutoOn(Helpers.PorchMotionEnable, TimeSpan.FromHours(1)).WithMeta("Auto enable front porch motion","1 hour"));
 
         reg.Register(_builder.CreateSimple()
             .WithName("Turn on back hall light when garage door opens")
             .WithTriggers("binary_sensor.garage_1_contact_opening")
-            .WithExecution((sc, ct) =>{
+            .WithExecution(async (sc, ct) =>{
+                
                 if (sc.ToOnOff().TurnedOn())
                 {
-                    return _services.Api.TurnOn(Lights.BackHallLight);
+                    var sun = await _services.EntityProvider.GetSun();
+                    if (sun?.State == SunState.Below_Horizon)
+                    {
+                        await _services.Api.TurnOn(Lights.BackHallLight);
+                    }
                 }
-                return Task.CompletedTask;
             })
             .Build());
 
@@ -71,6 +87,10 @@ public class OutsideRegistry : IAutomationRegistry
                 return Task.CompletedTask;
             })
             .Build());
+
+        reg.RegisterMultiple( 
+            GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
+            GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT));
     }
 
     private IConditionalAutomation WhenDoorStaysOpen_Alert(string doorId, string doorName)
@@ -118,5 +138,32 @@ public class OutsideRegistry : IAutomationRegistry
             // the door was closed or
             // the application is shutting down
         }
-    }    
+    }  
+
+    ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
+    {
+        var notifcationId = new NotificationId(garageContact);
+        return _builder.CreateSchedulable(true)
+            .WithName($"{name} alert")
+            .WithDescription("notify when garage door stays open")
+            .WithTriggers(garageContact)
+            .MakeDurable()
+            .ShouldExecutePastEvents()
+            .GetNextScheduled(async (sc, ct) => {
+                var openCloseState = sc.ToOnOff();
+                if (openCloseState.New.State == OnOff.On)
+                {
+                    return openCloseState.New.LastUpdated.AddHours(1);
+                }
+                else
+                {
+                    await _notificationService.Clear(notifcationId);
+                }
+                return default;
+            })
+            .WithExecution(async ct => { 
+                await _notifyAboutGarage($"{name} has been open for an hour", "Garage Alert", notifcationId);
+            })
+            .Build();
+    }
 }

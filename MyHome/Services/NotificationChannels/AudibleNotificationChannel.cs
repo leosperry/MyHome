@@ -18,7 +18,6 @@ public class AudibleNotificationChannel : INotificationChannel
 
     public Task Send(NotificationId id, string message, string? title = null)
     {
-        Console.WriteLine("and here");
         return _api.SpeakPiper(_targets, message, true, _voiceSettings);
     }
 }

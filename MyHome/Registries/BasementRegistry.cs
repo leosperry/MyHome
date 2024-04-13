@@ -44,7 +44,6 @@ public class BasementRegistry : IAutomationRegistry
             })
             .WithExecution(DimOverTime)
             .Build());
-
     }
 
     async Task<byte> GetBasementAverageBrighness(CancellationToken ct)
@@ -61,14 +60,22 @@ public class BasementRegistry : IAutomationRegistry
 
     private async Task DimOverTime(CancellationToken ct)
     {
-        var average = await GetBasementAverageBrighness(ct);
-        await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2, Lights.BasementWork], average);
-        while (average > Bytes._30pct && !ct.IsCancellationRequested)
+        try
         {
-            await Task.Delay(TimeSpan.FromMinutes(1), ct);
-            var newB = (byte)(average - Bytes._10pct);
-            await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2, Lights.BasementWork], newB, ct);
-            average = await GetBasementAverageBrighness(ct);
+            var average = await GetBasementAverageBrighness(ct);
+            await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2, Lights.BasementWork], average);
+            while (average > Bytes._30pct && !ct.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromMinutes(1), ct);
+                var newB = (byte)(average - Bytes._10pct);
+                await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2, Lights.BasementWork], newB, ct);
+                average = await GetBasementAverageBrighness(ct);
+            }
         }
+        catch (TaskCanceledException)
+        {
+            // someone walked by the sensor
+        }
+        
     }
 }

@@ -62,18 +62,14 @@ public class NotificationService : INotificationService
 
     public Task Clear(NotificationId id)
     {
-        return _lam.Clear(id);
-        // return Task.WhenAll(
-        //     _clearers.Select(c => c.Clear(id))
-        // );
+        _lam.Clear(id);
+        return Task.CompletedTask;
     }    
     
     public Task ClearAll()
     {
-        return _lam.ClearAll();
-        // return Task.WhenAll(
-        //     _clearers.Select(c => c.ClearAll())
-        // );
+        _lam.ClearAll();
+        return Task.CompletedTask;
     }
 
     public INotificationChannel CreateAudibleChannel(IEnumerable<string> media_player_targets, PiperSettings? voiceSettings = null)

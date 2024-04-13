@@ -7,17 +7,19 @@ namespace MyHome;
 public class DiningRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
+    readonly INotificationService _notificationService;
     readonly NotificationSender _notifyAsher;
     public DiningRoomButtons(IHaServices servcies, INotificationService notificationService)
     {
         _services = servcies;
+        _notificationService = notificationService;
         var channel = notificationService.CreateAudibleChannel([MediaPlayers.Asher]);
         _notifyAsher = notificationService.CreateNotificationSender([channel]);
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        if (stateChange.EntityId == Helpers.LivingRoomOverride || stateChange.EntityId == Helpers.PorchMotionEnable)
+        if (stateChange.EntityId == Helpers.LivingRoomOverride)
         {
             return SetHelperState((HaEntityState<OnOff, JsonElement>)stateChange.New, ct);
         }
@@ -31,7 +33,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         return (btn, press) switch
         {
             {btn: '1', press: KeyPress.KeyPressed} => _services.Api.Toggle(Helpers.LivingRoomOverride, ct),
-            {btn: '3', press: KeyPress.KeyPressed} => _services.Api.Toggle(Helpers.PorchMotionEnable, ct),
+            {btn: '3', press: KeyPress.KeyPressed} => _notificationService.ClearAll(),
             {btn: '4', press: KeyPress.KeyPressed} => AsherButton(ct),
             _ => Task.CompletedTask
         };
@@ -47,7 +49,6 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return Helpers.LivingRoomOverride;
-        yield return Helpers.PorchMotionEnable;
         yield return "event.dining_room_scene_001";
         //yield return "event.dining_room_scene_002";
         yield return "event.dining_room_scene_003";
@@ -66,8 +67,8 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
             toggle lights
         Step 3
             set lights to 40%*/
+        PlayRandom(ct);
         await Task.WhenAll(
-            PlayRandom(ct),
             _services.Api.TurnOn(Lights.Basement1, ct),
             _services.Api.TurnOff(Lights.Basement2, ct)
         );
@@ -83,7 +84,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
     }
 
-    Task PlayRandom(CancellationToken ct)
+    void PlayRandom(CancellationToken ct)
     {
         string[] messages = [ 
             "My lord. Your presence is requested in the main chamber",
@@ -95,7 +96,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
             "Brave knight. You have been given a valiant quest to return to the overworld" ];
         Random r = new();
         
-        return _notifyAsher(messages[r.Next(0, messages.Length)]);
+        _notifyAsher(messages[r.Next(0, messages.Length)]);
     }
 
     Task SetHelperState(HaEntityState<OnOff, JsonElement>? helperState, CancellationToken ct)
@@ -104,8 +105,6 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         {
             {State : OnOff.On, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Yellow, 7),
             {State : OnOff.Off, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Cyan, 7),
-            {State : OnOff.On, EntityId : Helpers.PorchMotionEnable} => (ZoozColor.Red, 9),
-            {State : OnOff.Off, EntityId : Helpers.PorchMotionEnable} => (ZoozColor.Green, 9),
             _ => throw new Exception("unknown setup for dining room LED status indicators")
         };
 

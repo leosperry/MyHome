@@ -98,6 +98,6 @@ public static class Helpers
         BedTime = "input_boolean.bedtime_switch",
         LivingRoomOverride = "input_boolean.living_room_override",
         OfficeOverride = "input_boolean.office_override",
-        PorchMotionEnable = "input_boolean.front_porch_motion_enable",
+        //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
         RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper";
 }

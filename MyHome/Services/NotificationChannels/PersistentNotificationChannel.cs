@@ -13,6 +13,6 @@ public class PersistentNotificationChannel : INotificationChannel
 
     public Task Send(NotificationId id, string message, string? title = null)
     {
-        return _api.PersistentNotification(message, title ?? "test title", id);
+        return _api.PersistentNotificationDetail(message, title, id);
     }
 }

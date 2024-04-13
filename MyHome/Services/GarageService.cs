@@ -55,7 +55,7 @@ public class GarageService : IGarageService
                 await Task.WhenAll(
                     _api.TurnOn(opener, cancellationToken), // close the door
                     _api.TurnOn(BACK_HALL_LIGHT, cancellationToken), // turn onn the back hall light
-                    notify("my_notify_group", $"Attempting to close {doorName}"),
+                    notify($"Attempting to close {doorName}"),
                     Task.Delay(TimeSpan.FromSeconds(15)) // wait for door to close
                 );
 
@@ -63,14 +63,14 @@ public class GarageService : IGarageService
                 var doorState = await getGarageDoorState(contact, tilt);
                 if (doorState != GarageDoorState.Closed)
                 {
-                    await notify("my_notify_group", $"Could not verify {doorName} is closed");
+                    await notify($"Could not verify {doorName} is closed");
                 }
 
                 break;
             case GarageDoorState.Unknown:
                 // alert
                 await Task.WhenAll(
-                    notify("my_notify_group", $"{doorName} is in an unknown state"),
+                    notify($"{doorName} is in an unknown state"),
                     _api.TurnOn(BACK_HALL_LIGHT, cancellationToken));
                 break;
         }

@@ -11,7 +11,7 @@ public class MainRegistry : IAutomationRegistry
     readonly ILivingRoomService _livingRoomService;
     readonly INotificationService _notificationService;
     readonly NotificationSender _notifyKitchenLivingRoom;
-    readonly NotificationSender _notifyAboutGarage;
+    readonly NotificationSenderNoText _notifyPressure;
 
     public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILivingRoomService livingRoomService, INotificationService notificationService)
     {
@@ -23,14 +23,14 @@ public class MainRegistry : IAutomationRegistry
 
         var channel = notificationService.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom]);
         _notifyKitchenLivingRoom = notificationService.CreateNotificationSender([channel]);
-        var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
+
+        _notifyPressure = _notificationService.CreateNoTextNotificationSender([_notificationService.CreateMonkeyChannel(new()
         {
             EntityId = [Lights.Monkey],
-            ColorName = "saddlebrown",
-            Brightness = Bytes._30pct
-        });
-        var phoneChannel = notificationService.CreateGroupOrDeviceChannel([Phones.LeonardPhone]);
-        _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]);
+            ColorName = "darkslateblue",
+            Brightness = Bytes._50pct,
+        })]);
+        
     }
 
     public void Register(IRegistrar reg)
@@ -43,16 +43,17 @@ public class MainRegistry : IAutomationRegistry
             _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
             _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
             _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
-                .WithMeta("mainbedroom off on no motion","10 minutes"),
-            GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
-            GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT)
+                .WithMeta("mainbedroom off on no motion","10 minutes")           
         );
 
         //brush lyra hair
         reg.Register(_builder.CreateSimple()
             .WithName("Lyra Brush Hair")
             .WithTriggers("binary_sensor.lyra_brush_hair")
-            .WithExecution((sc, ct) => _notifyKitchenLivingRoom("Time to brush Lyra's hair"))
+            .WithExecution((sc, ct) => {
+                _notifyKitchenLivingRoom("Time to brush Lyra's hair");
+                return Task.CompletedTask;
+            })
             .Build());
         
         // make sure switches are off
@@ -82,6 +83,19 @@ public class MainRegistry : IAutomationRegistry
                     true => _livingRoomService.SetLightsBasedOnPower(),
                     _ => Task.CompletedTask
                 };
+            })
+            .Build());
+
+        reg.Register(_builder.CreateSimple()
+            .WithName("Barometric Pressure Alert")
+            .WithDescription("Notify when pressure drops by 0.04 over 4 hours")
+            .WithTriggers("sensor.pressure_change_4_hr")
+            .WithExecution(async (sc, ct) =>{
+                var pressure = sc.ToFloatTyped();
+                if (pressure.BecameLessThanOrEqual(-0.04f))
+                {
+                    await _notifyPressure();
+                }
             })
             .Build());
     }
@@ -137,29 +151,4 @@ public class MainRegistry : IAutomationRegistry
         }
     }
 
-    ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
-    {
-        var notifcationId = new NotificationId(garageContact);
-        return _builder.CreateSchedulable(true)
-            .WithName($"{name} alert")
-            .WithDescription("notify when garage door stays open")
-            .WithTriggers(garageContact)
-            .MakeDurable()
-            .GetNextScheduled(async (sc, ct) => {
-                var openCloseState = sc.ToOnOff();
-                if (openCloseState.New.State == OnOff.On)
-                {
-                    return openCloseState.New.LastUpdated.AddHours(1);
-                }
-                else
-                {
-                    await _notificationService.Clear(notifcationId);
-                }
-                return default;
-            })
-            .WithExecution(async ct => { 
-                await _notifyAboutGarage($"{name} has been open for an hour", "Garage Alert", notifcationId);
-            })
-            .Build();
-    }
 }

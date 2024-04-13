@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-using System.Security.Cryptography.X509Certificates;
-using HaKafkaNet;
+﻿using HaKafkaNet;
 
 namespace MyHome;
 

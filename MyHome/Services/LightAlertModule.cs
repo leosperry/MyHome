@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Diagnostics.Contracts;
 using HaKafkaNet;
 
 namespace MyHome;
@@ -21,14 +22,21 @@ public class LightAlertModule : IDisposable
     ConcurrentQueue<(string, LightTurnOnModel)> _newItems = new();
     ConcurrentDictionary<string, object?> _itemsToRemove = new();
 
+    static readonly RgbTuple _standbyRgb = (255, 215, 2);
     static LightTurnOnModel _standby = new()
     {
         EntityId = [Lights.Monkey],
-        //XyColor = _standbyColor,
-        ColorName = "gold",
-        Brightness = Bytes._10pct
-    };
-    static readonly XyColor _standbyColor = (0.494f, 0.474f);
+        //ColorName = "gold",
+        Brightness = Bytes._10pct,
+        RgbColor = _standbyRgb
+    };    
+
+    public async Task Start()
+    {
+        // set it once to ensure state in cache
+        await SetStandby();
+        StartTracking();
+    }
 
     public LightAlertModule(IHaApiProvider api, IHaEntityProvider entityProvider, ILogger<LightAlertModule> logger)
     {
@@ -39,25 +47,36 @@ public class LightAlertModule : IDisposable
         StartTracking();
     }
 
-    public async Task Add(NotificationId id, LightTurnOnModel options)
+    public void ConfigureStandByBrightness(Byte brightness)
+    {
+        _standby.Brightness = brightness;
+        _api.LightTurnOn(_standby);
+    }
+
+    public void Add(NotificationId id, LightTurnOnModel options)
     {
         _newItems.Enqueue((id, options));
-        await RunNow();
+        _ = RunNow();
     }
 
-    public async Task Clear(NotificationId id)
+    public void Clear(NotificationId id)
     {
         _itemsToRemove.TryAdd(id, null);
-        await RunNow();
+        _ = RunNow();
     }
 
-    public async Task ClearAll()
+    public void ClearAll()
     {
         foreach (var item in _alerts)
         {
             _itemsToRemove.TryAdd(item.Item1, null);
         }
-        await RunNow();
+        _ = RunNow();
+    }
+
+    private async Task SetStandby()
+    {
+        await _api.LightTurnOn(_standby);
     }
 
     private async Task RunNow()
@@ -131,10 +150,16 @@ public class LightAlertModule : IDisposable
             if (itemToSet is null)
             {
                 var currentMonkeyState = await _entityProvider.GetColorLightEntity(Lights.Monkey);
-
-                if (currentMonkeyState?.Attributes?.XyColor != _standbyColor)
+                if (currentMonkeyState?.Attributes?.RGB != _standbyRgb)
                 {
-                    await _api.LightTurnOn(_standby);
+                    // using (_logger.BeginScope(new Dictionary<string, object>()
+                    // {
+                    //     {"_standbyRgb", _standbyRgb},
+                    //     {"_standby", _standby},
+                    // }))
+                    // {
+                        await _api.LightTurnOn(_standby);
+                    //}
                 }
             } 
             else if (_current is null || itemToSet != _current)
@@ -154,7 +179,7 @@ public class LightAlertModule : IDisposable
         }
     }
 
-    internal void StartTracking()
+    private void StartTracking()
     {
         _timerTask = TimerTick();
     }

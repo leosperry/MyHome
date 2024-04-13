@@ -17,17 +17,20 @@ public class MonkeyNotificationChannel : INoTextNotificationChannel, INotificati
 
     public Task Clear(NotificationId id)
     {
-        return _lam.Clear(id);
+        _lam.Clear(id);
+        return Task.CompletedTask;
     }
 
     public Task ClearAll()
     {
-        return _lam.ClearAll();
+        _lam.ClearAll();
+        return Task.CompletedTask;
     }
 
     public Task Send(NotificationId id)
     {
-        return _lam.Add(id, _effects);
+        _lam.Add(id, _effects);
+        return Task.CompletedTask;
     }
 }
 

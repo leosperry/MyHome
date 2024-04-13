@@ -8,9 +8,11 @@ namespace MyHome.Dev;
 public class SystemMonitor : ISystemMonitor
 {
     readonly IHaServices _services;
-    public SystemMonitor(IHaServices services)
+    readonly LightAlertModule _lam;
+    public SystemMonitor(IHaServices services, LightAlertModule lam)
     {
         _services = services;
+        _lam = lam;
     }
 
     public Task BadEntityStateDiscovered(IEnumerable<BadEntityState> badStates)
@@ -38,9 +40,10 @@ public class SystemMonitor : ISystemMonitor
             _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
     }
 
-    public Task StateHandlerInitialized()
+    public async Task StateHandlerInitialized()
     {
-        return Task.CompletedTask;
+        await _lam.Start();
+        
         // this is jenky and will not handle all circumstances
         // var logResponse = await _services.Api.GetErrorLog();
         // if (logResponse.StatusCode == System.Net.HttpStatusCode.OK)
@@ -63,5 +66,14 @@ public class SystemMonitor : ISystemMonitor
         return Task.WhenAll(
             _services.Api.PersistentNotification($"automation: [{automationMetaData.Name}] failed with [{exception.Message}]", default),
             _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, $"Uncaught Automation Error in {automationMetaData.Name}"));
+    }
+
+    public Task HaNotificationUpdate(HaNotification notification, CancellationToken ct)
+    {
+        if (notification.UpdateType == "removed" && notification.Id is not null)
+        {
+            _lam.Clear(new NotificationId(notification.Id));
+        }    
+        return Task.CompletedTask;
     }
 }

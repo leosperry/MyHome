@@ -49,10 +49,16 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
             {button: '4', keypress: KeyPress.KeyPressed2x}  => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString()),
             {button: '4', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString()),
             {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
-            {button: '6', keypress: KeyPress.KeyPressed}    => _notificationService.ClearAll(),
+            {button: '6', keypress: KeyPress.KeyPressed}    => ClearAllNotifications(),
             {button: '8', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.select.ToString()),
             _ => Task.CompletedTask //unassigned 
         };    
+    }
+
+    Task ClearAllNotifications()
+    {
+        _notificationService.ClearAll();
+        return Task.CompletedTask;
     }
 
     private async Task ToggleLight(string lightId, CancellationToken ct)
