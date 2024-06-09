@@ -143,7 +143,7 @@ public class OutsideRegistry : IAutomationRegistry
     ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
     {
         var notifcationId = new NotificationId(garageContact);
-        return _builder.CreateSchedulable(true)
+        return _builder.CreateSchedulable(enabledAtStartup: false)
             .WithName($"{name} alert")
             .WithDescription("notify when garage door stays open")
             .WithTriggers(garageContact)

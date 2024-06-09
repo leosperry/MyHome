@@ -149,18 +149,7 @@ public class LightAlertModule : IDisposable
         {
             if (itemToSet is null)
             {
-                var currentMonkeyState = await _entityProvider.GetColorLightEntity(Lights.Monkey);
-                if (currentMonkeyState?.Attributes?.RGB != _standbyRgb)
-                {
-                    // using (_logger.BeginScope(new Dictionary<string, object>()
-                    // {
-                    //     {"_standbyRgb", _standbyRgb},
-                    //     {"_standby", _standby},
-                    // }))
-                    // {
-                        await _api.LightTurnOn(_standby);
-                    //}
-                }
+                await SetStandby();
             } 
             else if (_current is null || itemToSet != _current)
             {
@@ -195,9 +184,12 @@ public class LightAlertModule : IDisposable
                 try
                 {
                     var diff = (DateTime.Now - _lastUpdate).TotalMilliseconds;
-                    if (diff < 4000)
+                    if (_alerts.Count <= 1 || diff < 4000)
                     {
-                        // new item came in. let it sit for a bit
+                        // either we already set the light when 
+                        // the alert came in or a
+                        // new item came in. 
+                        // in either case, we don't need to change it
                         continue;
                     }
                     await Run();

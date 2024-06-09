@@ -54,7 +54,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
     private Task BatteryCheck(HaEntityState state)
     {
         float? batteryLevel = null;
-        if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 40f)
+        if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 25f)
         {
             return _notifyCritical($"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent");
         }

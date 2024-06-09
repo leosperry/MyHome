@@ -5,13 +5,15 @@ services:
       context: .
     container_name: my-home-transformer
     restart: unless-stopped
-    depends_on: 
-      - cache
+    # depends_on: 
+    #   - cache
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
     ports:
       - 8081:8080
+    networks:
+      - home-network
 
   my-home-state:
     build: 
@@ -19,18 +21,35 @@ services:
       context: .
     container_name: my-home-state
     restart: unless-stopped
-    depends_on: 
-      - cache
+    # depends_on: 
+    #   - cache
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
     ports:
       - 8082:8080
+    networks:
+      - home-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.hkn.entrypoints=http"
+      - "traefik.http.routers.hkn.rule=Host(`hkn.sperry.rocks`)"
+      - "traefik.http.middlewares.hkn-https-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.hkn.middlewares=hkn-https-redirect"
+      - "traefik.http.routers.hkn-secure.entrypoints=https"
+      - "traefik.http.routers.hkn-secure.rule=Host(`hkn.sperry.rocks`)"
+      - "traefik.http.routers.hkn-secure.tls=true"
+      - "traefik.http.routers.hkn-secure.service=hkn"
+      - "traefik.http.services.hkn.loadbalancer.server.port=8080"
+      - "traefik.docker.network=proxy"
 
-  cache:
-    image: redis:alpine
-    container_name: my-home-cache
-    restart: unless-stopped
-    command: redis-server
-    ports:
-      - 6379:6379
+networks:
+  home-network:
+    external: true
+  # cache:
+  #   image: redis:alpine
+  #   container_name: my-home-cache
+  #   restart: unless-stopped
+  #   command: redis-server
+  #   ports:
+  #     - 6379:6379

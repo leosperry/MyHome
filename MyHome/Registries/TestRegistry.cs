@@ -6,17 +6,26 @@ public class TestRegistry : IAutomationRegistry
 {
     IAutomationFactory _factory;
     INotificationService _notifications;
-    public TestRegistry(IAutomationFactory factory, INotificationService notificationService)
+    private ILogger<TestRegistry> _logger;
+
+    public TestRegistry(IAutomationFactory factory, INotificationService notificationService, ILogger<TestRegistry> logger)
     {
         _factory = factory;
         _notifications = notificationService;
+        this._logger = logger;
     }
 
     int tracker = 0;
 
     public void Register(IRegistrar reg)
     {
-        TestLAM(reg);
+        //TestLAM(reg);
+        reg.Register(_factory.SimpleAutomation(["input_button.test_button"], (sc, ct) =>
+        {
+            System.Console.WriteLine("test button pushed");
+            _logger.LogInformation("test button pushed");
+            return Task.CompletedTask;
+        }).WithMeta("test", "test logging"));
     }
 
     private void TestLAM(IRegistrar reg)
