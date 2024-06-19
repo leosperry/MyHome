@@ -40,6 +40,8 @@ public static class Devices
         Roku = "remote.roku_ultra",
         OfficeFan = "switch.office_fan_switch",
         SolarPower = "sensor.solaredge_current_power";
+
+
 }
 
 public static class Sensors
@@ -51,7 +53,10 @@ public static class Sensors
         MainBedroom4in1Motion = "binary_sensor.4_in_1_sensor_motion_detection",
         OfficeDoor = "binary_sensor.office_door_opening",
         OfficeMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion",
-        OfficeTemp = "sensor.lumi_lumi_sensor_motion_aq2_device_temperature";
+        OfficeTemp = "sensor.lumi_lumi_sensor_motion_aq2_device_temperature",
+        LivingRoomZone1AllCount = "sensor.esphome_living_room_zone_1_all_target_count",
+        LivingRoomZone2AllCount = "sensor.esphome_living_room_zone_2_all_target_count",
+        LivingRoomZone3AllCount = "sensor.esphome_living_room_zone_3_all_target_count";
 }
 
 public static class NotificationGroups
@@ -71,12 +76,14 @@ public static class Phones
 public static class MediaPlayers
 {
     public const string
+        Roku = "media_player.roku_ultra",
         Asher = "media_player.asher",
         Kitchen = "media_player.kitchen",
         LivingRoom = "media_player.living_room",
         Lyra = "media_player.lyra",
         MainBedroom = "media_player.main_bedroom",
         Office = "media_player.office";
+        
 
 }
 
