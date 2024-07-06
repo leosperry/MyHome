@@ -4,7 +4,7 @@ using System.Text.Unicode;
 using HaKafkaNet;
 using KafkaFlow;
 using KafkaFlow.Configuration;
-using KafkaFlow.OpenTelemetry;
+//using KafkaFlow.OpenTelemetry;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Diagnostics.Metrics;
 using MyHome;
@@ -21,48 +21,36 @@ builder.Host.UseNLog();
 
 var services = builder.Services;
 
-var otel = services.AddOpenTelemetry();
+var otlpEndpoint = "http://192.168.1.3:4317";
 
-otel.ConfigureResource(resource => {
-    resource.AddService(serviceName: "home-automations");
-});
-
-var activitySource = new ActivitySource("HaKafkaNet");
-
-var traceProvider = Sdk.CreateTracerProviderBuilder()
-    .AddSource("HaKafkaNet")
-    .AddSource(KafkaFlowInstrumentation.ActivitySourceName)
-    .Build();
-
-otel.WithTracing(tracing =>{
-    tracing
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddRedisInstrumentation(redis => {redis.SetVerboseDatabaseStatements = true;})
-        .AddSource("HaKafkaNet")
-        .AddSource(KafkaFlowInstrumentation.ActivitySourceName)
-        .AddOtlpExporter(exporterOptions => {
-            exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-            exporterOptions.Endpoint = new Uri("http://192.168.1.3:4317");
-            exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
-        });
-});
-
-
-otel.WithMetrics(metrics => {
-    metrics.AddAspNetCoreInstrumentation()
-        .AddMeter("Microsoft.AspNetCore.Hosting")
-        .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
-        .AddAspNetCoreInstrumentation()
-        .AddHttpClientInstrumentation()
-        .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
-            exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-            exporterOptions.Endpoint = new Uri("http://192.168.1.3:4317");
-            exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
-            metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15000;
-        })
-        ;
-});
+services.AddOpenTelemetry()
+    .ConfigureResource(resource => {
+        resource.AddService(serviceName: "home-automations");
+    }).WithTracing(tracing =>{ 
+        tracing
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddHaKafkaNetInstrumentation()
+            //.AddSource(KafkaFlowInstrumentation.ActivitySourceName)
+            .AddOtlpExporter(exporterOptions => {
+                exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                exporterOptions.Endpoint = new Uri(otlpEndpoint);
+                exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
+            });
+    }).WithMetrics(metrics => {
+        metrics.AddAspNetCoreInstrumentation()
+            .AddMeter("Microsoft.AspNetCore.Hosting")
+            .AddMeter("Microsoft.AspNetCore.Server.Kestrel")
+            .AddHaKafkaNetInstrumentation()
+            .AddAspNetCoreInstrumentation()
+            .AddHttpClientInstrumentation()
+            .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
+                exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                exporterOptions.Endpoint = new Uri(otlpEndpoint);
+                exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
+                metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15000;
+            });
+    });
 
 builder.Logging.AddOpenTelemetry(logging => {
     logging.IncludeScopes = true;
@@ -70,10 +58,19 @@ builder.Logging.AddOpenTelemetry(logging => {
     logging.ParseStateValues = true;
     logging.AddOtlpExporter((exporterOptions, logProcessOptions) =>{
             exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-            exporterOptions.Endpoint = new Uri("http://192.168.1.3:4317");
+            exporterOptions.Endpoint = new Uri(otlpEndpoint);
             exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
         });
 });
+
+// for local development of dashboard only
+services.AddCors(options => {
+    options.AddPolicy("hknDev", policy =>{
+        policy.WithOrigins("*");
+        policy.AllowAnyHeader();
+    });
+});
+
 HaKafkaNetConfig config = new HaKafkaNetConfig();
 builder.Configuration.GetSection("HaKafkaNet").Bind(config);
 
@@ -96,16 +93,12 @@ services.AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLigh
 services.AddSingleton<INotificationService, NotificationService>();
 services.AddSingleton<LightAlertModule>();
 
-services.AddHaKafkaNet(config, (kafka, cluset) =>{
-    kafka
-        .UseMicrosoftLog()
-        .AddOpenTelemetryInstrumentation(opt => {
-            opt.EnrichConsumer = ((activitySource, messageContext) => {
-                activitySource.SetTag("entityId", Encoding.Default.GetString((byte[])messageContext.Message.Key));
-            });
-        });});
+services.AddHaKafkaNet(config, (kafka, cluster) =>{ });
 
 var app = builder.Build();
+
+// for local development of dashboard only
+app.UseCors("hknDev");
 
 await app.StartHaKafkaNet();
 

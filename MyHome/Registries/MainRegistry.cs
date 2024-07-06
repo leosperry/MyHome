@@ -69,8 +69,32 @@ public class MainRegistry : IAutomationRegistry
             .WithName("Rachel Phone Battery")
             .WithDescription("Alert when her battery is low")
             .WithTriggers(Helpers.RachelPhoneBatteryHelper)
-            .WithExecution((sc, ct) => sc.ToOnOff().New.State == OnOff.On ? _notifyKitchenLivingRoom("Rachel, your phone battery is low") : Task.CompletedTask)
+            .WithExecution(async (sc, ct) =>
+            {
+                var onOff = sc.ToOnOff();
+                if (onOff.IsOn())
+                {
+                    var batteryState = await _services.EntityProvider.GetBatteryStateEntity("sensor.rachel_phone_battery_state");
+                    if (batteryState?.State != BatteryState.Charging)
+                    {
+                        await _notifyKitchenLivingRoom("Rachel, your phone battery is low");
+                    }
+                }
+            })
             .Build());
+
+        reg.Register(_builder.CreateSimple()
+            .WithName("Person arriving home")
+            .WithTriggers("person.leonard", "person.rachel")
+            .WithExecution(async (sc, ct) =>{
+                var person = sc.ToPerson();
+                if (person.CameHome())
+                {
+                    await _notifyKitchenLivingRoom($"{person?.New?.Attributes?.FriendlyName ?? "person"} is arriving home");
+                }
+            })
+            .Build()
+        );
 
         reg.Register(_builder.CreateSimple()
             .WithName("Living Room - Set lights when override disabled")

@@ -7,12 +7,14 @@ public class TestRegistry : IAutomationRegistry
     IAutomationFactory _factory;
     INotificationService _notifications;
     private ILogger<TestRegistry> _logger;
+    private IHaServices _services;
 
-    public TestRegistry(IAutomationFactory factory, INotificationService notificationService, ILogger<TestRegistry> logger)
+    public TestRegistry(IAutomationFactory factory, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger)
     {
         _factory = factory;
         _notifications = notificationService;
         this._logger = logger;
+        this._services = services;
     }
 
     int tracker = 0;
@@ -20,12 +22,13 @@ public class TestRegistry : IAutomationRegistry
     public void Register(IRegistrar reg)
     {
         //TestLAM(reg);
-        reg.Register(_factory.SimpleAutomation(["input_button.test_button"], (sc, ct) =>
-        {
-            System.Console.WriteLine("test button pushed");
-            _logger.LogInformation("test button pushed");
-            return Task.CompletedTask;
-        }).WithMeta("test", "test logging"));
+        // reg.Register(_factory.SimpleAutomation(["input_button.test_button"], (sc, ct) =>
+        // {
+        //     _services.Api.Toggle(Lights.OfficeLeds);
+        //     System.Console.WriteLine("test button pushed");
+        //     _logger.LogWarning("test button pushed");
+        //     return Task.CompletedTask;
+        // }).WithMeta("test", "test logging"));
     }
 
     private void TestLAM(IRegistrar reg)
@@ -57,7 +60,6 @@ public class TestRegistry : IAutomationRegistry
 
         reg.Register(_factory.SimpleAutomation(["input_button.test_button"], async (sc, ct) =>
         {
-            //tracker++;
             switch (tracker % 3)
             {
                 case 0:

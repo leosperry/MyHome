@@ -27,7 +27,7 @@ public class KazulAlertsTests
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object, notify.Object);
 
         // When
-        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP_BATTERY, "39.9");
+        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP_BATTERY, "24.9");
         await sut.Execute(fakeState, default);
     
         // Then
@@ -92,7 +92,7 @@ public class KazulAlertsTests
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object, notify.Object);
 
         // When
-        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP, "65.0");
+        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP, "64.0");
         await sut.Execute(fakeState, default);
     
         // Then

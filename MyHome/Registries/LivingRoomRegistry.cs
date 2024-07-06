@@ -66,6 +66,7 @@ public class LivingRoomRegistry : IAutomationRegistry
 
 
         var livingRoomZone1Exit =_builder.CreateSchedulable()
+            .MakeDurable()
             .WithName("Living Room Zone 1 Exit")
             .WithDescription("Turn off TV when unoccupied")
             .WithTriggers(Sensors.LivingRoomZone1AllCount)
@@ -79,13 +80,15 @@ public class LivingRoomRegistry : IAutomationRegistry
                 }
                 return Task.FromResult<DateTime?>(null);
             })
-            .WithExecution(async cd => {
+            .WithExecution(cd => {
                 //await _services.Api.TurnOff(Devices.Roku);
                 _lam.ConfigureStandByBrightness(0);
+                return Task.CompletedTask;
             })
             .Build();
         
         var livingRoomZone1Enter = _builder.CreateSimple()
+            .WithName("Living Room Zone 1")
             .WithTriggers(Sensors.LivingRoomZone1AllCount)
             .WithExecution(async (sc, ct) => {
                 var zone = sc.ToIntTyped();
