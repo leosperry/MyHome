@@ -83,7 +83,7 @@ public class MainRegistry : IAutomationRegistry
             })
             .Build());
 
-        reg.Register(_builder.CreateSimple()
+        reg.Register(_builder.CreateSimple(false)
             .WithName("Person arriving home")
             .WithTriggers("person.leonard", "person.rachel")
             .WithExecution(async (sc, ct) =>{

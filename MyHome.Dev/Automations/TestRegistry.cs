@@ -20,12 +20,12 @@ public class TestRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(_builder.CreateSimple()
-            .WithTriggers("input_button.test_button")
-            .WithExecution(async (sc, ct) => {
-                await _services.Api.ToggleByLabel("bedtimeoff");
-            })
-            .Build());
+        // reg.Register(_builder.CreateSimple()
+        //     .WithTriggers("input_button.test_button")
+        //     .WithExecution(async (sc, ct) => {
+        //         await _services.Api.ToggleByLabel("bedtimeoff");
+        //     })
+        //     .Build());
 
         //reg.Register(_factory.DurableAutoOff("light.office_led_light", TimeSpan.FromSeconds(1)));
 
