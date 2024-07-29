@@ -15,7 +15,7 @@ services:
     networks:
       - home-network
 
-  my-home-state:
+  my-home-automation:
     build: 
       dockerfile: MyHome/Dockerfile
       context: .

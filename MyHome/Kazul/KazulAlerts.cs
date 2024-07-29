@@ -26,13 +26,16 @@ public class KazulAlerts : IAutomation, IAutomationMeta
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entities;
     private readonly NotificationSender _notifyCritical;
+    private readonly NotificationSender _notifyInformational;
 
     public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService)
     {
         _api = api;
         _entities = entities;
         _notifyCritical = notificationService.GetCritical();
+        _notifyInformational = notificationService.CreateInformationalSender();
     }
+
 
     public IEnumerable<string> TriggerEntityIds()
     {
@@ -54,9 +57,9 @@ public class KazulAlerts : IAutomation, IAutomationMeta
     private Task BatteryCheck(HaEntityState state)
     {
         float? batteryLevel = null;
-        if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 25f)
+        if (state.Bad() || (batteryLevel = state.GetState<float?>()) < 20f)
         {
-            return _notifyCritical($"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent");
+            return _notifyInformational($"Kazul temp sensor battery rerports {batteryLevel?.ToString() ?? "unknown"} percent");
         }
         return Task.CompletedTask;
     }

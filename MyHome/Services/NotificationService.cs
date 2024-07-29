@@ -12,6 +12,7 @@ public interface INotificationService
     INotificationChannel CreateGroupOrDeviceChannel(params string[] device_targets);
     INotificationChannel CreateAudibleChannel(IEnumerable<string> media_player_targets, PiperSettings? voiceSettings = null);
     INoTextNotificationChannel CreateMonkeyChannel(LightTurnOnModel effects);
+    NotificationSender CreateInformationalSender();
     INotificationChannel Persistent { get; }
 
     //Task Reset();
@@ -87,6 +88,15 @@ public class NotificationService : INotificationService
         var monkey = new MonkeyNotificationChannel(_services.Api, _lam, effect);
         _clearers.Add(monkey);
         return monkey;
+    }
+
+    public NotificationSender CreateInformationalSender()
+    {
+        return CreateNotificationSender([Persistent], [CreateMonkeyChannel(new LightTurnOnModel{
+            EntityId = [Lights.Monkey],
+            ColorName = "lightpink",
+            Brightness = Bytes._30pct
+        })]);
     }
 
     public NotificationSenderNoText CreateNoTextNotificationSender(IEnumerable<INoTextNotificationChannel> noTextChannels)

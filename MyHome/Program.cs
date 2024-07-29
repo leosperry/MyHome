@@ -21,7 +21,7 @@ builder.Host.UseNLog();
 
 var services = builder.Services;
 
-var otlpEndpoint = "http://192.168.1.3:4317";
+var otlpEndpoint = "http://172.17.1.3:4317";
 
 services.AddOpenTelemetry()
     .ConfigureResource(resource => {

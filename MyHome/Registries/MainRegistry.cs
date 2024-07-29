@@ -34,9 +34,7 @@ public class MainRegistry : IAutomationRegistry
     }
 
     public void Register(IRegistrar reg)
-    {
-        SetupKitcheLights(reg);
-        
+    {        
         // lights auto off
         reg.RegisterMultiple(
             _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
@@ -124,55 +122,5 @@ public class MainRegistry : IAutomationRegistry
             .Build());
     }
 
-    private void SetupKitcheLights(IRegistrar reg)
-    {
-        reg.Register(_builder.CreateSimple()
-            .WithName("Kitchen double tap")
-            .WithDescription("increase brightness")
-            .WithTriggers("event.kitchen_lights_scene_001", "event.kitchen_lights_scene_002")
-            .WithExecution((sc, ct) => {
-                var sceneController = sc.ToSceneControllerEvent();
-                var press = sceneController?.New.Attributes?.GetKeyPress();
-                var scene = sc.EntityId.Last();
-                
-                return (scene, press) switch
-                {
-                    {scene: '1', press: KeyPress.KeyPressed} => UpKitchenLights(ct),
-                    {scene: '1', press: KeyPress.KeyPressed2x } => _services.Api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Lights.KitchenLights],
-                        BrightnessStepPct = 10
-                    }),
-                    {scene: '2', press: KeyPress.KeyPressed} => TurnOffKitchen(ct),
-                    _ => Task.CompletedTask
-                };
-            })
-            .Build());
-    }
-
-    private async Task TurnOffKitchen(CancellationToken ct)
-    {
-        var kitchenLights = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
-        if (kitchenLights?.Attributes?.Brightness > 26)//10%
-        {
-            //make sure that when we turn back on, we don't blind everyone.
-            await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._10pct, ct);
-            await Task.Delay(500);
-            await _services.Api.TurnOff(Lights.KitchenLights);
-        }
-    }
-
-    private async Task UpKitchenLights(CancellationToken ct)
-    {
-        var kitchenLights = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
-        if (kitchenLights?.State == OnOff.On)
-        {
-            await _services.Api.LightTurnOn(new LightTurnOnModel()
-            {
-                EntityId = [Lights.KitchenLights],
-                BrightnessStepPct = 10
-            });
-        }
-    }
 
 }

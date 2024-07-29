@@ -22,7 +22,7 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
     NotificationId _lowSoapId = new NotificationId("washing-machine-low-soap");
     ILogger _logger;
     NotificationSender _regularAlert;
-    NotificationSender _sporadicAlert;
+    NotificationSender _soapAlert;
 
 
     public LaundryAlerts(IHaEntityProvider entityProvider, INotificationService notifications, ILogger<LaundryAlerts> logger)
@@ -40,11 +40,7 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
         var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.Kitchen]);
         _regularAlert = _notifications.CreateNotificationSender([audioChannel], [monkeyChannel]);
 
-        _sporadicAlert = _notifications.CreateNotificationSender([_notifications.Persistent], [_notifications.CreateMonkeyChannel(new LightTurnOnModel{
-            EntityId = [Lights.Monkey],
-            ColorName = "lightpink",
-            Brightness = Bytes._30pct
-        })]);
+        _soapAlert = _notifications.CreateInformationalSender();
     }
 
     public IEnumerable<string> TriggerEntityIds()
@@ -119,7 +115,7 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
         
         if (stateChange.New.State.ToLower() == "low")
         {
-            await _sporadicAlert("The Washing Mashine is hungry for detergent", "Wahing Machine Low Soap", _lowSoapId);
+            await _soapAlert("The Washing Mashine is hungry for detergent", "Wahing Machine Low Soap", _lowSoapId);
         }
         else
         {
