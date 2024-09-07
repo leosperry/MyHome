@@ -8,15 +8,16 @@ public class LivingRoomRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
-
+    readonly ILivingRoomService _livingRoomService;
     static readonly TimeSpan four_hours = TimeSpan.FromHours(4);
 
-    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam)
+    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, ILivingRoomService livingRoomService)
     {
         _factory = factory;
         _builder = builder;
         _services = services;
         _lam = lam;
+        _livingRoomService = livingRoomService;
     }
 
     public void Register(IRegistrar reg)
@@ -25,7 +26,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         var livingAndKitchenNoPresence = _builder.CreateSchedulable()
             .MakeDurable()
             .WithName($"Living Room and Kitchen not occupied for {downstairsLightDelayMinutes} minutes")
-            .WithDescription("Turn Off living room lights and turn on living room override")
+            .WithDescription("Turn Off living room lights")
             .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount) // helper entitiy combining kitchen and living room
             .GetNextScheduled((sc, ct) => {
                 DateTime? time = default;
@@ -37,30 +38,25 @@ public class LivingRoomRegistry : IAutomationRegistry
             })
             .WithExecution(ct => {
                 return Task.WhenAll(
-                    _services.Api.TurnOn(Helpers.LivingRoomOverride),
                     _services.Api.TurnOff([Lights.TvBacklight, Lights.Couch1, Lights.Couch2, 
                     Lights.DiningRoomLights, Lights.KitchenLights])
                 );
             })
             .Build();
-        
-        var peopleDetectedTurnOffLivingRoomOverride = _builder.CreateSimple()
-            .WithName("People entered Downstairs")
-            .WithDescription("Turn off the living room override. This will trigger auto setting of lights")
-            .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
+
+        var livingRoomBecameOccupied = _builder.CreateSimple()
+            .WithName("Living Room became occupied")
+            .WithDescription("")
+            .WithTriggers(Sensors.LivingRoomPresence)
             .WithExecution(async (sc, ct) => {
-                var count = sc.ToFloatTyped();
-                if (count.BecameGreaterThan(0))
-                {
-                    await _services.Api.TurnOff(Helpers.LivingRoomOverride);
-                }
+                await _livingRoomService.SetLightsBasedOnPower();
             })
             .Build();
 
         var livingroomAllZoneExit = _builder.CreateSchedulable()
             .MakeDurable()
             .WithName("Living Room All zones empty")
-            .WithDescription("pause the roku")
+            .WithDescription("pause the roku after 30 minutes")
             .WithTriggers(Sensors.LivingRoomPresence)
             .GetNextScheduled((sc, ct) => {
                 var zoneCount = sc.ToOnOff();
@@ -104,8 +100,8 @@ public class LivingRoomRegistry : IAutomationRegistry
 
         var livingRoomZone1Exit =_builder.CreateSchedulable()
             .MakeDurable()
-            .WithName("Living Room Zone 1 Exit")
-            .WithDescription("Turn off TV when unoccupied")
+            .WithName("Living Room all zone count 0")
+            .WithDescription("Set Monkey standby to 0 when unoccupied for 20 minutes")
             .WithTriggers(Sensors.LivingRoomZone1AllCount)
             .WithAdditionalEntitiesToTrack(Devices.Roku)
             .MakeDurable()
@@ -126,6 +122,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         
         var livingRoomZone1Enter = _builder.CreateSimple()
             .WithName("Living Room Zone 1")
+            .WithDescription("sets the Monkey light standby brightness")
             .WithTriggers(Sensors.LivingRoomZone1AllCount)
             .WithExecution(async (sc, ct) => {
                 var zone = sc.ToIntTyped();
@@ -157,9 +154,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         reg.RegisterMultiple(
             _factory.SunRiseAutomation(this.Sunrise).WithMeta("Sunrise", "turn off couch 1"),
             _factory.SunRiseAutomation(
-                async ct => {
-                    //await _services.Api.TurnOff(Helpers.LivingRoomOverride, ct);
-                    
+                async ct => {                    
                     var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1AllCount);
                     if (zone1!.State > 0)
                     {
@@ -186,8 +181,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             }            
         }).WithMeta("Dusk", "dim monkey standby"));
 
-
-        reg.RegisterMultiple(livingRoomZone1Enter, peopleDetectedTurnOffLivingRoomOverride);
+        reg.RegisterMultiple(livingRoomZone1Enter, livingRoomBecameOccupied);
         reg.RegisterMultiple(livingRoomZone1Exit, livingroomAllZoneExit, rokuPaused, livingAndKitchenNoPresence);        
     }
 

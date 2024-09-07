@@ -66,6 +66,9 @@ public class LivingRoomLightsTests
         provider.Setup(p => p.GetEntity<HaEntityState<OnOff, JsonElement>>(Helpers.LivingRoomOverride, default))
             .ReturnsAsync(TestHelpers.GetState<OnOff, JsonElement>(Helpers.LivingRoomOverride, OnOff.Off));
 
+        provider.Setup(p => p.GetEntity<HaEntityState<int?, JsonElement>>(Sensors.LivingRoomAndKitchenPresenceCount, default))
+            .ReturnsAsync(TestHelpers.GetState<int?, JsonElement>(Sensors.LivingRoomAndKitchenPresenceCount, 1));
+
         Mock<ILivingRoomService> livingRoom = new();            
 
         LivingRoomLights sut = new LivingRoomLights(provider.Object, livingRoom.Object);

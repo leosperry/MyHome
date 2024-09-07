@@ -44,7 +44,7 @@ public class OfficeRegistry : IAutomationRegistry
     {
         var tempState = change.ToFloatTyped();
         var officeMotion = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeMotion, token);
-        if (tempState.BecameGreaterThan(83f) && officeMotion?.State == OnOff.On)
+        if (tempState.New.State > 85f && officeMotion?.State == OnOff.On)
         {
             await _services.Api.TurnOn(Devices.OfficeFan);
         }

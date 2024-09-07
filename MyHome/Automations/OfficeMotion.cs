@@ -27,11 +27,11 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
         _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
             //MinIllumination = 7,
-            TargetIllumination = 115,
-            MinBrightness = 3,
-            MaxLightBrightness = 40,
+            TargetIllumination = 60, 
+            MinBrightness = Bytes.PercentToByte(1), //3
+            MaxLightBrightness = Bytes.PercentToByte(16), // 40
             IlluminationAddedAtMin = 2,
-            IlluminationAddedAtMax = 31
+            IlluminationAddedAtMax = 41 // used to be 31
         });
     }
 
@@ -75,7 +75,7 @@ public class OfficeMotion : IAutomation, IAutomationMeta
 
     private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
     {
-        var officeLights = await _cache.GetColorLightEntity(Lights.OfficeLights);
+        var officeLights = await _cache.GetLightEntity(Lights.OfficeLights);
 
         var oldBrightness = officeLights?.Attributes?.Brightness ?? 0;
 

@@ -26,13 +26,40 @@ public class KazulRegistry : IAutomationRegistry
     public void Register(IRegistrar reg)
     {
         var kazulSunset = _factory.SunSetAutomation(async ct => {
-            await _services.Api.TurnOn(KazulAlerts.CERAMIC_SWITCH, ct);
-            await _services.Api.TurnOff(KazulAlerts.HALOGEN_SWITCH, ct);
-        }).WithMeta("Kazul sunset","Turn on Ceramic. Turn off Halogen");
+            var turnOnVerification = await _services.Api.TurnOnAndVerify(KazulAlerts.CERAMIC_SWITCH, ct);
+            
+            if(!turnOnVerification)
+            {
+                await _notifyCritical("Failed to turn on Kazul Ceramic");
+                return;
+            }
+            
+            var turnOffVerification  = await _services.Api.TurnOffAndVerify(KazulAlerts.HALOGEN_SWITCH, ct);
+            if(!turnOffVerification)
+            {
+                await _notifyCritical("Failed to turn off Kazul Halogen");
+            }
+            
+        }).WithMeta(new AutomationMetaData(){
+            Name = "Kazul sunset",
+            Description = "Turn on Ceramic. Turn off Halogen",
+            AdditionalEntitiesToTrack = [KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH],
+        });
 
         var kazulSunrise = _factory.SunRiseAutomation(async ct => {
-            await _services.Api.TurnOn(KazulAlerts.HALOGEN_SWITCH, ct);
-            await _services.Api.TurnOff(KazulAlerts.CERAMIC_SWITCH, ct);
+            bool turnOnVerification = await _services.Api.TurnOnAndVerify(KazulAlerts.HALOGEN_SWITCH, ct);
+
+            if(!turnOnVerification)
+            {
+                await _notifyCritical("Failed to turn on Kazul Halogen");
+                return;
+            }            
+            bool turnOffVerification = await _services.Api.TurnOffAndVerify(KazulAlerts.CERAMIC_SWITCH, ct);
+            if(!turnOnVerification)
+            {
+                await _notifyCritical("Failed to turn off Kazul Ceramic");
+                return;
+            }
         }).WithMeta("Kazul sunrise", "Turn off Ceramic. Turn on Halogen");
 
         var kazulUVB =_factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", KAZUL_UVB)
@@ -42,7 +69,12 @@ public class KazulRegistry : IAutomationRegistry
             .WithName("Kazul - ensure 1 is on")
             .WithDescription("when either the ceramic or halogen change state, ensure at least 1 is on")
             .WithTriggers(KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH)
+            .TriggerOnBadState()
             .WithExecution(async (sc, ct) =>{
+                if(sc.New.Bad())
+                {
+                    await _notifyCritical("Kazul power strip in bad state");
+                }
                 try
                 {
                     var swithcStates = await Task.WhenAll(

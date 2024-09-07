@@ -92,7 +92,8 @@ public class KazulAlerts : IAutomation, IAutomationMeta
             Description = "Ensure Kazul's environment is healthy",
             AdditionalEntitiesToTrack = [
                 CERAMIC_SWITCH, HALOGEN_SWITCH
-            ]
+            ],
+            TriggerOnBadState = true
         };
     }
 }

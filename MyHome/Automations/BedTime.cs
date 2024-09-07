@@ -43,7 +43,6 @@ public class BedTime : IAutomation, IAutomationMeta
     async Task RunBedtimeRoutine(CancellationToken ct)
     {
         Task[] taskList = [
-            _services.Api.TurnOn(Helpers.LivingRoomOverride),
             _services.Api.TurnOff(Helpers.BedTime),
             _services.Api.LockLock(Devices.FrontDoorLock, ct),
             _garageService.EnsureGarageClosed(_notify,ct),

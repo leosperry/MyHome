@@ -24,26 +24,8 @@ public class LivingRoomLights : IAutomation, IAutomationMeta
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
         var powerState = stateChange.ToFloatTyped();
-        var currentPower = powerState.New.State;
 
-        if (currentPower is null)
-        {
-            //can't calculate; do nothing
-            return;
-        }
-
-        Task<SunModel?> sunTask;
-
-        Task<HaEntityState<OnOff, JsonElement>?> overrideTask;
-        await Task.WhenAll(
-            sunTask = _entityProvider.GetSun(),//.GetEntityState<SunAttributes>("sun.sun"),
-            overrideTask = _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride));
-
-        // only run when the sun is up and the override is off
-        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off)
-        {
-            await _livingRoom.SetLightsBasedOnPower(currentPower, ct);
-        }
+        await _livingRoom.SetLightsBasedOnPower(powerState.New.State, ct);
     }
 
     public IEnumerable<string> TriggerEntityIds()

@@ -25,17 +25,29 @@ public class LivingRoomService : ILivingRoomService
 
     public async Task SetLightsBasedOnPower(float? currentPower = null, CancellationToken ct = default)
     {
-        if (currentPower is null)
-        {
-            currentPower = (await _entityProvider.GetFloatEntity(Devices.SolarPower))?.State;    
-        }
-        if (currentPower is null)
-        {
-            _logger.LogWarning("could not get solar power state");
-            return;
-        }
+        Task<SunModel?> sunTask;
+        Task<HaEntityState<OnOff, JsonElement>?> overrideTask;
+        Task<HaEntityState<int?, JsonElement>?> livingKitchenPresenceCount;
 
-        if (currentPower > THRESHOLD)
+        await Task.WhenAll(
+            sunTask = _entityProvider.GetSun(),
+            overrideTask = _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride),
+            livingKitchenPresenceCount = _entityProvider.GetIntegerEntity(Sensors.LivingRoomAndKitchenPresenceCount));
+
+        // only run when the sun is up and the override is off
+        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off && livingKitchenPresenceCount.Result?.State > 0)
+        {
+            if (currentPower is null)
+            {
+                currentPower = (await _entityProvider.GetFloatEntity(Devices.SolarPower))?.State;
+            }
+            if (currentPower is null)
+            {
+                _logger.LogWarning("could not get solar power state");
+                return;
+            }
+
+            if (currentPower > THRESHOLD)
             {
                 // turn off when we have plenty of light
                 await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
@@ -64,6 +76,7 @@ public class LivingRoomService : ILivingRoomService
                     }, ct)
                 );
             }
-
+        }
     }
 }
+

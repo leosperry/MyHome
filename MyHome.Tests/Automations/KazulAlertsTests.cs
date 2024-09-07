@@ -23,11 +23,13 @@ public class KazulAlertsTests
         };
         notify.Setup(n => n.CreateNotificationSender(It.IsAny<IEnumerable<INotificationChannel>>(), It.IsAny<IEnumerable<INoTextNotificationChannel>>()))
             .Returns(sender);
+        
+        notify.Setup(n => n.CreateInformationalSender()).Returns(sender);
     
         KazulAlerts sut = new KazulAlerts(api.Object, entities.Object, notify.Object);
 
         // When
-        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP_BATTERY, "24.9");
+        var fakeState = TestHelpers.GetStateChange(KazulAlerts.TEMP_BATTERY, "19.9");
         await sut.Execute(fakeState, default);
     
         // Then

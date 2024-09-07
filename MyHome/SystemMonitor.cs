@@ -9,32 +9,33 @@ public class SystemMonitor : ISystemMonitor
 {
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
-    public SystemMonitor(IHaServices services, LightAlertModule lam)
+    readonly ILogger<SystemMonitor> _logger;
+    public SystemMonitor(IHaServices services, LightAlertModule lam, ILogger<SystemMonitor> logger)
     {
         _services = services;
         _lam = lam;
+        _logger = logger;
     }
 
-    public Task BadEntityStateDiscovered(IEnumerable<BadEntityState> badStates)
+    public Task BadEntityStateDiscovered(BadEntityState badStates)
     {
-        var filteredStates = badStates.Where(bs => !bs.EntityId.StartsWith("event"));
-        if (!filteredStates.Any())
+        if (badStates.EntityId.StartsWith("event"))
         {
             return Task.CompletedTask;
         }
         StringBuilder sb = new();
+
         sb.AppendLine("bad entity states");
-        foreach (var item in filteredStates)
+        
+        if (badStates.State is null)
         {
-            if (item.State is null)
-            {
-                sb.AppendLine($"{item.EntityId} could not be found");            
-            }
-            else
-            {
-                sb.AppendLine($"{item.EntityId} has a state of {item.State.State}");
-            }
+            sb.AppendLine($"{badStates.EntityId} could not be found");            
         }
+        else
+        {
+            sb.AppendLine($"{badStates.EntityId} has a state of {badStates.State.State}");
+        }
+
         return Task.WhenAll(
             _services.Api.PersistentNotification(sb.ToString(), default),
             _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
@@ -76,4 +77,11 @@ public class SystemMonitor : ISystemMonitor
         }    
         return Task.CompletedTask;
     }
+
+    public Task HaStartUpShutDown(StartUpShutDownEvent evt, CancellationToken ct)
+    {
+        _logger.LogWarning("Home Assistant {HaEvent}", evt.Event);
+        return Task.CompletedTask;
+    }
+
 }

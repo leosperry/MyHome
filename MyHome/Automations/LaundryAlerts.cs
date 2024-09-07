@@ -76,7 +76,12 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
 
     Task DoorAction(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        _notifications.Clear(_laundryId);
+        // off means closed
+        var onOff = stateChange.ToOnOff();
+        if (onOff.TurnedOn())
+        {
+            _notifications.Clear(_laundryId);    
+        }
         return Task.CompletedTask;
     }
 

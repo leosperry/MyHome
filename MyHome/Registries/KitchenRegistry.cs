@@ -47,7 +47,8 @@ public class KitchenRegistry : IAutomationRegistry
             .WithTriggers(Sensors.KitchenZone1AllCount)
             .WithExecution(async (sc, ct) => {
                 var solaredge_current_power = await _services.EntityProvider.GetFloatEntity(Devices.SolarPower);
-                if (solaredge_current_power?.State < 1000)
+                var lightStatus = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
+                if (lightStatus.IsOff() && solaredge_current_power?.State < 1100)
                 {
                     await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._20pct);
                 }

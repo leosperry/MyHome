@@ -53,12 +53,13 @@ public class OutsideRegistry : IAutomationRegistry
         reg.Register(_builder.CreateSimple()
             .WithName("Turn on back hall light when garage door opens")
             .WithTriggers("binary_sensor.garage_1_contact_opening")
-            .WithExecution(async (sc, ct) =>{
+            .WithExecution(async (sc, ct) => {
                 
                 if (sc.ToOnOff().TurnedOn())
                 {
                     var sun = await _services.EntityProvider.GetSun();
-                    if (sun?.State == SunState.Below_Horizon)
+                    var officeDoor = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeDoor);
+                    if (officeDoor.IsOff() || sun?.State == SunState.Below_Horizon)
                     {
                         await _services.Api.TurnOn(Lights.BackHallLight);
                     }
@@ -67,7 +68,7 @@ public class OutsideRegistry : IAutomationRegistry
             .Build());
 
         reg.Register(_builder.CreateSimple()
-            .WithName("Open Grage From switch")
+            .WithName("Open Garage From switch")
             .WithTriggers("event.back_hall_light_scene_001", "event.back_hall_light_scene_002")
             .WithExecution((sc, ct) =>{
                 var scene = sc.ToSceneControllerEvent();
@@ -116,15 +117,13 @@ public class OutsideRegistry : IAutomationRegistry
         {
             do
             {
-                await Task.WhenAll( 
-                    _services.Api.Speak("tts.piper", "media_player.kitchen", message, cancellationToken: ct),
-                    _services.Api.Speak("tts.piper", "media_player.living_room", message, cancellationToken: ct)
-                );
 
+                await _services.Api.NotifyAlexaMedia(message, ["Kitchen", "Living Room"]);
+                
                 await Task.Delay(seconds, ct); // <-- use the cancellation token
 
                 var doorState = await _services.EntityProvider.GetOnOffEntity(entityId, ct);
-                doorOpen = doorState!.IsOn();
+                doorOpen = doorState.IsOn();
             } while (doorOpen && ++alertCount < 8 && !ct.IsCancellationRequested);
 
             if (doorOpen)

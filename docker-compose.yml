@@ -1,25 +1,25 @@
 services:
-  my-home-transformer:
-    build: 
-      dockerfile: MyHome.Transformer/Dockerfile
-      context: .
-    container_name: my-home-transformer
-    restart: unless-stopped
-    # depends_on: 
-    #   - cache
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - DOTNET_ENVIRONMENT=Production
-    ports:
-      - 8081:8080
-    networks:
-      - home-network
+  # my-home-transformer:
+  #   build: 
+  #     dockerfile: MyHome.Transformer/Dockerfile
+  #     context: .
+  #   container_name: my-home-transformer
+  #   restart: unless-stopped
+  #   # depends_on: 
+  #   #   - cache
+  #   environment:
+  #     - ASPNETCORE_ENVIRONMENT=Production
+  #     - DOTNET_ENVIRONMENT=Production
+  #   ports:
+  #     - 8081:8080
+  #   networks:
+  #     - home-network
 
   my-home-automation:
     build: 
       dockerfile: MyHome/Dockerfile
       context: .
-    container_name: my-home-state
+    container_name: home-automations-prod
     restart: unless-stopped
     # depends_on: 
     #   - cache

@@ -16,11 +16,11 @@ public interface IDynamicLightAdjuster
         /// <summary>
         /// When turning on the light, what is the minimum brighness needed to activate the lights
         /// </summary>
-        public int MinBrightness { get; set; }
+        public byte MinBrightness { get; set; }
         /// <summary>
         /// The maximum brightness that lights should be set to
         /// </summary>
-        public int MaxLightBrightness { get; set; }
+        public byte MaxLightBrightness { get; set; }
         /// <summary>
         /// The amount of illumination added when lights are set to minimum 
         /// </summary>
