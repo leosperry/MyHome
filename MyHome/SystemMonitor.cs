@@ -1,7 +1,4 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
-using Confluent.Kafka;
-using HaKafkaNet;
+﻿using HaKafkaNet;
 
 namespace MyHome.Dev;
 
@@ -10,6 +7,9 @@ public class SystemMonitor : ISystemMonitor
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
     readonly ILogger<SystemMonitor> _logger;
+
+    private bool _sendBadStateEvents = true;
+
     public SystemMonitor(IHaServices services, LightAlertModule lam, ILogger<SystemMonitor> logger)
     {
         _services = services;
@@ -23,27 +23,22 @@ public class SystemMonitor : ISystemMonitor
         {
             return Task.CompletedTask;
         }
-        StringBuilder sb = new();
 
-        sb.AppendLine("bad entity states");
-        
-        if (badStates.State is null)
+        if (_sendBadStateEvents)
         {
-            sb.AppendLine($"{badStates.EntityId} could not be found");            
-        }
-        else
-        {
-            sb.AppendLine($"{badStates.EntityId} has a state of {badStates.State.State}");
-        }
+            var message = $"Bad Entity State{Environment.NewLine}{badStates.EntityId} has a state of {badStates?.State?.State ?? "null"}";
 
-        return Task.WhenAll(
-            _services.Api.PersistentNotification(sb.ToString(), default),
-            _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
+            return Task.WhenAll(
+                _services.Api.PersistentNotification(message, default),
+                _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
+        }
+        return Task.CompletedTask;
     }
 
     public async Task StateHandlerInitialized()
     {
         await _lam.Start();
+        _logger.LogInformation("State Handler Initialized");
         
         // this is jenky and will not handle all circumstances
         // var logResponse = await _services.Api.GetErrorLog();
@@ -78,10 +73,14 @@ public class SystemMonitor : ISystemMonitor
         return Task.CompletedTask;
     }
 
-    public Task HaStartUpShutDown(StartUpShutDownEvent evt, CancellationToken ct)
+    public async Task HaStartUpShutDown(StartUpShutDownEvent evt, CancellationToken ct)
     {
-        _logger.LogWarning("Home Assistant {HaEvent}", evt.Event);
-        return Task.CompletedTask;
-    }
+        _logger.LogInformation("Home Assistant {HaEvent}", evt.Event);
+        const int three_min = 3 * 60 * 1000;
 
+        await evt.ShutdownStartupActions(
+            () => _sendBadStateEvents = false, 
+            ()  => _sendBadStateEvents = true , 
+            three_min, _logger);
+    }
 }
