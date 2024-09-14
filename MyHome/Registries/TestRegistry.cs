@@ -5,16 +5,18 @@ namespace MyHome;
 public class TestRegistry : IAutomationRegistry
 {
     IAutomationFactory _factory;
+    IAutomationBuilder _builder;
     INotificationService _notifications;
     private ILogger<TestRegistry> _logger;
     private IHaServices _services;
 
-    public TestRegistry(IAutomationFactory factory, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger)
+    public TestRegistry(IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger)
     {
         _factory = factory;
+        _builder = builder;
         _notifications = notificationService;
-        this._logger = logger;
-        this._services = services;
+        _logger = logger;
+        _services = services;
     }
 
     int tracker = 0;
@@ -88,5 +90,19 @@ public class TestRegistry : IAutomationRegistry
 
             await _notifications.ClearAll();
         }));
+
+                // disabled
+        // reg.Register(_builder.CreateSimple(false)
+        //     .WithName("Person arriving home")
+        //     .WithTriggers("person.leonard", "person.rachel")
+        //     .WithExecution(async (sc, ct) =>{
+        //         var person = sc.ToPerson();
+        //         if (person.CameHome())
+        //         {
+        //             //await _notifyKitchenLivingRoom($"{person?.New?.Attributes?.FriendlyName ?? "person"} is arriving home");
+        //         }
+        //     })
+        //     .Build()
+        // );
     }
 }

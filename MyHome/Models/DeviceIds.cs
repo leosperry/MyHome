@@ -55,10 +55,11 @@ public static class Sensors
         OfficeMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion",
         OfficeTemp = "sensor.lumi_lumi_sensor_motion_aq2_device_temperature",
         KitchenZone1AllCount = "sensor.esphomekitchenmotion_zone_1_all_target_count",
+        KitchenZone2AllCount = "sensor.esphomekitchenmotion_zone_2_all_target_count",
         KitchenPresence = "binary_sensor.esphomekitchenmotion_presence",
         LivingRoomPresence = "binary_sensor.esphome_living_room_presence",
-        LivingRoomZone1AllCount = "sensor.esphome_living_room_zone_1_all_target_count",
-        LivingRoomZone2AllCount = "sensor.esphome_living_room_zone_2_all_target_count",
+        LivingRoomZone1Count = "sensor.esphome_living_room_zone_1_all_target_count",
+        LivingRoomZone2Count = "sensor.esphome_living_room_zone_2_all_target_count",
         LivingRoomZone3AllCount = "sensor.esphome_living_room_zone_3_all_target_count",
         LivingRoomAndKitchenPresenceCount = "sensor.livingroomandkitchenpresencecount";
 }

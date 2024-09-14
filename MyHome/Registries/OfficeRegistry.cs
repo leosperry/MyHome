@@ -23,21 +23,32 @@ public class OfficeRegistry : IAutomationRegistry
     {
         reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
             .WithMeta("Office Light Off","10 minutes"));
+        
+        reg.RegisterMultiple(
+            ReportOverrideStatus(),
+            OfficeFan()
+        );
+    }
 
-        reg.Register(_builder.CreateSimple()
+    IAutomation OfficeFan()
+    {
+        return _builder.CreateSimple()
             .WithName("Office Fan")
             .WithDescription("Turn on fan when it gets warm")
             .WithTriggers(Sensors.OfficeTemp)
             .WithExecution(this.OfficeFan)
             .WithAdditionalEntitiesToTrack(Devices.OfficeFan)
-            .Build());
-        
-        reg.Register(_builder.CreateSimple()
+            .Build();
+    }
+
+    IAutomation ReportOverrideStatus()
+    {
+        return _builder.CreateSimple()
             .WithName("report office overrid status")
             .WithDescription("when office override changes, report on alexa")
             .WithTriggers(Helpers.OfficeOverride)
             .WithExecution((sc, ct) => _notifyOffice($"override is {sc.New.State}"))
-            .Build());
+            .Build();
     }
 
     private async Task OfficeFan(HaEntityStateChange change, CancellationToken token)

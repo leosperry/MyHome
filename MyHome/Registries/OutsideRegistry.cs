@@ -9,18 +9,16 @@ public class OutsideRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
-    readonly ILogger _logger;
     readonly IGarageService _garage;
     private INotificationService _notificationService;
     readonly NotificationSender _notifyAboutGarage;
 
 
-    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, ILogger<OutsideRegistry> logger, IGarageService garageService, INotificationService notificationService)
+    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, IGarageService garageService, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
-        _logger = logger;
         _garage = garageService;
         _notificationService =notificationService;
 
@@ -47,10 +45,30 @@ public class OutsideRegistry : IAutomationRegistry
             WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door")
         );
-        
-        //reg.Register(_factory.DurableAutoOn(Helpers.PorchMotionEnable, TimeSpan.FromHours(1)).WithMeta("Auto enable front porch motion","1 hour"));
 
-        reg.Register(_builder.CreateSimple()
+        reg.RegisterMultiple(
+            MakeSureGarageSwitchesAreOff(),
+            OpenGarageFromSWitch(), 
+            GarageOpens_TurnOnBackHall());
+
+        reg.RegisterMultiple( 
+            GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
+            GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT));
+
+    }
+
+    IAutomation MakeSureGarageSwitchesAreOff()
+    {
+        return _factory.SimpleAutomation([GarageService.GARAGE1_DOOR_OPENER, GarageService.GARAGE2_DOOR_OPENER],
+                (sc, ct) => sc.ToOnOff().New.State == OnOff.On 
+                    ? _services.Api.TurnOff(sc.EntityId)
+                    : Task.CompletedTask).WithMeta("Garage Door switches auto-off")
+            .WithMeta("Garage door swtiches","turn them off immediately");
+    }
+
+    IAutomation GarageOpens_TurnOnBackHall()
+    {
+        return _builder.CreateSimple()
             .WithName("Turn on back hall light when garage door opens")
             .WithTriggers("binary_sensor.garage_1_contact_opening")
             .WithExecution(async (sc, ct) => {
@@ -65,9 +83,12 @@ public class OutsideRegistry : IAutomationRegistry
                     }
                 }
             })
-            .Build());
+            .Build();
+    }
 
-        reg.Register(_builder.CreateSimple()
+    IAutomation OpenGarageFromSWitch()
+    {
+        return _builder.CreateSimple()
             .WithName("Open Garage From switch")
             .WithTriggers("event.back_hall_light_scene_001", "event.back_hall_light_scene_002")
             .WithExecution((sc, ct) =>{
@@ -87,11 +108,7 @@ public class OutsideRegistry : IAutomationRegistry
                 }
                 return Task.CompletedTask;
             })
-            .Build());
-
-        reg.RegisterMultiple( 
-            GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
-            GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT));
+            .Build();
     }
 
     private IConditionalAutomation WhenDoorStaysOpen_Alert(string doorId, string doorName)
@@ -117,7 +134,6 @@ public class OutsideRegistry : IAutomationRegistry
         {
             do
             {
-
                 await _services.Api.NotifyAlexaMedia(message, ["Kitchen", "Living Room"]);
                 
                 await Task.Delay(seconds, ct); // <-- use the cancellation token

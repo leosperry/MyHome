@@ -49,13 +49,8 @@ public class BedTime : IAutomation, IAutomationMeta
             EnsureOfficeClosed(ct),
             _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._20pct ,ct),
             _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
-            _services.Api.TurnOff([
-                Lights.FrontRoomLight, Lights.LoungeCeiling, Lights.UpstairsHall, 
-                Lights.Couch2, Lights.Couch3, Lights.TvBacklight, Lights.PeacockLamp, Devices.Roku,
-                Lights.KitchenLights, Lights.DiningRoomLights,
-                Lights.OfficeLeds, Lights.OfficeLights, Devices.OfficeFan,
-                Lights.BackFlood, Lights.BackPorch, Lights.FrontPorchLight
-            ], ct)];
+            _services.Api.TurnOffByLabel("bedtimeoff"),
+            ];
         try
         {
             await Task.WhenAll(taskList);

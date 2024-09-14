@@ -22,42 +22,77 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
+        reg.RegisterMultiple(
+            Sunrise(),
+            SunDusk(),
+            Sunset()
+        );
+
+        reg.RegisterMultiple(
+            SomeoneInLivingRoom(),
+            OverrideTurnedOff_SetLights()
+        );
+
+        reg.RegisterMultiple(
+            NoOneDownstairs_for30min_PauseRoku(), 
+            RokuPaused_for15min_TurnItOff(),
+            NoOneInLivingRoom_for5min_TurnOffLights()
+        );
+    }
+
+    IAutomation OverrideTurnedOff_SetLights()
+    {
+        return _builder.CreateSimple()
+            .WithName("Living Room - Set lights when override disabled")
+            .WithDescription("When the living room override is turned off, set the lights based on power reading")
+            .WithTriggers(Helpers.LivingRoomOverride)
+            .WithExecution((sc, ct) =>{
+                var onOff = sc.ToOnOff();
+                return sc.ToOnOff().IsOff() switch
+                {
+                    true => _livingRoomService.SetLightsBasedOnPower(),
+                    _ => Task.CompletedTask
+                };
+            })
+            .Build();
+    }
+
+    ISchedulableAutomation NoOneInLivingRoom_for5min_TurnOffLights()
+    {
         var downstairsLightDelayMinutes = 5;
-        var livingAndKitchenNoPresence = _builder.CreateSchedulable()
+
+        return _builder.CreateSchedulable()
             .MakeDurable()
             .WithName($"Living Room and Kitchen not occupied for {downstairsLightDelayMinutes} minutes")
             .WithDescription("Turn Off living room lights")
-            .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount) // helper entitiy combining kitchen and living room
+            .WithTriggers(Sensors.LivingRoomPresence) // helper entitiy combining kitchen and living room
             .GetNextScheduled((sc, ct) => {
                 DateTime? time = default;
-                if (sc.ToFloatTyped().New.State == 0)
+                if (sc.ToOnOff().New.State == OnOff.Off)
                 {
                     time = DateTime.Now.AddMinutes(downstairsLightDelayMinutes);
                 }
                 return Task.FromResult(time);
             })
             .WithExecution(ct => {
+                _lam.ConfigureStandByBrightness(0);
                 return Task.WhenAll(
-                    _services.Api.TurnOff([Lights.TvBacklight, Lights.Couch1, Lights.Couch2, 
-                    Lights.DiningRoomLights, Lights.KitchenLights])
+                    _services.Api.TurnOff([
+                        Lights.TvBacklight, Lights.Couch1, Lights.Couch2, Lights.PeacockLamp
+                        // leave on Couch3 for nightlight
+                        ])
                 );
             })
             .Build();
+    }
 
-        var livingRoomBecameOccupied = _builder.CreateSimple()
-            .WithName("Living Room became occupied")
-            .WithDescription("")
-            .WithTriggers(Sensors.LivingRoomPresence)
-            .WithExecution(async (sc, ct) => {
-                await _livingRoomService.SetLightsBasedOnPower();
-            })
-            .Build();
-
-        var livingroomAllZoneExit = _builder.CreateSchedulable()
+    ISchedulableAutomation NoOneDownstairs_for30min_PauseRoku()
+    {
+        return _builder.CreateSchedulable()
             .MakeDurable()
-            .WithName("Living Room All zones empty")
-            .WithDescription("pause the roku after 30 minutes")
-            .WithTriggers(Sensors.LivingRoomPresence)
+            .WithName("Living Room All zones empty for 30 min")
+            .WithDescription("pause the roku and turn off dining room")
+            .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
             .GetNextScheduled((sc, ct) => {
                 var zoneCount = sc.ToOnOff();
                 if (zoneCount.New.IsOff())
@@ -68,19 +103,20 @@ public class LivingRoomRegistry : IAutomationRegistry
             })
             .WithExecution(async ct => {
                 var roku = await _services.EntityProvider.GetEntity(MediaPlayers.Roku,ct);
-                if (roku.Bad())
-                {
-                    await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "roku offline again");
-                }
-                else if(roku!.State == "playing")
+
+                if(roku!.State == "playing")
                 {
                     await _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString());
-                }                
+                }
+                await _services.Api.TurnOff(Lights.DiningRoomLights); 
             })
             .Build();
-
+    }
+    
+    ISchedulableAutomation RokuPaused_for15min_TurnItOff()
+    {
         var statesToLeaveAlone = new HashSet<string>(["playing","standby","idle"]);
-        var rokuPaused = _builder.CreateSchedulable()
+        return _builder.CreateSchedulable()
             .MakeDurable()
             .WithName("Roku Paused")
             .WithTriggers(MediaPlayers.Roku)
@@ -96,38 +132,21 @@ public class LivingRoomRegistry : IAutomationRegistry
                 return _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.power.ToString());
             })
             .Build();
+    }
 
-
-        var livingRoomZone1Exit =_builder.CreateSchedulable()
-            .MakeDurable()
-            .WithName("Living Room all zone count 0")
-            .WithDescription("Set Monkey standby to 0 when unoccupied for 20 minutes")
-            .WithTriggers(Sensors.LivingRoomZone1AllCount)
-            .WithAdditionalEntitiesToTrack(Devices.Roku)
-            .MakeDurable()
-            .GetNextScheduled((sc, ct) => {
-                var zoneCount = sc.ToIntTyped();
-                if (zoneCount.New.State == 0)
-                {
-                    return Task.FromResult<DateTime?>(DateTime.Now.AddMinutes(20));
-                }
-                return Task.FromResult<DateTime?>(null);
-            })
-            .WithExecution(cd => {
-                //await _services.Api.TurnOff(Devices.Roku);
-                _lam.ConfigureStandByBrightness(0);
-                return Task.CompletedTask;
-            })
-            .Build();
-        
-        var livingRoomZone1Enter = _builder.CreateSimple()
+    IAutomation SomeoneInLivingRoom()
+    {
+        return _builder.CreateSimple()
             .WithName("Living Room Zone 1")
             .WithDescription("sets the Monkey light standby brightness")
-            .WithTriggers(Sensors.LivingRoomZone1AllCount)
+            .WithTriggers(Sensors.LivingRoomZone1Count)
             .WithExecution(async (sc, ct) => {
-                var zone = sc.ToIntTyped();
+                var zone = sc.ToFloatTyped();
                 if (zone.BecameGreaterThan(0))
                 {
+                    await _livingRoomService.SetLightsBasedOnPower();
+
+                    // this code is to set the monkeylight
                     var sun = await _services.EntityProvider.GetSun();
                     // figure out what it should be 
                     // at sunrise   9%
@@ -150,40 +169,38 @@ public class LivingRoomRegistry : IAutomationRegistry
                 }
             })
             .Build();
+    }
 
-        reg.RegisterMultiple(
-            _factory.SunRiseAutomation(this.Sunrise).WithMeta("Sunrise", "turn off couch 1"),
-            _factory.SunRiseAutomation(
-                async ct => {                    
-                    var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1AllCount);
-                    if (zone1!.State > 0)
-                    {
-                        _lam.ConfigureStandByBrightness(Bytes.PercentToByte(9));
-                    }
-                }, 
-                TimeSpan.FromHours(1))
-                .WithMeta("re-enable living room lights","1 hour after sunrise, monkey standby brighter")
-        );
+    ISchedulableAutomation Sunrise()
+    {
+        return _factory.SunRiseAutomation(async ct => { 
+            // turn off night light.
+            await _services.Api.TurnOff([Lights.Couch1], ct);
+            _lam.ConfigureStandByBrightness(Bytes.PercentToByte(9));
+            })
+        .WithMeta("Sunrise", "turn off couch 1");
+    }
 
-        reg.Register(_factory.SunSetAutomation(async ct => {
-            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1AllCount);
+    ISchedulableAutomation Sunset()
+    {
+        return _factory.SunSetAutomation(async ct => {
+            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1Count);
             if (zone1!.State > 0)
             {
                 _lam.ConfigureStandByBrightness(Bytes.PercentToByte(6));
             }
-        }).WithMeta("Sunset", "dim monkey standby"));
+        }).WithMeta("Sunset", "dim monkey standby");
+    }
 
-        reg.Register(_factory.SunDuskAutomation(async ct => {
-            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1AllCount);
+    ISchedulableAutomation SunDusk()
+    {
+        return _factory.SunDuskAutomation(async ct => {
+            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1Count);
             if (zone1!.State > 0)
             {
                 _lam.ConfigureStandByBrightness(Bytes.PercentToByte(3));
             }            
-        }).WithMeta("Dusk", "dim monkey standby"));
-
-        reg.RegisterMultiple(livingRoomZone1Enter, livingRoomBecameOccupied);
-        reg.RegisterMultiple(livingRoomZone1Exit, livingroomAllZoneExit, rokuPaused, livingAndKitchenNoPresence);        
+        }).WithMeta("Dusk", "dim monkey standby");
     }
 
-    Task Sunrise(CancellationToken ct) => _services.Api.TurnOff([Lights.Couch1], ct);
 }

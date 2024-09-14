@@ -37,7 +37,7 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
             ColorName = "aquamarine",
             Brightness = Bytes._30pct
         });
-        var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.Kitchen]);
+        var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom]);
         _regularAlert = _notifications.CreateNotificationSender([audioChannel], [monkeyChannel]);
 
         _soapAlert = _notifications.CreateInformationalSender();
@@ -71,7 +71,6 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
             WasherSoap => SoapLevelUpdate(stateChange, ct),
             _ => Task.CompletedTask
         };
-        
     }
 
     Task DoorAction(HaEntityStateChange stateChange, CancellationToken ct)

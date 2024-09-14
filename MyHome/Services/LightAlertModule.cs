@@ -22,10 +22,12 @@ public class LightAlertModule : IDisposable
     ConcurrentQueue<(string, LightTurnOnModel)> _newItems = new();
     ConcurrentDictionary<string, object?> _itemsToRemove = new();
 
+    static readonly string[] ALERT_LIGHTS = [Lights.Monkey, Lights.OfficeLeds];
+
     static readonly RgbTuple _standbyRgb = (255, 215, 2);
     static LightTurnOnModel _standby = new()
     {
-        EntityId = [Lights.Monkey],
+        EntityId = ALERT_LIGHTS,
         //ColorName = "gold",
         Brightness = Bytes._10pct,
         RgbColor = _standbyRgb
@@ -154,7 +156,7 @@ public class LightAlertModule : IDisposable
             else if (_current is null || itemToSet != _current)
             {
                 var settings = itemToSet.Value.Item2;
-                settings.EntityId = [Lights.Monkey];
+                settings.EntityId = ALERT_LIGHTS;
                 settings.Transition = 2;
 
                 await _api.LightTurnOn(itemToSet.Value.Item2);

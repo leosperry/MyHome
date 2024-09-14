@@ -27,15 +27,15 @@ public class LivingRoomService : ILivingRoomService
     {
         Task<SunModel?> sunTask;
         Task<HaEntityState<OnOff, JsonElement>?> overrideTask;
-        Task<HaEntityState<int?, JsonElement>?> livingKitchenPresenceCount;
+        Task<HaEntityState<float?, JsonElement>?> livingKitchenPresenceCount;
 
         await Task.WhenAll(
             sunTask = _entityProvider.GetSun(),
             overrideTask = _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride),
-            livingKitchenPresenceCount = _entityProvider.GetIntegerEntity(Sensors.LivingRoomAndKitchenPresenceCount));
+            livingKitchenPresenceCount = _entityProvider.GetFloatEntity(Sensors.LivingRoomAndKitchenPresenceCount));
 
         // only run when the sun is up and the override is off
-        if (sunTask.Result?.Attributes?.Azimuth > -6 && overrideTask.Result?.State == OnOff.Off && livingKitchenPresenceCount.Result?.State > 0)
+        if (overrideTask.Result?.State == OnOff.Off && livingKitchenPresenceCount.Result?.State > 0)
         {
             if (currentPower is null)
             {
