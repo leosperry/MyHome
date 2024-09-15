@@ -7,9 +7,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "HaKafkaNet", "HaKafkaNet", 
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet", "ha-kafka-net\src\HaKafkaNet\HaKafkaNet.csproj", "{84CC3258-BEE7-493C-B88E-79C0381AAAD6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyHome", "MyHome\MyHome.csproj", "{A2EFEF0F-A55F-4B65-B2A7-2BDDBF7012DE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyHome.Transformer", "MyHome.Transformer\MyHome.Transformer.csproj", "{1AEA5598-9AC5-43EE-82B4-EAAF628E7448}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyHome", "MyHome\MyHome.csproj", "{A2EFEF0F-A55F-4B65-B2A7-2BDDBF7012DE}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.ExampleApp", "ha-kafka-net\example\HaKafkaNet.ExampleApp\HaKafkaNet.ExampleApp.csproj", "{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}"
 EndProject
@@ -17,11 +15,13 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.ExampleApp.Tests
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.Tests", "ha-kafka-net\src\HaKafkaNet.Tests\HaKafkaNet.Tests.csproj", "{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyHome.Dev", "MyHome.Dev\MyHome.Dev.csproj", "{598C131E-EF78-4CCF-92EE-1433AF6F6595}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyHome.Dev", "MyHome.Dev\MyHome.Dev.csproj", "{598C131E-EF78-4CCF-92EE-1433AF6F6595}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.TestHarness", "ha-kafka-net\src\HaKafkaNet.TestHarness\HaKafkaNet.TestHarness.csproj", "{60F562CB-5251-44F1-8D8B-78889D737DAA}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyHome.Tests", "MyHome.Tests\MyHome.Tests.csproj", "{A9470AB3-7E9D-46D8-90A9-0DD5AB6E6F6D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyHome.Tests", "MyHome.Tests\MyHome.Tests.csproj", "{A9470AB3-7E9D-46D8-90A9-0DD5AB6E6F6D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Alexa", "Alexa", "{4E9C71B2-6D48-4085-9ED5-C1CF6EA0BDBB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -37,10 +37,6 @@ Global
 		{A2EFEF0F-A55F-4B65-B2A7-2BDDBF7012DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2EFEF0F-A55F-4B65-B2A7-2BDDBF7012DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2EFEF0F-A55F-4B65-B2A7-2BDDBF7012DE}.Release|Any CPU.Build.0 = Release|Any CPU
-		{1AEA5598-9AC5-43EE-82B4-EAAF628E7448}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{1AEA5598-9AC5-43EE-82B4-EAAF628E7448}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{1AEA5598-9AC5-43EE-82B4-EAAF628E7448}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{1AEA5598-9AC5-43EE-82B4-EAAF628E7448}.Release|Any CPU.Build.0 = Release|Any CPU
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{94F6AC1C-2861-40F9-A9E5-53A1F1DE5B22}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -75,5 +71,8 @@ Global
 		{76DAE567-5F3F-44F5-A541-547CBA92B6C7} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
 		{06E0ADB8-A469-4D5F-A972-52BA1FB1FBEF} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
 		{60F562CB-5251-44F1-8D8B-78889D737DAA} = {2B3B611F-1C53-44E3-A502-D76EAACE90B5}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {ED5C8C19-91FC-46E6-A1D5-1058327C7FC4}
 	EndGlobalSection
 EndGlobal
