@@ -37,7 +37,7 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
             ColorName = "aquamarine",
             Brightness = Bytes._30pct
         });
-        var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom]);
+        var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.DiningRoom]);
         _regularAlert = _notifications.CreateNotificationSender([audioChannel], [monkeyChannel]);
 
         _soapAlert = _notifications.CreateInformationalSender();

@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.Models;
 
 namespace MyHome;
 
@@ -23,6 +24,25 @@ public class TestRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
+        var test_button = "input_button.test_button";
+        var testSonos = _builder.CreateSimple()
+            .WithTriggers(test_button)
+            .WithExecution(async (sc, ct) => {
+                try
+                {
+                    var playerState = await _services.EntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+                }
+                catch (System.Exception)
+                {
+                    
+                    throw;
+                }
+                
+            })
+            .Build();
+        
+        reg.Register(testSonos);
+
         //TestLAM(reg);
         // reg.Register(_factory.SimpleAutomation(["input_button.test_button"], (sc, ct) =>
         // {

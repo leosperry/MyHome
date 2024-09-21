@@ -9,15 +9,17 @@ public class LivingRoomRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
     readonly ILivingRoomService _livingRoomService;
+    readonly ILogger<LivingRoomRegistry> _logger;
     static readonly TimeSpan four_hours = TimeSpan.FromHours(4);
 
-    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, ILivingRoomService livingRoomService)
+    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, ILivingRoomService livingRoomService, ILogger<LivingRoomRegistry> logger)
     {
         _factory = factory;
         _builder = builder;
         _services = services;
         _lam = lam;
         _livingRoomService = livingRoomService;
+        _logger = logger;
     }
 
     public void Register(IRegistrar reg)
@@ -38,6 +40,12 @@ public class LivingRoomRegistry : IAutomationRegistry
             RokuPaused_for15min_TurnItOff(),
             NoOneInLivingRoom_for5min_TurnOffLights()
         );
+    }
+
+    Task RokuCommand(RokuCommands command)
+    {
+        _logger.LogWarning("{command} Remote command sent to roku", command);
+        return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
     }
 
     IAutomation OverrideTurnedOff_SetLights()
@@ -102,11 +110,11 @@ public class LivingRoomRegistry : IAutomationRegistry
                 return Task.FromResult<DateTime?>(null);
             })
             .WithExecution(async ct => {
-                var roku = await _services.EntityProvider.GetEntity(MediaPlayers.Roku,ct);
+                var roku = await _services.EntityProvider.GetEntity(MediaPlayers.Roku, ct);
 
                 if(roku!.State == "playing")
                 {
-                    await _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString());
+                    await RokuCommand(RokuCommands.play);
                 }
                 await _services.Api.TurnOff(Lights.DiningRoomLights); 
             })
@@ -129,7 +137,7 @@ public class LivingRoomRegistry : IAutomationRegistry
                 return Task.FromResult<DateTime?>(null);
             })
             .WithExecution(ct => {
-                return _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.power.ToString());
+                return RokuCommand(RokuCommands.power);
             })
             .Build();
     }

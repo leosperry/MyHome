@@ -18,7 +18,7 @@ public class AudibleNotificationChannel : INotificationChannel
 
     public Task Send(NotificationId id, string message, string? title = null)
     {
-        return _api.NotifyAlexaMedia(message, _targets);
+        return _api.SpeakPiper(_targets, message);
         //return _api.SpeakPiper(_targets, message, true, _voiceSettings);
     }
 }

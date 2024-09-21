@@ -21,8 +21,6 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HaKafkaNet.TestHarness", "h
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyHome.Tests", "MyHome.Tests\MyHome.Tests.csproj", "{A9470AB3-7E9D-46D8-90A9-0DD5AB6E6F6D}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Alexa", "Alexa", "{4E9C71B2-6D48-4085-9ED5-C1CF6EA0BDBB}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

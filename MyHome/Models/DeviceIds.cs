@@ -40,8 +40,6 @@ public static class Devices
         Roku = "remote.roku_ultra",
         OfficeFan = "switch.office_fan_switch",
         SolarPower = "sensor.solaredge_current_power";
-
-
 }
 
 public static class Sensors
@@ -82,27 +80,31 @@ public static class MediaPlayers
 {
     public const string
         Roku = "media_player.roku_ultra",
-        Asher = "media_player.asher",
-        Kitchen = "media_player.kitchen",
-        LivingRoom = "media_player.living_room",
+        Asher = "media_player.asher_room_speaker",
+        //Kitchen = "media_player.kitchen",
+        //LivingRoom = "media_player.living_room",
         Lyra = "media_player.lyra",
-        MainBedroom = "media_player.main_bedroom",
-        Office = "media_player.office";
-        
+        MainBedroom = "media_player.main_bedroom_speaker",
+        //Office = "media_player.office",
+        DiningRoom = "media_player.dining_room_speaker";
+    
+    public const float
+        DiningRoomActiveVolume = 0.35f,
+        DiningRoomInActiveVolume = 0.25f;
 
 }
 
-public static class Alexa
-{
-    public const string 
-        Office = "Office",
-        LivingRoom = "Living Room",
-        Kitchen = "Kitchen",
-        Asher = "Asher",
-        Logan = "Logan",
-        Lyra = "Lyra",
-        MainBedroom = "Main Bedroom";
-}
+// public static class Alexa
+// {
+//     public const string 
+//         Office = "Office",
+//         LivingRoom = "Living Room",
+//         Kitchen = "Kitchen",
+//         Asher = "Asher",
+//         Logan = "Logan",
+//         Lyra = "Lyra",
+//         MainBedroom = "Main Bedroom";
+// }
 
 public static class Helpers
 {
@@ -111,5 +113,7 @@ public static class Helpers
         LivingRoomOverride = "input_boolean.living_room_override",
         OfficeOverride = "input_boolean.office_override",
         //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
-        RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper";
+        RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper",
+        HouseActiveTimesOfDay = "binary_sensor.house_active_times_of_day";
+
 }

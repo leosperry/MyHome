@@ -134,7 +134,9 @@ public class OutsideRegistry : IAutomationRegistry
         {
             do
             {
-                await _services.Api.NotifyAlexaMedia(message, ["Kitchen", "Living Room"]);
+                await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, message);
+
+                //await _services.Api.NotifyAlexaMedia(message, ["Kitchen", "Living Room"]);
                 
                 await Task.Delay(seconds, ct); // <-- use the cancellation token
 

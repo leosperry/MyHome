@@ -22,7 +22,7 @@ public class BedTime : IAutomation, IAutomationMeta
         this._garageService = garageService;
         this._logger = logger;
 
-        var voiceChannel = notification.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom, MediaPlayers.Office]);
+        var voiceChannel = notification.CreateAudibleChannel([MediaPlayers.DiningRoom]);
         this._notify = notification.CreateNotificationSender([voiceChannel]);
     }
 

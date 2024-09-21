@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Text.Json;
 using HaKafkaNet;
+using MyHome.Models;
 
 namespace MyHome;
 
@@ -8,13 +9,12 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
     readonly INotificationService _notificationService;
-    readonly NotificationSender _notifyAsher;
-    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService)
+    readonly ILogger _logger;
+    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService, ILogger<DiningRoomButtons> logger)
     {
         _services = servcies;
         _notificationService = notificationService;
-        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Asher]);
-        _notifyAsher = notificationService.CreateNotificationSender([channel]);
+        _logger = logger;
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -26,7 +26,11 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         
         var sceneState = stateChange.ToSceneControllerEvent();
 
-        if(!sceneState.New.StateAndLastUpdatedWithin1Second()) return Task.CompletedTask;
+        if(!sceneState.New.StateAndLastUpdatedWithin1Second())
+        {
+            _logger.LogWarning("Exiting. Not within 1 second");
+            return Task.CompletedTask;
+        }
         
         var btn = stateChange.EntityId.Last();
         var press = sceneState?.New.Attributes?.GetKeyPress();
@@ -34,16 +38,21 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         {
             {btn: '1', press: KeyPress.KeyPressed} => _services.Api.Toggle(Helpers.LivingRoomOverride, ct),
             {btn: '3', press: KeyPress.KeyPressed} => _notificationService.ClearAll(),
-            {btn: '4', press: KeyPress.KeyPressed} => AsherButton(ct),
+            {btn: '4', press: KeyPress.KeyPressed} => AsherButton(0.15f, ct),
+            {btn: '4', press: KeyPress.KeyPressed2x} => AsherButton(0.20f, ct),
+            {btn: '4', press: KeyPress.KeyPressed3x} => AsherButton(0.25f, ct),
+            {btn: '4', press: KeyPress.KeyPressed4x} => AsherButton(0.30f, ct),
+            {btn: '4', press: KeyPress.KeyPressed5x} => AsherButton(0.35f, ct),
             _ => Task.CompletedTask
         };
     }
 
     AutomationMetaData _meta = new()
     {
-        Name = nameof(DiningRoomButtons),
-        Description = "Front Door, Living Room Override, Asher button",
+        Name = "Dining Room Buttons",
+        Description = "Living Room Override, Clear notifications, Asher button",
     };
+
     public AutomationMetaData GetMetaData() => _meta;
 
     public IEnumerable<string> TriggerEntityIds()
@@ -56,8 +65,12 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         //yield return "event.dining_room_scene_005";
     }
 
-    async Task AsherButton(CancellationToken ct)
+    async Task AsherButton(float targetVolume ,CancellationToken ct)
     {
+        if (!shouldPlay())
+        {
+            return;
+        }
         /* 
         Step 1
             Play random
@@ -67,7 +80,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
             toggle lights
         Step 3
             set lights to 40%*/
-        PlayRandom(ct);
+        _ = PlayRandom(targetVolume, ct);
         await Task.WhenAll(
             _services.Api.TurnOn(Lights.Basement1, ct),
             _services.Api.TurnOff(Lights.Basement2, ct)
@@ -84,19 +97,62 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
     }
 
-    void PlayRandom(CancellationToken ct)
-    {
-        string[] messages = [ 
+    static readonly string[] _messages = [ 
             "My lord. Your presence is requested in the main chamber",
             "Prince Asher, the king and queen have summoned you",
             "Hey you. Yes, you. Please come upstairs",
             "The parental units have requested of the carbon based lifeform known as Asher to vacate his domicile and return upstairs",
             "The crown has requested a status report from the dungeons forthwith",
             "Your assignment is as follows, collect dishes and return to base. This message will self destruct",
-            "Brave knight. You have been given a valiant quest to return to the overworld" ];
-        Random r = new();
-        
-        _notifyAsher(messages[r.Next(0, messages.Length)]);
+            "Brave knight. You have been given a valiant quest to return to the overworld",
+            "Random message to see if you're paying attention" ];
+    
+    static readonly PiperSettings[] _voices = [Voices.Buttler, Voices.Female, Voices.Mundane];
+    static readonly Random _random = new();
+    async Task PlayRandom(float targetVolume, CancellationToken ct)
+    {
+        // get a message
+        var message = _messages[_random.Next(0, _messages.Length)];
+        var voice = _voices[_random.Next(0, _voices.Length)];
+
+        // get the volume
+        var playerState = await _services.EntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+
+        if (!playerState.Bad())
+        {
+            float? previousVolume = playerState.Attributes?.VolumeLevel;
+            if (previousVolume < targetVolume)
+            {
+                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, targetVolume);
+            }
+
+            await _services.Api.SpeakPiper(MediaPlayers.Asher, message, false, voice);
+
+            if (previousVolume is not null && previousVolume != targetVolume)
+            {
+                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, previousVolume.Value);
+            }
+        }
+        else
+        {
+            _logger.LogWarning("Asher speaker state is {AsherState}", playerState?.State.ToString() ?? "null" );
+            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "Something is wrong with Asher's speaker");
+        }
+    }
+
+    static DateTime _lastPressed = DateTime.Now;
+    static object _presslock = new {};
+    static readonly TimeSpan _lockDelay = TimeSpan.FromSeconds(4);
+    private bool shouldPlay()
+    {
+        var now = DateTime.Now;
+        lock (_presslock)
+        {
+            var diff = now - _lastPressed;
+            _lastPressed = now;
+
+            return diff > _lockDelay;
+        }
     }
 
     Task SetHelperState(HaEntityState<OnOff, JsonElement>? helperState, CancellationToken ct)

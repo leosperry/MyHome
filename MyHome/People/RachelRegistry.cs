@@ -17,7 +17,7 @@ public class RachelRegistry : IAutomationRegistry
         _services = services;
         _notificationService = notificationService;
 
-        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom]);
+        var channel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom]);
         _notifyKitchenLivingRoom = notificationService.CreateNotificationSender([channel]);
 
         _notifyPressure = _notificationService.CreateNoTextNotificationSender([_notificationService.CreateMonkeyChannel(new()

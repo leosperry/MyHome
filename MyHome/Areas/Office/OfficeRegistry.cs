@@ -7,7 +7,7 @@ public class OfficeRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
-    readonly NotificationSender _notifyOffice;
+    //readonly NotificationSender _notifyOffice;
 
     public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
     {
@@ -15,8 +15,8 @@ public class OfficeRegistry : IAutomationRegistry
         _factory = factory;
         _builder = builder;
 
-        var channel = notificationService.CreateAudibleChannel([MediaPlayers.Office], Voices.Mundane);
-        _notifyOffice = notificationService.CreateNotificationSender([channel]);
+        //var channel = notificationService.CreateAudibleChannel([MediaPlayers.Office], Voices.Mundane);
+        //_notifyOffice = notificationService.CreateNotificationSender([channel]);
     }
     
     public void Register(IRegistrar reg)
@@ -45,9 +45,23 @@ public class OfficeRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple()
             .WithName("report office overrid status")
-            .WithDescription("when office override changes, report on alexa")
+            .WithDescription("when office override changes, report on Office LED")
             .WithTriggers(Helpers.OfficeOverride)
-            .WithExecution((sc, ct) => _notifyOffice($"override is {sc.New.State}"))
+            .WithExecution((sc, ct) => {
+                return sc.New.State switch{
+                    "on" => _services.Api.LightTurnOn(new LightTurnOnModel{
+                        EntityId = [Lights.OfficeLeds],
+                        Brightness = Bytes._10pct,
+                        ColorName = "red"
+                    }),
+                    "off" => _services.Api.LightTurnOn(new LightTurnOnModel{
+                        EntityId = [Lights.OfficeLeds],
+                        Brightness = Bytes._10pct,
+                        ColorName = "blue"
+                    }),
+                    _ => Task.CompletedTask
+                };
+            })
             .Build();
     }
 

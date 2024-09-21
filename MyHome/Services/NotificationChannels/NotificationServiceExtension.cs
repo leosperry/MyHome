@@ -13,7 +13,7 @@ public static class NotificationServiceExtension
 
     private static NotificationSender MakeCritical(INotificationService service)
     {
-        var audible = service.CreateAudibleChannel([MediaPlayers.Kitchen, MediaPlayers.LivingRoom, MediaPlayers.Office, MediaPlayers.MainBedroom]);
+        var audible = service.CreateAudibleChannel([MediaPlayers.DiningRoom, MediaPlayers.MainBedroom]);
         var phones = service.CreateGroupOrDeviceChannel(Phones.LeonardPhone, Phones.RachelPhone);
         var monkey = service.CreateMonkeyChannel(new()
         {

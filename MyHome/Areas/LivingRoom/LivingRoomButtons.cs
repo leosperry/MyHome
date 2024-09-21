@@ -8,6 +8,7 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
     readonly INotificationService _notificationService;
+    readonly ILogger _logger;
     
     LightTurnOnModel _tvBacklightPresets = new LightTurnOnModel()
     {
@@ -23,10 +24,11 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         RgbColor = (255, 146, 39)
     };
 
-    public LivingRoomButtons(IHaServices services, INotificationService notificationService)
+    public LivingRoomButtons(IHaServices services, INotificationService notificationService, ILogger<LivingRoomButtons> logger)
     {
         _services = services;
         _notificationService = notificationService;
+        _logger = logger;
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -46,13 +48,19 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
             {button: '2', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Lights.CounchOverhead, ct),
             {button: '2', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Lights.CounchOverhead, ct),
             {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Lights.KitchenLights, Lights.DiningRoomLights, Lights.FrontRoomLight, Lights.BackHallLight],ct),
-            {button: '4', keypress: KeyPress.KeyPressed2x}  => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString()),
-            {button: '4', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.play.ToString()),
+            {button: '4', keypress: KeyPress.KeyPressed2x}  => RokuCommand(RokuCommands.find_remote),
+            {button: '4', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.play),
             {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
             {button: '6', keypress: KeyPress.KeyPressed}    => ClearAllNotifications(),
-            {button: '8', keypress: KeyPress.KeyPressed}    => _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.select.ToString()),
+            {button: '8', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.select),
             _ => Task.CompletedTask //unassigned 
         };    
+    }
+
+    Task RokuCommand(RokuCommands command)
+    {
+        _logger.LogWarning("{command} Remote command sent to roku", command);
+        return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
     }
 
     Task ClearAllNotifications()
