@@ -31,6 +31,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         );
 
         reg.RegisterMultiple(
+            SolarPowerChange(),
             SomeoneInLivingRoom(),
             OverrideTurnedOff_SetLights()
         );
@@ -40,6 +41,16 @@ public class LivingRoomRegistry : IAutomationRegistry
             RokuPaused_for15min_TurnItOff(),
             NoOneInLivingRoom_for5min_TurnOffLights()
         );
+    }
+
+    private IAutomation SolarPowerChange()
+    {
+        return _builder.CreateSimple()
+            .WithTriggers("sensor.solaredge_current_power")
+            .WithName("Living Room lights")
+            .WithDescription("Set living room lights based on solar power")
+            .WithExecution((sc, ct) => _livingRoomService.SetLights(null, null, sc.ToFloatTyped().New.State, ct))
+            .Build();
     }
 
     Task RokuCommand(RokuCommands command)
@@ -54,14 +65,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithName("Living Room - Set lights when override disabled")
             .WithDescription("When the living room override is turned off, set the lights based on power reading")
             .WithTriggers(Helpers.LivingRoomOverride)
-            .WithExecution((sc, ct) =>{
-                var onOff = sc.ToOnOff();
-                return sc.ToOnOff().IsOff() switch
-                {
-                    true => _livingRoomService.SetLightsBasedOnPower(),
-                    _ => Task.CompletedTask
-                };
-            })
+            .WithExecution((sc, ct) => _livingRoomService.SetLights(overrideOn: sc.ToOnOff().IsOn(), ct: ct))
             .Build();
     }
 
@@ -145,15 +149,17 @@ public class LivingRoomRegistry : IAutomationRegistry
     IAutomation SomeoneInLivingRoom()
     {
         return _builder.CreateSimple()
-            .WithName("Living Room Zone 1")
+            .WithName("Enter Living Room Zone 1")
             .WithDescription("sets the Monkey light standby brightness")
             .WithTriggers(Sensors.LivingRoomZone1Count)
             .WithExecution(async (sc, ct) => {
                 var zone = sc.ToFloatTyped();
-                if (zone.BecameGreaterThan(0))
-                {
-                    await _livingRoomService.SetLightsBasedOnPower();
 
+                bool occupied = zone.BecameGreaterThan(0); 
+
+                if (occupied)
+                {
+                    await _livingRoomService.SetLights(occupied: true, ct: ct);
                     // this code is to set the monkeylight
                     var sun = await _services.EntityProvider.GetSun();
                     // figure out what it should be 

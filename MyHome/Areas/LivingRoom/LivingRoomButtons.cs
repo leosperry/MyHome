@@ -1,6 +1,5 @@
 ﻿
 using HaKafkaNet;
-using Microsoft.AspNetCore.Mvc;
 
 namespace MyHome;
 

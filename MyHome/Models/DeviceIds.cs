@@ -28,6 +28,7 @@ public static class Lights
         Monkey = "light.monkey_light",
         OfficeLights = "light.office_lights",
         OfficeLeds = "light.office_led_light",
+        OfficeLightBars = "light.office_light_bars",
         PeacockLamp = "switch.peacock_lamp",
         TvBacklight = "light.tv_backlight",
         UpstairsHall = "light.upstairs_hall";
@@ -71,7 +72,7 @@ public static class NotificationGroups
 public static class Phones
 {
     public const string        
-        LeonardPhone = "mobile_app_leonardphone",
+        LeonardPhone = "mobile_app_leonard_phone",
         RachelPhone = "mobile_app_rachel_phone";
 
 }
@@ -111,6 +112,7 @@ public static class Helpers
     public const string
         BedTime = "input_boolean.bedtime_switch",
         LivingRoomOverride = "input_boolean.living_room_override",
+        MaintenanceMode = "input_boolean.maintenance_mode",
         OfficeOverride = "input_boolean.office_override",
         //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
         RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper",

@@ -146,7 +146,7 @@ public class OutsideRegistry : IAutomationRegistry
 
             if (doorOpen)
             {
-                await _services.Api.NotifyGroupOrDevice("critical_notification_group", $"{friendlyName} has remained open for more than a minute", ct);
+                await _services.Api.NotifyGroupOrDevice("critical_notification_group", $"{friendlyName} has remained open for more than a minute", "Door Open", ct);
             }
         }
         catch (TaskCanceledException)

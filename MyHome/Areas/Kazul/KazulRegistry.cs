@@ -1,22 +1,23 @@
 ﻿using System.Collections;
 using HaKafkaNet;
+using MyHome.Services;
 
 namespace MyHome;
 
 public class KazulRegistry : IAutomationRegistry
 {
+    private readonly HelpersService _helpersService;
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
-
-    const EventTiming EVENT_TIMINGS = EventTiming.PostStartup | EventTiming.PreStartupSameAsLastCached | EventTiming.PreStartupPostLastCached | EventTiming.PreStartupNotCached;
 
     string[] KAZUL_UVB = ["switch.kazul_power_strip_3", "switch.kazul_power_strip_4"];
 
     NotificationSender _notifyCritical;
 
-    public KazulRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
+    public KazulRegistry(HelpersService helpersService, IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
     {
+        _helpersService = helpersService;
         _services = services;
         _factory = factory;
         _builder = builder;
@@ -71,6 +72,8 @@ public class KazulRegistry : IAutomationRegistry
             .WithTriggers(KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH)
             .TriggerOnBadState()
             .WithExecution(async (sc, ct) =>{
+                if(await _helpersService.MaintenanceModeIsOn()) return;
+
                 if(sc.New.Bad())
                 {
                     await _notifyCritical("Kazul power strip in bad state");

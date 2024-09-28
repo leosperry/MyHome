@@ -11,6 +11,8 @@ public class TestRegistry : IAutomationRegistry
     private ILogger<TestRegistry> _logger;
     private IHaServices _services;
 
+    const string TEST_BUTTON = "input_button.test_button";
+
     public TestRegistry(IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger)
     {
         _factory = factory;
@@ -24,33 +26,34 @@ public class TestRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        var test_button = "input_button.test_button";
-        var testSonos = _builder.CreateSimple()
-            .WithTriggers(test_button)
+        reg.RegisterMultiple(
+            TestButton()
+        );
+    }
+
+    public IAutomation TestButton()
+    {
+        return  _builder.CreateSimple()
+            .WithTriggers(TEST_BUTTON)
+            .WithName("Test Button")
             .WithExecution(async (sc, ct) => {
                 try
                 {
-                    var playerState = await _services.EntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+                    await TestButtonAction();
+                    _logger.LogWarning("test automation success");
                 }
-                catch (System.Exception)
+                catch (System.Exception ex)
                 {
-                    
+                    _logger.LogError(ex, "Failure in test automation");
                     throw;
                 }
-                
             })
             .Build();
-        
-        reg.Register(testSonos);
+    }
 
-        //TestLAM(reg);
-        // reg.Register(_factory.SimpleAutomation(["input_button.test_button"], (sc, ct) =>
-        // {
-        //     _services.Api.Toggle(Lights.OfficeLeds);
-        //     System.Console.WriteLine("test button pushed");
-        //     _logger.LogWarning("test button pushed");
-        //     return Task.CompletedTask;
-        // }).WithMeta("test", "test logging"));
+    private async Task TestButtonAction()
+    {
+        await _services.Api.CallService("notify", "nope", new{entity_id = "nope"});
     }
 
     private void TestLAM(IRegistrar reg)

@@ -5,7 +5,7 @@ namespace MyHome;
 
 public interface ILivingRoomService
 {
-    Task SetLightsBasedOnPower(float? currentPower = null, CancellationToken ct = default);
+    Task SetLights(bool? occupied = null, bool? overrideOn = null, float? currentPower = null, CancellationToken ct = default);
 }
 
 public class LivingRoomService : ILivingRoomService
@@ -23,60 +23,75 @@ public class LivingRoomService : ILivingRoomService
         _logger = logger;
     }
 
-    public async Task SetLightsBasedOnPower(float? currentPower = null, CancellationToken ct = default)
+    public async Task SetLights(bool? occupied = null, bool? overrideOn = null, float? currentPower = null, CancellationToken ct = default)
     {
-        Task<SunModel?> sunTask;
-        Task<HaEntityState<OnOff, JsonElement>?> overrideTask;
-        Task<HaEntityState<float?, JsonElement>?> livingKitchenPresenceCount;
+        // if override is on , do nothing
+        if ((overrideOn is null && (await _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride)).IsOn()) || overrideOn == true)
+        {
+            return;
+        }
 
-        await Task.WhenAll(
-            sunTask = _entityProvider.GetSun(),
-            overrideTask = _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride),
-            livingKitchenPresenceCount = _entityProvider.GetFloatEntity(Sensors.LivingRoomAndKitchenPresenceCount));
-
-        // only run when the sun is up and the override is off
-        if (overrideTask.Result?.State == OnOff.Off && livingKitchenPresenceCount.Result?.State > 0)
+        // if occupied set lights
+        // otherwise turn off
+        if (occupied is null)
+        {
+            occupied = (await _entityProvider.GetOnOffEntity(Sensors.LivingRoomPresence)).IsOn();
+        }
+        
+        if (occupied == false)
+        {
+            // turn off
+            await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
+            return;
+        }
+        else
         {
             if (currentPower is null)
             {
                 currentPower = (await _entityProvider.GetFloatEntity(Devices.SolarPower))?.State;
             }
-            if (currentPower is null)
+            if (currentPower is null) // if it's still null we have an issue
             {
-                _logger.LogWarning("could not get solar power state");
-                return;
-            }
-
-            if (currentPower > THRESHOLD)
-            {
-                // turn off when we have plenty of light
-                await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
+                _logger.LogWarning("could not fetch current solar power");
             }
             else
             {
-                // crazy calc time
-                // get the difference
-                // divide by threshold to get decimal percentage
-                // raise to power of 2 for parabolic
-                // set maximum for each light
-                // convert to byte
-                var unmodifiedValue = Math.Pow((THRESHOLD - currentPower.Value)/ THRESHOLD, 2) * 255;
-                await Task.WhenAll(
-                    _api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Lights.TvBacklight],
-                        Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
-                        Kelvin = 2202,
-                    },ct),
-                    _api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Lights.CounchOverhead],
-                        Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
-                        RgbColor = (255, 146, 39),
-                    }, ct)
-                );
+                await SetLightsBasedOnPower(currentPower.Value, ct);
             }
         }
+    }
+
+    private async Task SetLightsBasedOnPower(float currentPower, CancellationToken ct)
+    {
+        if (currentPower > THRESHOLD)
+        {
+            // turn off when we have plenty of light
+            await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
+        }
+        else
+        {
+            // crazy calc time
+            // get the difference
+            // divide by threshold to get decimal percentage
+            // raise to power of 2 for parabolic
+            // set maximum for each light
+            // convert to byte
+            var unmodifiedValue = Math.Pow((THRESHOLD - currentPower)/ THRESHOLD, 2) * 255;
+            await Task.WhenAll(
+                _api.LightTurnOn(new LightTurnOnModel()
+                {
+                    EntityId = [Lights.TvBacklight],
+                    Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
+                    Kelvin = 2202,
+                },ct),
+                _api.LightTurnOn(new LightTurnOnModel()
+                {
+                    EntityId = [Lights.CounchOverhead],
+                    Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
+                    RgbColor = (255, 146, 39),
+                }, ct)
+            );
+        } 
     }
 }
 

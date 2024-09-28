@@ -21,7 +21,7 @@ public class OfficeRegistry : IAutomationRegistry
     
     public void Register(IRegistrar reg)
     {
-        reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
+        reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds, Lights.OfficeLightBars], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
             .WithMeta("Office Light Off","10 minutes"));
         
         reg.RegisterMultiple(
@@ -69,7 +69,7 @@ public class OfficeRegistry : IAutomationRegistry
     {
         var tempState = change.ToFloatTyped();
         var officeMotion = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeMotion, token);
-        if (tempState.New.State > 85f && officeMotion?.State == OnOff.On)
+        if (tempState.New.State > 90f && officeMotion?.State == OnOff.On)
         {
             await _services.Api.TurnOn(Devices.OfficeFan);
         }

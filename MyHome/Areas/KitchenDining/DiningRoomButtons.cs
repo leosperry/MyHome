@@ -43,8 +43,14 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
             {btn: '4', press: KeyPress.KeyPressed3x} => AsherButton(0.25f, ct),
             {btn: '4', press: KeyPress.KeyPressed4x} => AsherButton(0.30f, ct),
             {btn: '4', press: KeyPress.KeyPressed5x} => AsherButton(0.35f, ct),
-            _ => Task.CompletedTask
+            _ => HandleNoMatch(btn, press)
         };
+    }
+
+    Task HandleNoMatch(char  button, KeyPress? press)
+    {
+        _logger.LogWarning("No match found for button {button} and press {press}", button, press.ToString() ?? "null");
+        return Task.CompletedTask;
     }
 
     AutomationMetaData _meta = new()
@@ -140,7 +146,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         }
     }
 
-    static DateTime _lastPressed = DateTime.Now;
+    static DateTime _lastPressed = SystemMonitor.StartTime; // hack
     static object _presslock = new {};
     static readonly TimeSpan _lockDelay = TimeSpan.FromSeconds(4);
     private bool shouldPlay()
@@ -151,7 +157,14 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
             var diff = now - _lastPressed;
             _lastPressed = now;
 
-            return diff > _lockDelay;
+            var retVal = diff > _lockDelay;
+
+            if (!retVal)
+            {
+                _logger.LogWarning("Press Lock engaged - Now:{now} Last Pressed:{last_pressed} Diff: {diff}", now, _lastPressed, diff);
+            }
+
+            return retVal;
         }
     }
 

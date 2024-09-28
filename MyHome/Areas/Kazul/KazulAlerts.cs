@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.Services;
 
 namespace MyHome;
 
@@ -22,14 +23,15 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         {CERAMIC_POWER, (CERAMIC_SWITCH, "ceramic heater")},
         {HALOGEN_POWER, (HALOGEN_SWITCH, "halogen lamp")}
     };
-
+    private readonly HelpersService _helpersService;
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entities;
     private readonly NotificationSender _notifyCritical;
     private readonly NotificationSender _notifyInformational;
 
-    public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService)
+    public KazulAlerts(HelpersService helpersService, IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService)
     {
+        _helpersService = helpersService;
         _api = api;
         _entities = entities;
         _notifyCritical = notificationService.GetCritical();
@@ -42,7 +44,16 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         return [TEMP, TEMP_BATTERY, CERAMIC_POWER, HALOGEN_POWER];
     }
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    {
+        if (await _helpersService.MaintenanceModeIsOn())
+        {
+            return;
+        }
+        await internalExecute(stateChange);
+    }
+
+    private Task internalExecute(HaEntityStateChange stateChange)
     {
         return stateChange.EntityId switch 
         {

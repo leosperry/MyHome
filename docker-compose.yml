@@ -1,19 +1,4 @@
 services:
-  # my-home-transformer:
-  #   build: 
-  #     dockerfile: MyHome.Transformer/Dockerfile
-  #     context: .
-  #   container_name: my-home-transformer
-  #   restart: unless-stopped
-  #   # depends_on: 
-  #   #   - cache
-  #   environment:
-  #     - ASPNETCORE_ENVIRONMENT=Production
-  #     - DOTNET_ENVIRONMENT=Production
-  #   ports:
-  #     - 8081:8080
-  #   networks:
-  #     - home-network
 
   my-home-automation:
     build: 
@@ -21,8 +6,6 @@ services:
       context: .
     container_name: home-automations-prod
     restart: unless-stopped
-    # depends_on: 
-    #   - cache
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
       - DOTNET_ENVIRONMENT=Production
@@ -46,10 +29,5 @@ services:
 networks:
   home-network:
     external: true
-  # cache:
-  #   image: redis:alpine
-  #   container_name: my-home-cache
-  #   restart: unless-stopped
-  #   command: redis-server
-  #   ports:
-  #     - 6379:6379
+
+

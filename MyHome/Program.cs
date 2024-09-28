@@ -1,13 +1,9 @@
-using System.Diagnostics;
-using System.Text;
-using System.Text.Unicode;
 using HaKafkaNet;
 using KafkaFlow;
-using KafkaFlow.Configuration;
-//using KafkaFlow.OpenTelemetry;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.Extensions.Diagnostics.Metrics;
 using MyHome;
+using MyHome.Services;
+using NLog.Extensions.Logging;
 using NLog.Web;
 using OpenTelemetry;
 using OpenTelemetry.Logs;
@@ -92,10 +88,14 @@ services.AddSingleton<ILivingRoomService, LivingRoomService>();
 services.AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster>>(model => new DynamicLightAdjuster(model));
 services.AddSingleton<INotificationService, NotificationService>();
 services.AddSingleton<LightAlertModule>();
+services.AddSingleton<HelpersService>();
 
 services.AddHaKafkaNet(config, (kafka, cluster) =>{ });
 
+
 var app = builder.Build();
+
+NLog.LogManager.Configuration = new NLogLoggingConfiguration(builder.Configuration.GetSection("NLog"));
 
 // for local development of dashboard only
 app.UseCors("hknDev");

@@ -15,7 +15,6 @@ public interface INotificationService
     NotificationSender CreateInformationalSender();
     INotificationChannel Persistent { get; }
 
-    //Task Reset();
     Task Clear(NotificationId id);
     Task ClearAll();
 }
