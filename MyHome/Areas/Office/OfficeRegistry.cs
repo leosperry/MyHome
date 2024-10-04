@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.Areas.Office;
 
 namespace MyHome;
 
@@ -7,13 +8,17 @@ public class OfficeRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
+    private readonly OfficeService _officeService;
+
     //readonly NotificationSender _notifyOffice;
 
-    public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
+    public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, 
+        OfficeService officeService, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
+        _officeService = officeService;
 
         //var channel = notificationService.CreateAudibleChannel([MediaPlayers.Office], Voices.Mundane);
         //_notifyOffice = notificationService.CreateNotificationSender([channel]);
@@ -21,13 +26,16 @@ public class OfficeRegistry : IAutomationRegistry
     
     public void Register(IRegistrar reg)
     {
-        reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds, Lights.OfficeLightBars], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
-            .WithMeta("Office Light Off","10 minutes"));
+        // reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds, Lights.OfficeLightBars], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
+        //     .WithMeta("Office Off","10 minutes"));
         
         reg.RegisterMultiple(
+            DynamicallySetLights(),
             ReportOverrideStatus(),
             OfficeFan()
         );
+
+        reg.RegisterMultiple(NoMotion());
     }
 
     IAutomation OfficeFan()
@@ -38,6 +46,59 @@ public class OfficeRegistry : IAutomationRegistry
             .WithTriggers(Sensors.OfficeTemp)
             .WithExecution(this.OfficeFan)
             .WithAdditionalEntitiesToTrack(Devices.OfficeFan)
+            .Build();
+    }
+
+    ISchedulableAutomation NoMotion()
+    {
+        return _builder.CreateSchedulable()
+            .WithName("Office off with no motion")
+            .MakeDurable()
+            .WithTriggers(Sensors.OfficeMotion)
+            .While(sc => sc.ToOnOff().New.State == OnOff.Off)
+            .For(TimeSpan.FromMinutes(10))
+            // .GetNextScheduled((sc, ct) =>{
+            //     DateTime? result;
+            //     var motion = sc.ToOnOff();
+            //     if (motion.New.State == OnOff.Off)
+            //     {
+            //         result = DateTime.Now.AddMinutes(10);
+            //     }
+            //     else { result = null; }
+            //     return Task.FromResult(result);
+            // })
+            .WithExecution(ct => _officeService.TurnOff(ct))
+            
+            .Build();
+    }
+
+    IAutomation DynamicallySetLights()
+    {
+        return _builder.CreateSimple()
+            .WithName("Set Office Lights")
+            .WithDescription("dynamically set the office lights")
+            .WithTriggers(
+                Sensors.OfficeIlluminance, 
+                Sensors.OfficeMotion, 
+                Helpers.OfficeOverride, 
+                Helpers.OfficeIlluminanceThreshold
+            )
+            .WithExecution(async (sc, ct) => {
+                if (sc.EntityId == Sensors.OfficeMotion)
+                {
+                    var detected = sc.ToOnOff().New.State == OnOff.On;
+                    if (detected)
+                    {
+                        await _officeService.SetLights(false);
+                        return;
+                    }
+                }
+                else
+                {
+                    await _officeService.SetLights(sc.EntityId == Sensors.OfficeIlluminance, ct);
+                }
+                
+            })
             .Build();
     }
 

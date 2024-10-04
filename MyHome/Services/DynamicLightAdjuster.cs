@@ -3,6 +3,7 @@
 public interface IDynamicLightAdjuster
 {
     double GetAppropriateBrightness(double illumination, double currentBrightness);
+    public double GetIlluminationFromBrightness(double currentBrightness);
 
     /// <summary>
     /// Model required for logic
@@ -45,11 +46,12 @@ public class DynamicLightAdjuster : IDynamicLightAdjuster
 {
     IDynamicLightAdjuster.DynamicLightModel _model;
     double _m, _b;
+    ILogger<DynamicLightAdjuster> _logger;
 
-
-    public DynamicLightAdjuster(IDynamicLightAdjuster.DynamicLightModel model)
+    public DynamicLightAdjuster(IDynamicLightAdjuster.DynamicLightModel model, ILogger<DynamicLightAdjuster> logger)
     {
         _model = model;
+        _logger = logger;
 
         // slope and y intercpt for use later
         _m = (double)(_model.IlluminationAddedAtMax - _model.IlluminationAddedAtMin)/(double)(_model.MaxLightBrightness - _model.MinBrightness);
@@ -63,12 +65,17 @@ public class DynamicLightAdjuster : IDynamicLightAdjuster
         
         // subtract it from the illumination
         var actualIllumination = illumination - illuminationAddedByLight;
+        if (actualIllumination < 0)
+        {
+            _logger.LogWarning("somehow calculated impossible situation. Actual illuminatin cannot be negative");
+            actualIllumination = 0;
+        }
 
         //calculate what it should be and return
         return GetBrightnessFromIllumination(_model.TargetIllumination - actualIllumination);
     }
 
-    double GetIlluminationFromBrightness(double currentBrightness)
+    public double GetIlluminationFromBrightness(double currentBrightness)
     {
         if (currentBrightness == 0) return 0;
 

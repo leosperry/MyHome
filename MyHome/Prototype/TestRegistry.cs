@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 using MyHome.Models;
 
 namespace MyHome;
@@ -13,13 +14,17 @@ public class TestRegistry : IAutomationRegistry
 
     const string TEST_BUTTON = "input_button.test_button";
 
-    public TestRegistry(IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger)
+    private IHaEntity<OnOff, LightModel> _officeLeds;
+
+    public TestRegistry(IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService, IHaServices services, ILogger<TestRegistry> logger, IUpdatingEntityProvider updatingProvider)
     {
         _factory = factory;
         _builder = builder;
         _notifications = notificationService;
         _logger = logger;
         _services = services;
+
+        _officeLeds = updatingProvider.GetLightEntity(Lights.OfficeLeds);
     }
 
     int tracker = 0;
@@ -51,9 +56,10 @@ public class TestRegistry : IAutomationRegistry
             .Build();
     }
 
-    private async Task TestButtonAction()
+    private Task TestButtonAction()
     {
-        await _services.Api.CallService("notify", "nope", new{entity_id = "nope"});
+        _logger.LogInformation("LED State: {led_state}", _officeLeds);
+        return Task.CompletedTask;
     }
 
     private void TestLAM(IRegistrar reg)

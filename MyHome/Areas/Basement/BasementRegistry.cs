@@ -72,7 +72,7 @@ public class BasementRegistry : IAutomationRegistry
                 average = await GetBasementAverageBrighness(ct);
             }
         }
-        catch (TaskCanceledException)
+        catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)
         {
             // someone walked by the sensor
         }

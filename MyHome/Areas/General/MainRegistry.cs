@@ -18,7 +18,22 @@ public class MainRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        var DiningRoomVolumeAdjust = _builder.CreateSimple()
+        reg.RegisterMultiple(DiningRoomVolumeAdjust());
+
+        // lights auto off
+        reg.RegisterMultiple(
+            _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour"),
+            _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
+            _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
+            _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
+            _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
+                .WithMeta("mainbedroom off on no motion","10 minutes")           
+        );
+    }
+
+    IAutomation DiningRoomVolumeAdjust()
+    {
+        return _builder.CreateSimple()
             .WithName("Adjust Dining room notification volume")
             .WithDescription("using binary_sensor.house_active_times_of_day adjust the volume of dining room speaker")
             .WithTriggers("binary_sensor.house_active_times_of_day")
@@ -34,16 +49,5 @@ public class MainRegistry : IAutomationRegistry
                 }
             })
             .Build();
-
-        reg.RegisterMultiple(DiningRoomVolumeAdjust);
-
-        // lights auto off
-        reg.RegisterMultiple(
-            _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
-            _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
-            _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
-            _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
-                .WithMeta("mainbedroom off on no motion","10 minutes")           
-        );
     }
 }

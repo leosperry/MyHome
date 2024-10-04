@@ -51,6 +51,7 @@ public static class Sensors
         FrontPorchMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_3",
         MainBedroom4in1Motion = "binary_sensor.4_in_1_sensor_motion_detection",
         OfficeDoor = "binary_sensor.office_door_opening",
+        OfficeIlluminance = "sensor.lumi_lumi_sensor_motion_aq2_illuminance",
         OfficeMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion",
         OfficeTemp = "sensor.lumi_lumi_sensor_motion_aq2_device_temperature",
         KitchenZone1AllCount = "sensor.esphomekitchenmotion_zone_1_all_target_count",
@@ -114,8 +115,17 @@ public static class Helpers
         LivingRoomOverride = "input_boolean.living_room_override",
         MaintenanceMode = "input_boolean.maintenance_mode",
         OfficeOverride = "input_boolean.office_override",
+        OfficeIlluminanceThreshold = "input_number.office_illuminance_threshold",
         //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
         RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper",
         HouseActiveTimesOfDay = "binary_sensor.house_active_times_of_day";
+
+}
+
+public static class Labels
+{
+    public const string
+        BedTimeOff = "bedtimeoff",
+        OfficeDevices = "office_switches";
 
 }

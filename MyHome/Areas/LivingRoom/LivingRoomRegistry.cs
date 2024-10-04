@@ -8,11 +8,11 @@ public class LivingRoomRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
-    readonly ILivingRoomService _livingRoomService;
+    readonly LivingRoomService _livingRoomService;
     readonly ILogger<LivingRoomRegistry> _logger;
     static readonly TimeSpan four_hours = TimeSpan.FromHours(4);
 
-    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, ILivingRoomService livingRoomService, ILogger<LivingRoomRegistry> logger)
+    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, LivingRoomService livingRoomService, ILogger<LivingRoomRegistry> logger)
     {
         _factory = factory;
         _builder = builder;
@@ -77,15 +77,17 @@ public class LivingRoomRegistry : IAutomationRegistry
             .MakeDurable()
             .WithName($"Living Room and Kitchen not occupied for {downstairsLightDelayMinutes} minutes")
             .WithDescription("Turn Off living room lights")
-            .WithTriggers(Sensors.LivingRoomPresence) // helper entitiy combining kitchen and living room
-            .GetNextScheduled((sc, ct) => {
-                DateTime? time = default;
-                if (sc.ToOnOff().New.State == OnOff.Off)
-                {
-                    time = DateTime.Now.AddMinutes(downstairsLightDelayMinutes);
-                }
-                return Task.FromResult(time);
-            })
+            .WithTriggers(Sensors.LivingRoomPresence)
+            .While(sc => sc.ToOnOff().New.State == OnOff.Off)
+            .For(TimeSpan.FromMinutes(downstairsLightDelayMinutes))
+            // .GetNextScheduled((sc, ct) => {
+            //     DateTime? time = default;
+            //     if (sc.ToOnOff().New.State == OnOff.Off)
+            //     {
+            //         time = DateTime.Now.AddMinutes(downstairsLightDelayMinutes);
+            //     }
+            //     return Task.FromResult(time);
+            // })
             .WithExecution(ct => {
                 _lam.ConfigureStandByBrightness(0);
                 return Task.WhenAll(
@@ -155,11 +157,11 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithExecution(async (sc, ct) => {
                 var zone = sc.ToFloatTyped();
 
-                bool occupied = zone.BecameGreaterThan(0); 
+                bool occupied = zone.BecameGreaterThan(0);
 
                 if (occupied)
                 {
-                    await _livingRoomService.SetLights(occupied: true, ct: ct);
+                    await _livingRoomService.SetLights(DateTime.Now, ct: ct);
                     // this code is to set the monkeylight
                     var sun = await _services.EntityProvider.GetSun();
                     // figure out what it should be 

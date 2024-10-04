@@ -2,6 +2,7 @@ using HaKafkaNet;
 using KafkaFlow;
 using Microsoft.AspNetCore.DataProtection;
 using MyHome;
+using MyHome.Areas.Office;
 using MyHome.Services;
 using NLog.Extensions.Logging;
 using NLog.Web;
@@ -83,12 +84,15 @@ services.AddDataProtection()
     .PersistKeysToStackExchangeRedis(redis, "DataProtection-Keys");
 
 //my services
-services.AddSingleton<IGarageService, GarageService>();
-services.AddSingleton<ILivingRoomService, LivingRoomService>();
-services.AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster>>(model => new DynamicLightAdjuster(model));
-services.AddSingleton<INotificationService, NotificationService>();
-services.AddSingleton<LightAlertModule>();
-services.AddSingleton<HelpersService>();
+services
+    .AddSingleton<IGarageService, GarageService>()
+    .AddSingleton<LivingRoomService>()
+    .AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster>>(sp => 
+        model => new DynamicLightAdjuster(model, sp.GetRequiredService<ILogger<DynamicLightAdjuster>>()))
+    .AddSingleton<INotificationService, NotificationService>()
+    .AddSingleton<LightAlertModule>()
+    .AddSingleton<HelpersService>()
+    .AddSingleton<OfficeService>();
 
 services.AddHaKafkaNet(config, (kafka, cluster) =>{ });
 

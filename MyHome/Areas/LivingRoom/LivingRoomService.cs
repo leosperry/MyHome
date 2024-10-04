@@ -3,12 +3,8 @@ using HaKafkaNet;
 
 namespace MyHome;
 
-public interface ILivingRoomService
-{
-    Task SetLights(bool? occupied = null, bool? overrideOn = null, float? currentPower = null, CancellationToken ct = default);
-}
 
-public class LivingRoomService : ILivingRoomService
+public class LivingRoomService
 {
     readonly IHaApiProvider _api;
     readonly IHaEntityProvider _entityProvider; 
@@ -23,7 +19,7 @@ public class LivingRoomService : ILivingRoomService
         _logger = logger;
     }
 
-    public async Task SetLights(bool? occupied = null, bool? overrideOn = null, float? currentPower = null, CancellationToken ct = default)
+    public async Task SetLights(DateTime? lastOccupied = null, bool? overrideOn = null, float? currentPower = null, CancellationToken ct = default)
     {
         // if override is on , do nothing
         if ((overrideOn is null && (await _entityProvider.GetOnOffEntity(Helpers.LivingRoomOverride)).IsOn()) || overrideOn == true)
@@ -31,34 +27,52 @@ public class LivingRoomService : ILivingRoomService
             return;
         }
 
-        // if occupied set lights
-        // otherwise turn off
-        if (occupied is null)
-        {
-            occupied = (await _entityProvider.GetOnOffEntity(Sensors.LivingRoomPresence)).IsOn();
-        }
-        
-        if (occupied == false)
+        if (await HasBeenUnoccupiedForXminutes(10, lastOccupied) == true)
         {
             // turn off
             await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
             return;
         }
+
+        if (currentPower is null)
+        {
+            currentPower = (await _entityProvider.GetFloatEntity(Devices.SolarPower))?.State;
+        }
+        if (currentPower is null) // if it's still null we have an issue
+        {
+            _logger.LogWarning("could not fetch current solar power");
+        }
         else
         {
-            if (currentPower is null)
-            {
-                currentPower = (await _entityProvider.GetFloatEntity(Devices.SolarPower))?.State;
-            }
-            if (currentPower is null) // if it's still null we have an issue
-            {
-                _logger.LogWarning("could not fetch current solar power");
-            }
-            else
-            {
-                await SetLightsBasedOnPower(currentPower.Value, ct);
-            }
+            await SetLightsBasedOnPower(currentPower.Value, ct);
         }
+    }
+
+    private async Task<bool?> HasBeenUnoccupiedForXminutes(int minutes, DateTime? lastOccupied)
+    {
+        var occupiedAt = lastOccupied ?? await FetchLastOccupied();
+
+        if (occupiedAt is null)
+        {
+            _logger.LogWarning("could not get living room occupied state");
+            return null;
+        }
+        
+        return (DateTime.Now - occupiedAt.Value).TotalMinutes > minutes;
+    }
+
+    private async Task<DateTime?> FetchLastOccupied()
+    {
+        var presenceState = await _entityProvider.GetOnOffEntity(Sensors.LivingRoomPresence);
+        if (presenceState is null)
+        {
+            return null;
+        }
+        if (presenceState.IsOn())
+        {
+            return DateTime.Now;
+        }
+        return presenceState.LastChanged;
     }
 
     private async Task SetLightsBasedOnPower(float currentPower, CancellationToken ct)

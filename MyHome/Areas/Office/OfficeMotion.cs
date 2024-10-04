@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.Areas.Office;
 using MyHome.Services;
 
 namespace MyHome;
@@ -10,29 +11,33 @@ namespace MyHome;
     /// This automation uses a DynamicLightAdjuster object which takes into account 
     /// the brightness from the lights themselves
     /// </summary>
+[ExcludeFromDiscovery]
 public class OfficeMotion : IAutomation, IAutomationMeta
 {
-    public EventTiming EventTimings { get => EventTiming.PostStartup |  EventTiming.PreStartupSameAsLastCached; }
+    //public EventTiming EventTimings { get => EventTiming.PostStartup; }
     
     public const string OFFICE_ILLUMINANCE = "sensor.lumi_lumi_sensor_motion_aq2_illuminance";
     private readonly IHaApiProvider _api;
     private readonly IHaStateCache _cache;
 
-    private readonly IDynamicLightAdjuster _lightAdjuster;
+    //private readonly IDynamicLightAdjuster _lightAdjuster;
+    private readonly OfficeService _officeService;
     private readonly ILogger<OfficeMotion> _logger;
 
-    private CombinedLight _officeLightsCombined;
+
+    //private CombinedLight _officeLightsCombined;
 
     public OfficeMotion(Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster> lightAdjusterFactory
-        , IHaApiProvider api, IHaStateCache cache, ILogger<OfficeMotion> logger)
+        , IHaApiProvider api, IHaStateCache cache, OfficeService officeService, ILogger<OfficeMotion> logger)
     {
         _api = api;
         _cache = cache;
+        _officeService = officeService;
         _logger = logger;
 
-        _officeLightsCombined = new CombinedLight(_api, 
-            new CombinedLightModel(Lights.OfficeLights, Bytes.PercentToByte(1), Bytes.PercentToByte(17)),
-            new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(1), Bytes._100pct));
+        // _officeLightsCombined = new CombinedLight(_api, 
+        //     new CombinedLightModel(Lights.OfficeLights, Bytes.PercentToByte(1), Bytes.PercentToByte(17)),
+        //     new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(1), Bytes._100pct));
 
         //old
         // _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
@@ -50,14 +55,14 @@ public class OfficeMotion : IAutomation, IAutomationMeta
         // combined illu at max 42
 
         //new 
-        _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
-            //MinIllumination = 7,
-            TargetIllumination = 110, 
-            MinBrightness = Bytes.PercentToByte(1),
-            MaxLightBrightness = Bytes._100pct, 
-            IlluminationAddedAtMin = 3,
-            IlluminationAddedAtMax = 42
-        });
+        // _lightAdjuster = lightAdjusterFactory(new IDynamicLightAdjuster.DynamicLightModel(){
+        //     //MinIllumination = 7,
+        //     TargetIllumination = 110, 
+        //     MinBrightness = Bytes.PercentToByte(1),
+        //     MaxLightBrightness = Bytes._100pct, 
+        //     IlluminationAddedAtMin = 3,
+        //     IlluminationAddedAtMax = 42
+        // });
         
     }
 
@@ -66,50 +71,15 @@ public class OfficeMotion : IAutomation, IAutomationMeta
         yield return OFFICE_ILLUMINANCE;
         yield return Sensors.OfficeMotion;
         yield return Helpers.OfficeOverride;
+        yield return Helpers.OfficeIlluminanceThreshold;
     }
     
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        if (stateChange.EntityId == Helpers.OfficeOverride && stateChange.ToOnOff().IsOn())
-        {
-            return;
-        }
 
-        var officeMotion = await _cache.GetOnOffEntity(Sensors.OfficeMotion);
-        if (officeMotion?.State == OnOff.Off)
-        {
-            return;
-        }
-
-        var officeOverride = await _cache.GetOnOffEntity(Helpers.OfficeOverride, cancellationToken);
-        if (officeOverride?.State == OnOff.On)
-        {
-            return;
-        }
-
-        var currentIlluminationEntity = await _cache.GetIntegerEntity(OFFICE_ILLUMINANCE);
-        var currentIllumination = currentIlluminationEntity?.State;
-        if (currentIllumination is not null)
-        {
-            await SetBrightness(currentIllumination.Value, cancellationToken);
-        }
-        else
-        {
-            _logger.LogWarning("could not get office illumination");
-        }
+        await _officeService.SetLights(stateChange.EntityId == Sensors.OfficeIlluminance, cancellationToken);
     }
 
-    private async Task SetBrightness(int currentIllumination, CancellationToken cancellationToken)
-    {
-        //var officeLights = await _cache.GetLightEntity(Lights.OfficeLights);
-
-        var oldBrightness = _officeLightsCombined.LatestBrightness; //officeLights?.Attributes?.Brightness ?? 0;
-
-        var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
-
-        //await _api.LightSetBrightness(Lights.OfficeLights, newBrightness, cancellationToken);
-        await _officeLightsCombined.Set(newBrightness);
-    }
 
     AutomationMetaData? _meta;
     public AutomationMetaData GetMetaData() => 

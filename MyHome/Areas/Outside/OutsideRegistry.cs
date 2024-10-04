@@ -149,7 +149,7 @@ public class OutsideRegistry : IAutomationRegistry
                 await _services.Api.NotifyGroupOrDevice("critical_notification_group", $"{friendlyName} has remained open for more than a minute", "Door Open", ct);
             }
         }
-        catch (TaskCanceledException)
+        catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)
         {
             // don't do anything
             // the door was closed or

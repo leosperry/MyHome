@@ -78,8 +78,8 @@ public class GarageService : IGarageService
 
     private async Task<GarageDoorState> getGarageDoorState(string garageContact, string garageTilt)
     {
-        Task<HaEntityState<OnOff,JsonElement>?> contactTask;
-        Task<HaEntityState<OnOff,JsonElement>?> tiltTask;
+        Task<IHaEntity<OnOff,JsonElement>?> contactTask;
+        Task<IHaEntity<OnOff,JsonElement>?> tiltTask;
         
         contactTask = _cache.GetOnOffEntity(garageContact);
         tiltTask = _cache.GetOnOffEntity(garageTilt);
