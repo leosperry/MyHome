@@ -112,6 +112,7 @@ public static class Helpers
 {
     public const string
         BedTime = "input_boolean.bedtime_switch",
+        ClearNotificationButton = "input_button.clear_notifications",
         LivingRoomOverride = "input_boolean.living_room_override",
         MaintenanceMode = "input_boolean.maintenance_mode",
         OfficeOverride = "input_boolean.office_override",

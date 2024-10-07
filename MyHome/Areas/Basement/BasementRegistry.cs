@@ -38,10 +38,8 @@ public class BasementRegistry : IAutomationRegistry
             .WithDescription("after 10 minutes, normalize light, then dim every minute until minimum")
             .MakeDurable()
             .WithTriggers(Sensors.BasementMotion)
-            .GetNextScheduled((sc, ct) => {
-                var motion = sc.ToOnOff();
-                return Task.FromResult<DateTime?>(motion.New.State == OnOff.Off ? motion.New.LastUpdated.AddMinutes(10): null);
-            })
+            .While(sc => sc.ToOnOff().IsOff())
+            .For(TimeSpan.FromMinutes(10))
             .WithExecution(DimOverTime)
             .Build());
     }

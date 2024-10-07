@@ -23,7 +23,7 @@ public class CombinedLight
         _lock = new();
     }
 
-    public async Task Set(byte brightness, CancellationToken ct)
+    public async Task Set(byte brightness, int kelvin, CancellationToken ct)
     {
         List<Task> tasks = new();
         foreach (var light in _lights)
@@ -41,18 +41,19 @@ public class CombinedLight
             {
                 var newBrightness = (byte)Math.Round(y);
 
-                // for now
-                tasks.Add(_api.LightSetBrightness(light.EntityId, newBrightness, ct));
-
-                //for later
-                // if (light.SetKelvin)
-                // {
-
-                // }
-                // else
-                // {
-
-                // }
+                if (light.SetKelvin)
+                {
+                    tasks.Add(_api.LightTurnOn(new LightTurnOnModel()
+                    {
+                        EntityId = [light.EntityId],
+                        Brightness = newBrightness,
+                        Kelvin = kelvin
+                    }));
+                }
+                else
+                {
+                    tasks.Add(_api.LightSetBrightness(light.EntityId, newBrightness, ct));
+                }
             }
         }
 
@@ -61,6 +62,13 @@ public class CombinedLight
         }));
         
         await Task.WhenAll(tasks);
+    }
+
+    public async Task TurnOff(CancellationToken cancellationToken = default)
+    {
+        var t =  Task.WhenAll(_lights.Select(async l => await _api.TurnOff(l.EntityId, cancellationToken)));
+        set_latest(0);
+        await t;
     }
 
     private static float CalculateBrightness(byte brightness, CombinedLightModel light)
@@ -73,6 +81,8 @@ public class CombinedLight
         return y;
     }
 
+    
+
     private static float ReverseCalculation(byte observed, CombinedLightModel light)
     {
         // x = (y-b)/m
@@ -82,47 +92,6 @@ public class CombinedLight
         if(x > 255) x = 255;
 
         return x;
-    }
-
-    internal void RecordBrightnessFromObservation(Byte? brightness)
-    {
-        var primary = _lights.FirstOrDefault(l => l.primary);
-        if (primary is null)
-        {
-            _logger?.LogWarning("cannot record outside observation for dynamic lighs. No primary is set");
-            return;
-        }
-
-        bool shouldSet = false;
-        _lock.EnterUpgradeableReadLock();
-        try
-        {
-            float calculated = 0;
-            if (brightness is null && _latest != 0)
-            {
-                shouldSet = true;
-            }
-            else 
-            {
-                calculated = CalculateBrightness(_latest, primary);
-                var diff = calculated - brightness;
-                if (diff is not null && Math.Abs(diff.Value)> 10)
-                {
-                    shouldSet = true;
-                }
-            }
-
-            if (shouldSet)
-            {
-                byte reversed = brightness is null ? (byte)0 : (byte)Math.Round(ReverseCalculation(brightness.Value, primary));
-                _logger?.LogInformation("adjusting latest brightness. Was {old_brightness} Now {new_brightness}", _latest, reversed);
-                set_latest(reversed);
-            }
-        }
-        finally
-        {
-            _lock.ExitUpgradeableReadLock();
-        }
     }
 
     private void set_latest(byte? latest)
@@ -157,7 +126,7 @@ public class CombinedLight
     }
 }
 
-public record CombinedLightModel(string EntityId, short Min, short Max, bool SetKelvin = false, bool primary = false)
+public record CombinedLightModel(string EntityId, short Min, short Max, bool SetKelvin = false)
 {
     internal float Slope {get;set;}
 }

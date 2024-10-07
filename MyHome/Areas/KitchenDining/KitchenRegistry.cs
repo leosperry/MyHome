@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -7,11 +8,16 @@ public class KitchenRegistry : IAutomationRegistry
 {
     readonly IHaServices _services;
     readonly IAutomationBuilder _builder;
+    private readonly IHaEntity<OnOff, LightModel> _kitchenLights;
+    private readonly IHaEntity<float?, JsonElement> _solarMeter;
 
-    public KitchenRegistry(IHaServices services, IAutomationBuilder builder)
+    public KitchenRegistry(IHaServices services, IAutomationBuilder builder, IUpdatingEntityProvider updatingEntityProvider)
     {
         _services = services;
         _builder = builder;
+
+        _kitchenLights = updatingEntityProvider.GetLightEntity(Lights.KitchenLights);
+        _solarMeter = updatingEntityProvider.GetFloatEntity(Devices.SolarPower);
     }
 
     public void Register(IRegistrar reg)
@@ -32,13 +38,9 @@ public class KitchenRegistry : IAutomationRegistry
             .WithName("Zone2Enter - Turn on a little")
             .WithTriggers(Sensors.KitchenZone2AllCount)
             .WithExecution(async (sc,ct) => {
-                var solaredge_current_power = await _services.EntityProvider.GetFloatEntity(Devices.SolarPower);
-
-                if (solaredge_current_power?.State < 1100)
+                if (_solarMeter.State < 1100)
                 {
-                    var kitchenLightStatus = await _services.EntityProvider.GetOnOffEntity(Lights.KitchenLights);
-
-                    if (kitchenLightStatus.IsOff())
+                    if (_kitchenLights.IsOff())
                     {
                         await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._5pct);
                     }                
@@ -54,9 +56,7 @@ public class KitchenRegistry : IAutomationRegistry
             .WithDescription("If ambient light is low, turn on kitchen lights")
             .WithTriggers(Sensors.KitchenZone1AllCount)
             .WithExecution(async (sc, ct) => {
-                var solaredge_current_power = await _services.EntityProvider.GetFloatEntity(Devices.SolarPower);
-
-                if (solaredge_current_power?.State < 1100)
+                if (_solarMeter.State < 1100)
                 {
                     var lightStatus = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
                     if (lightStatus.IsOff() || lightStatus!.Attributes!.Brightness < Bytes.PercentToByte(20))
@@ -77,18 +77,8 @@ public class KitchenRegistry : IAutomationRegistry
             .WithDescription($"Turn off the kitchen lights when unoccupied for {minutesToLeaveOn} minutes")
             .MakeDurable()
             .WithTriggers(Sensors.KitchenPresence)
-            .GetNextScheduled(async (sc, ct) => {
-                DateTime? time = default;
-                if (sc.ToOnOff().New.State == OnOff.Off)
-                {
-                    var lightStatus = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
-                    if (lightStatus?.State == OnOff.On)
-                    {
-                        time = DateTime.Now.AddMinutes(minutesToLeaveOn);
-                    }
-                }
-                return time;
-            })
+            .While(sc => sc.ToOnOff().IsOff() && _kitchenLights.IsOn())
+            .For(TimeSpan.FromMinutes(minutesToLeaveOn))
             .WithExecution(ct => {
                 return _services.Api.TurnOff(Lights.KitchenLights);
             })

@@ -20,14 +20,14 @@ public class GarageService : IGarageService
     public const string GARAGE2_DOOR_OPENER = "switch.garage_door_opener_2";
     public const string BACK_HALL_LIGHT = "switch.back_hall_light";
 
-    private IHaStateCache _cache;
+    private IHaEntityProvider _entityProvider;
     private readonly IHaApiProvider _api;
 
     private readonly NotificationSender _notifyOffice;
 
-    public GarageService(IHaStateCache cache, IHaApiProvider api, INotificationService notificationService)
+    public GarageService(IHaEntityProvider cache, IHaApiProvider api, INotificationService notificationService)
     {
-        _cache = cache;
+        _entityProvider = cache;
         _api = api;
 
         var officeChannel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom], Voices.Mundane);
@@ -81,8 +81,8 @@ public class GarageService : IGarageService
         Task<IHaEntity<OnOff,JsonElement>?> contactTask;
         Task<IHaEntity<OnOff,JsonElement>?> tiltTask;
         
-        contactTask = _cache.GetOnOffEntity(garageContact);
-        tiltTask = _cache.GetOnOffEntity(garageTilt);
+        contactTask = _entityProvider.GetOnOffEntity(garageContact);
+        tiltTask = _entityProvider.GetOnOffEntity(garageTilt);
 
         await Task.WhenAll(contactTask, tiltTask);
         

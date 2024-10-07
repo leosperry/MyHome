@@ -35,10 +35,10 @@ public class SystemMonitor : ISystemMonitor
 
         if (_sendBadStateEvents)
         {
-            var message = $"Bad Entity State{Environment.NewLine}{badStates.EntityId} has a state of {badStates?.State?.State ?? "null"}";
+            var message = $"{badStates.EntityId} has a state of {badStates?.State?.State ?? "null"}";
 
             await Task.WhenAll(
-                _services.Api.PersistentNotification(message, default),
+                _services.Api.PersistentNotification("Bad Entity State", message, default),
                 _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Bad Entity Discovered."));
         }
     }

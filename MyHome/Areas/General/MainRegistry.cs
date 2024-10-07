@@ -7,18 +7,22 @@ public class MainRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
+    private readonly INotificationService _notificationService;
 
-
-    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder)
+    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
+        this._notificationService = notificationService;
     }
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(DiningRoomVolumeAdjust());
+        reg.RegisterMultiple(
+            DiningRoomVolumeAdjust(),
+            ClearNotifications()
+            );
 
         // lights auto off
         reg.RegisterMultiple(
@@ -29,6 +33,15 @@ public class MainRegistry : IAutomationRegistry
             _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
                 .WithMeta("mainbedroom off on no motion","10 minutes")           
         );
+    }
+
+    private IAutomation ClearNotifications()
+    {
+        return _builder.CreateSimple()
+            .WithName("clear notifications")
+            .WithTriggers(Helpers.ClearNotificationButton)
+            .WithExecution((sc, ct) => _notificationService.ClearAll())
+            .Build();
     }
 
     IAutomation DiningRoomVolumeAdjust()

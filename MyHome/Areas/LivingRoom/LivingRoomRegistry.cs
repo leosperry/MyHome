@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -10,9 +11,10 @@ public class LivingRoomRegistry : IAutomationRegistry
     readonly LightAlertModule _lam;
     readonly LivingRoomService _livingRoomService;
     readonly ILogger<LivingRoomRegistry> _logger;
+    private readonly IHaEntity<MediaPlayerState, JsonElement> _rokuMediaPlayer;
     static readonly TimeSpan four_hours = TimeSpan.FromHours(4);
 
-    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, LivingRoomService livingRoomService, ILogger<LivingRoomRegistry> logger)
+    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, LivingRoomService livingRoomService, IUpdatingEntityProvider updatingEntityProvider, ILogger<LivingRoomRegistry> logger)
     {
         _factory = factory;
         _builder = builder;
@@ -20,6 +22,8 @@ public class LivingRoomRegistry : IAutomationRegistry
         _lam = lam;
         _livingRoomService = livingRoomService;
         _logger = logger;
+
+        _rokuMediaPlayer = updatingEntityProvider.GetMediaPlayer(MediaPlayers.Roku);
     }
 
     public void Register(IRegistrar reg)
@@ -37,8 +41,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         );
 
         reg.RegisterMultiple(
-            NoOneDownstairs_for30min_PauseRoku(), 
-            RokuPaused_for15min_TurnItOff(),
+            NoOneDownstairs_for20min_PauseRoku(), 
             NoOneInLivingRoom_for5min_TurnOffLights()
         );
     }
@@ -49,7 +52,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithTriggers("sensor.solaredge_current_power")
             .WithName("Living Room lights")
             .WithDescription("Set living room lights based on solar power")
-            .WithExecution((sc, ct) => _livingRoomService.SetLights(null, null, sc.ToFloatTyped().New.State, ct))
+            .WithExecution((sc, ct) => _livingRoomService.SetLights(ct))
             .Build();
     }
 
@@ -65,29 +68,21 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithName("Living Room - Set lights when override disabled")
             .WithDescription("When the living room override is turned off, set the lights based on power reading")
             .WithTriggers(Helpers.LivingRoomOverride)
-            .WithExecution((sc, ct) => _livingRoomService.SetLights(overrideOn: sc.ToOnOff().IsOn(), ct: ct))
+            .WithExecution((sc, ct) => _livingRoomService.SetLights(ct))
             .Build();
     }
 
     ISchedulableAutomation NoOneInLivingRoom_for5min_TurnOffLights()
     {
-        var downstairsLightDelayMinutes = 5;
+        var downstairsLightDelayMinutes = 10;
 
         return _builder.CreateSchedulable()
             .MakeDurable()
-            .WithName($"Living Room and Kitchen not occupied for {downstairsLightDelayMinutes} minutes")
-            .WithDescription("Turn Off living room lights")
+            .WithName("Living Room and Kitchen not occupied")
+            .WithDescription($"After {downstairsLightDelayMinutes} min, Turn Off living room lights")
             .WithTriggers(Sensors.LivingRoomPresence)
             .While(sc => sc.ToOnOff().New.State == OnOff.Off)
             .For(TimeSpan.FromMinutes(downstairsLightDelayMinutes))
-            // .GetNextScheduled((sc, ct) => {
-            //     DateTime? time = default;
-            //     if (sc.ToOnOff().New.State == OnOff.Off)
-            //     {
-            //         time = DateTime.Now.AddMinutes(downstairsLightDelayMinutes);
-            //     }
-            //     return Task.FromResult(time);
-            // })
             .WithExecution(ct => {
                 _lam.ConfigureStandByBrightness(0);
                 return Task.WhenAll(
@@ -100,50 +95,21 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    ISchedulableAutomation NoOneDownstairs_for30min_PauseRoku()
+    ISchedulableAutomation NoOneDownstairs_for20min_PauseRoku()
     {
         return _builder.CreateSchedulable()
             .MakeDurable()
-            .WithName("Living Room All zones empty for 30 min")
-            .WithDescription("pause the roku and turn off dining room")
+            .WithName("Living Room All zones empty")
+            .WithDescription("after 30 min, pause the roku and turn off dining room")
             .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
-            .GetNextScheduled((sc, ct) => {
-                var zoneCount = sc.ToOnOff();
-                if (zoneCount.New.IsOff())
-                {
-                    return Task.FromResult<DateTime?>(DateTime.Now.AddMinutes(30));
-                }
-                return Task.FromResult<DateTime?>(null);
-            })
+            .While(sc => sc.ToFloatTyped().New.State == 0)
+            .For(TimeSpan.FromMinutes(20))
             .WithExecution(async ct => {
-                var roku = await _services.EntityProvider.GetEntity(MediaPlayers.Roku, ct);
-
-                if(roku!.State == "playing")
+                if(_rokuMediaPlayer.State == MediaPlayerState.Playing)
                 {
                     await RokuCommand(RokuCommands.play);
                 }
                 await _services.Api.TurnOff(Lights.DiningRoomLights); 
-            })
-            .Build();
-    }
-    
-    ISchedulableAutomation RokuPaused_for15min_TurnItOff()
-    {
-        var statesToLeaveAlone = new HashSet<string>(["playing","standby","idle"]);
-        return _builder.CreateSchedulable()
-            .MakeDurable()
-            .WithName("Roku Paused")
-            .WithTriggers(MediaPlayers.Roku)
-            .WithDescription("If Roku is not playing for 15 minutes, turn it off")
-            .GetNextScheduled((sc, ct) => {
-                if (!statesToLeaveAlone.Contains(sc.New.State))
-                {
-                    return Task.FromResult<DateTime?>(DateTime.Now.AddMinutes(15));
-                }
-                return Task.FromResult<DateTime?>(null);
-            })
-            .WithExecution(ct => {
-                return RokuCommand(RokuCommands.power);
             })
             .Build();
     }
@@ -161,7 +127,7 @@ public class LivingRoomRegistry : IAutomationRegistry
 
                 if (occupied)
                 {
-                    await _livingRoomService.SetLights(DateTime.Now, ct: ct);
+                    await _livingRoomService.SetLights(ct);
                     // this code is to set the monkeylight
                     var sun = await _services.EntityProvider.GetSun();
                     // figure out what it should be 

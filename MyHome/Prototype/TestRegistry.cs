@@ -58,7 +58,7 @@ public class TestRegistry : IAutomationRegistry
 
     private Task TestButtonAction()
     {
-        _logger.LogInformation("LED State: {led_state}", _officeLeds);
+        _services.Api.PersistentNotification("this is a test");
         return Task.CompletedTask;
     }
 

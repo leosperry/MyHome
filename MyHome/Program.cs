@@ -43,6 +43,12 @@ services.AddOpenTelemetry()
             .AddHttpClientInstrumentation()
             .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
                 exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
+                exporterOptions.Endpoint = new Uri("http://localhost:24317");
+                exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
+                metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15000;
+            })
+            .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
+                exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                 exporterOptions.Endpoint = new Uri(otlpEndpoint);
                 exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
                 metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15000;

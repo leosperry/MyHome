@@ -11,7 +11,7 @@ public class OfficeService
     private readonly IHaApiProvider _api;
 
     private readonly IDynamicLightAdjuster _lightAdjuster;
-    private readonly ILogger<OfficeMotion> _logger;
+    private readonly ILogger<OfficeService> _logger;
     private readonly IEntityStateProvider _entityProvider;
     private CombinedLight _officeLightsCombined;
 
@@ -27,7 +27,7 @@ public class OfficeService
     private byte _previous = 127; // set it to something in the middle
 
     public OfficeService(Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster> lightAdjusterFactory
-        , IHaApiProvider api, IUpdatingEntityProvider updatingEntityProvider, IHaEntityProvider entityProvider, ILogger<OfficeMotion> logger)
+        , IHaApiProvider api, IUpdatingEntityProvider updatingEntityProvider, IHaEntityProvider entityProvider, ILogger<OfficeService> logger)
     {
         _api = api;
         _logger = logger;
@@ -52,12 +52,13 @@ public class OfficeService
 
         _officeLightsCombined = new CombinedLight(_api, _logger,
             new CombinedLightModel(Lights.OfficeLights, -40, Bytes.PercentToByte(17)),
-            new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(20), Bytes._100pct, primary:true));
+            new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(20), Bytes._100pct, true));
     }
 
-    internal async Task TurnOff(CancellationToken ct)
+    internal async Task TurnOff(CancellationToken ct = default)
     {
-        
+        await _officeLightsCombined.TurnOff(ct);
+        await _api.TurnOff([Devices.OfficeFan, Lights.OfficeLeds], ct);
         await _api.TurnOffByLabel(Labels.OfficeDevices, ct);
     }
 
@@ -103,7 +104,7 @@ public class OfficeService
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
 
-        await _officeLightsCombined.Set(newBrightness, cancellationToken);
+        await _officeLightsCombined.Set(newBrightness, GetKelvin(), cancellationToken);
         _logger.LogInformation("Set Brightness {values}", new SetBrightnessLog(triggeredByIlluminance, currentIllumination, oldBrightness, newBrightness));
     }
 
@@ -130,8 +131,18 @@ public class OfficeService
         else if (sunState == SunState.Above_Horizon && threshold < maxThreshold && _override.State == OnOff.Off)
         {
             var currentBrightness = _officeLightsCombined.LatestBrightness;
-            var sunIllumination = _lightAdjuster.GetIlluminationFromBrightness(currentBrightness);
-            if(sunIllumination > threshold)
+
+            if (_officeIlluminance.Bad())
+            {
+                _logger.LogWarning("cannot calculate actual illumination. Sensor in bad state");
+                return;
+            }
+
+            var sunIllumination = _lightAdjuster.GetActualIllumination(_officeIlluminance.State!.Value ,currentBrightness);
+
+            _logger.LogInformation("attempbting adjusting for sun: {currentBrightness},{sunIllumination}", currentBrightness, sunIllumination);
+
+            if(sunIllumination >= threshold)
             {
                 _logger.LogInformation("adjusting office lights target threshold. Was:{was}, Now:{now}", threshold, sunIllumination);
                 await _api.InputNumberSet(Helpers.OfficeIlluminanceThreshold, Math.Min(maxThreshold, (int)sunIllumination));
@@ -148,17 +159,59 @@ public class OfficeService
             return;
         }
 
-        _officeLightsCombined.RecordBrightnessFromObservation(lightBarStat.Attributes.Brightness);
+        if (lightBarStat.IsOff())
+        {
+            await _officeLightsCombined.TurnOff();
+        }
     }
 
     private int GetKelvin()
     {
-        //between 2000 and 9000
-        // warm to cool
-        return 6000; // not too cool
+        //  warmest  2000
+        //  coolest 9000
 
-        //want 
-        //  4 am warmest  2000
-        //  10 am coolest 9000
+        var now = DateTime.Now.TimeOfDay.TotalSeconds;
+
+        const int coolest = 9000;
+        const int warmest = 3000;
+        const float coolWarmDiff = coolest - warmest;
+
+        const int secondsInHour = 3600;
+        const int fourAM = 4 * secondsInHour;
+        const int tenAM = 10 * secondsInHour;
+        const int noon = 12 * secondsInHour;
+        const int sevenPM = 19 * secondsInHour;
+
+        const float coolingRate = coolWarmDiff / (tenAM - fourAM);
+        const float warmingRate = coolWarmDiff / (7 /*hours*/ * secondsInHour);
+
+        if(now < fourAM)
+        {
+            return warmest;
+            // still warming
+            // how long before 4 am?
+        }
+        else if(now < tenAM)
+        {
+            // start cooling
+            // how long after 4 am?
+            var diff = now - fourAM;
+            return  warmest + (int)(diff * coolingRate);
+        }
+        else if (now < noon)
+        {
+            return coolest;   
+        }
+        else if(now < sevenPM)
+        {
+            // start warming
+            // how long after noon?
+            var diff = now - noon;
+            return coolest - (int)(diff * warmingRate);
+        }
+        else
+        {
+            return warmest;
+        }
     }
 }

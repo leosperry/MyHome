@@ -11,16 +11,19 @@ public class OutsideRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     readonly IGarageService _garage;
     private INotificationService _notificationService;
+    private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     readonly NotificationSender _notifyAboutGarage;
 
 
-    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, IGarageService garageService, INotificationService notificationService)
+    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, IGarageService garageService, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider)
     {
         _services = services;
         _factory = factory;
         _builder = builder;
         _garage = garageService;
         _notificationService =notificationService;
+
+        _maintenanceMode = updatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
 
         var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
         {
@@ -166,18 +169,20 @@ public class OutsideRegistry : IAutomationRegistry
             .WithTriggers(garageContact)
             .MakeDurable()
             .ShouldExecutePastEvents()
-            .GetNextScheduled(async (sc, ct) => {
+            .While(sc => 
+            {
                 var openCloseState = sc.ToOnOff();
-                if (openCloseState.New.State == OnOff.On)
+                if(openCloseState.New.State == OnOff.Off)
                 {
-                    return openCloseState.New.LastUpdated.AddHours(1);
+                    _ = Task.Run(() => _notificationService.Clear(notifcationId));
+                    return false;
                 }
                 else
                 {
-                    await _notificationService.Clear(notifcationId);
+                    return _maintenanceMode.IsOn();
                 }
-                return default;
             })
+            .For(TimeSpan.FromHours(1))
             .WithExecution(async ct => { 
                 await _notifyAboutGarage($"{name} has been open for an hour", "Garage Alert", notifcationId);
             })

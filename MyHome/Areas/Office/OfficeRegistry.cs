@@ -10,8 +10,6 @@ public class OfficeRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     private readonly OfficeService _officeService;
 
-    //readonly NotificationSender _notifyOffice;
-
     public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, 
         OfficeService officeService, INotificationService notificationService)
     {
@@ -26,17 +24,44 @@ public class OfficeRegistry : IAutomationRegistry
     
     public void Register(IRegistrar reg)
     {
-        // reg.Register(_factory.DurableAutoOffOnEntityOff([Devices.OfficeFan, Lights.OfficeLights, Lights.OfficeLeds, Lights.OfficeLightBars], Sensors.OfficeMotion, TimeSpan.FromMinutes(10))
-        //     .WithMeta("Office Off","10 minutes"));
         
         reg.RegisterMultiple(
             DynamicallySetLights(),
             ReportOverrideStatus(),
-            OfficeFan()
+            OfficeFan(),
+            TurnOffAllOfficeWithSwitch(),
+            DyanicallyAdjustWithSwitch()
         );
 
         reg.RegisterMultiple(NoMotion());
     }
+
+    private IAutomation TurnOffAllOfficeWithSwitch()
+    {
+        return _builder.CreateSimple()
+            .WithName("Turn Off all office with switch")
+            .WithTriggers("event.office_lights_scene_001")
+            .WithExecution(async (sc, ct) => {
+                if(sc.ToSceneControllerEvent().New.StateAndLastUpdatedWithin1Second())
+                {
+                    await _officeService.TurnOff();
+                }
+            })
+            .Build();
+    }
+
+    private IAutomation DyanicallyAdjustWithSwitch()
+    {
+        return _builder.CreateSimple()
+            .WithName("Turn Off all office with switch")
+            .WithTriggers("event.office_lights_scene_002")
+            .WithExecution(async (sc, ct) => {
+                if(sc.ToSceneControllerEvent().New.StateAndLastUpdatedWithin1Second())
+                {
+                    await _officeService.SetLights(false ,ct);
+                }
+            })
+            .Build();    }
 
     IAutomation OfficeFan()
     {
@@ -57,18 +82,7 @@ public class OfficeRegistry : IAutomationRegistry
             .WithTriggers(Sensors.OfficeMotion)
             .While(sc => sc.ToOnOff().New.State == OnOff.Off)
             .For(TimeSpan.FromMinutes(10))
-            // .GetNextScheduled((sc, ct) =>{
-            //     DateTime? result;
-            //     var motion = sc.ToOnOff();
-            //     if (motion.New.State == OnOff.Off)
-            //     {
-            //         result = DateTime.Now.AddMinutes(10);
-            //     }
-            //     else { result = null; }
-            //     return Task.FromResult(result);
-            // })
             .WithExecution(ct => _officeService.TurnOff(ct))
-            
             .Build();
     }
 
@@ -77,6 +91,7 @@ public class OfficeRegistry : IAutomationRegistry
         return _builder.CreateSimple()
             .WithName("Set Office Lights")
             .WithDescription("dynamically set the office lights")
+            .WithTimings(EventTiming.PostStartup | EventTiming.PreStartupPostLastCached)
             .WithTriggers(
                 Sensors.OfficeIlluminance, 
                 Sensors.OfficeMotion, 

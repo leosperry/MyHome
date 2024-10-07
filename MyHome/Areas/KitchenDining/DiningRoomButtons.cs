@@ -10,11 +10,15 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     readonly IHaServices _services;
     readonly INotificationService _notificationService;
     readonly ILogger _logger;
-    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService, ILogger<DiningRoomButtons> logger)
+    private readonly IHaEntity<MediaPlayerState, SonosAttributes> _asherMediaPlayer;
+
+    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider, ILogger<DiningRoomButtons> logger)
     {
         _services = servcies;
         _notificationService = notificationService;
         _logger = logger;
+
+        _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -122,17 +126,18 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         var voice = _voices[_random.Next(0, _voices.Length)];
 
         // get the volume
-        var playerState = await _services.EntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
 
-        if (!playerState.Bad())
+        if (!_asherMediaPlayer.Bad())
         {
-            float? previousVolume = playerState.Attributes?.VolumeLevel;
+            float? previousVolume = _asherMediaPlayer.Attributes?.VolumeLevel;
             if (previousVolume < targetVolume)
             {
                 await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, targetVolume);
+                await Task.Delay(TimeSpan.FromSeconds(2));
             }
 
-            await _services.Api.SpeakPiper(MediaPlayers.Asher, message, false, voice);
+            await _services.Api.SpeakPiper(MediaPlayers.Asher, message, true, voice);
+            await Task.Delay(TimeSpan.FromSeconds(10));
 
             if (previousVolume is not null && previousVolume != targetVolume)
             {
@@ -141,7 +146,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         }
         else
         {
-            _logger.LogWarning("Asher speaker state is {AsherState}", playerState?.State.ToString() ?? "null" );
+            _logger.LogWarning("Asher speaker state is {AsherState}", _asherMediaPlayer?.State.ToString() ?? "null" );
             await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "Something is wrong with Asher's speaker");
         }
     }
