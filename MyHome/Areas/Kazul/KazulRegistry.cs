@@ -15,12 +15,12 @@ public class KazulRegistry : IAutomationRegistry
 
     NotificationSender _notifyCritical;
 
-    public KazulRegistry(HelpersService helpersService, IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
+    public KazulRegistry(HelpersService helpersService, IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
     {
         _helpersService = helpersService;
         _services = services;
-        _factory = factory;
-        _builder = builder;
+        _factory = helpers.Factory;
+        _builder = helpers.Builder;
         _notifyCritical = notificationService.GetCritical();
     }
 

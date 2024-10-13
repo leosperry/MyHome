@@ -8,11 +8,11 @@ public class BasementRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     readonly IAutomationFactory _factory;
 
-    public BasementRegistry(IHaServices services, IAutomationBuilder builder, IAutomationFactory factory)
+    public BasementRegistry(IHaServices services, IStartupHelpers helpers)
     {
         _services = services;
-        _builder = builder;
-        _factory = factory;
+        _builder = helpers.Builder;
+        _factory = helpers.Factory;
     }
 
     public void Register(IRegistrar reg)

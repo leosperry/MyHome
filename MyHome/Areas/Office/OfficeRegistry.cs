@@ -3,28 +3,31 @@ using MyHome.Areas.Office;
 
 namespace MyHome;
 
-public class OfficeRegistry : IAutomationRegistry
+public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
 {
     readonly IHaServices _services;
-    readonly IAutomationFactory _factory;
-    readonly IAutomationBuilder _builder;
+    readonly IStartupHelpers _helpers;
     private readonly OfficeService _officeService;
 
-    public OfficeRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, 
-        OfficeService officeService, INotificationService notificationService)
+    public OfficeRegistry(IHaServices services, IStartupHelpers helpers, 
+        OfficeService officeService)
     {
         _services = services;
-        _factory = factory;
-        _builder = builder;
+        _helpers = helpers;
         _officeService = officeService;
-
-        //var channel = notificationService.CreateAudibleChannel([MediaPlayers.Office], Voices.Mundane);
-        //_notifyOffice = notificationService.CreateNotificationSender([channel]);
     }
-    
+
+    public async Task Initialize()
+    {
+        var trackerState = await _services.EntityProvider.GetFloatEntity(Helpers.OfficeBrightnessTracker);
+        if (!trackerState.Bad() && trackerState.State is not null)
+        {
+            _officeService.Init((byte)trackerState.State.Value);
+        }    
+    }
+
     public void Register(IRegistrar reg)
     {
-        
         reg.RegisterMultiple(
             DynamicallySetLights(),
             ReportOverrideStatus(),
@@ -38,7 +41,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     private IAutomation TurnOffAllOfficeWithSwitch()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Turn Off all office with switch")
             .WithTriggers("event.office_lights_scene_001")
             .WithExecution(async (sc, ct) => {
@@ -52,7 +55,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     private IAutomation DyanicallyAdjustWithSwitch()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Turn Off all office with switch")
             .WithTriggers("event.office_lights_scene_002")
             .WithExecution(async (sc, ct) => {
@@ -65,7 +68,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     IAutomation OfficeFan()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Office Fan")
             .WithDescription("Turn on fan when it gets warm")
             .WithTriggers(Sensors.OfficeTemp)
@@ -76,7 +79,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     ISchedulableAutomation NoMotion()
     {
-        return _builder.CreateSchedulable()
+        return _helpers.Builder.CreateSchedulable()
             .WithName("Office off with no motion")
             .MakeDurable()
             .WithTriggers(Sensors.OfficeMotion)
@@ -88,7 +91,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     IAutomation DynamicallySetLights()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Set Office Lights")
             .WithDescription("dynamically set the office lights")
             .WithTimings(EventTiming.PostStartup | EventTiming.PreStartupPostLastCached)
@@ -119,7 +122,7 @@ public class OfficeRegistry : IAutomationRegistry
 
     IAutomation ReportOverrideStatus()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("report office overrid status")
             .WithDescription("when office override changes, report on Office LED")
             .WithTriggers(Helpers.OfficeOverride)
@@ -154,4 +157,6 @@ public class OfficeRegistry : IAutomationRegistry
             await _services.Api.TurnOff(Devices.OfficeFan);
         }
     }
+
+
 }

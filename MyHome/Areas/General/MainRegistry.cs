@@ -9,11 +9,11 @@ public class MainRegistry : IAutomationRegistry
     readonly IAutomationBuilder _builder;
     private readonly INotificationService _notificationService;
 
-    public MainRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, INotificationService notificationService)
+    public MainRegistry(IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
     {
         _services = services;
-        _factory = factory;
-        _builder = builder;
+        _factory = helpers.Factory;
+        _builder = helpers.Builder;
         this._notificationService = notificationService;
     }
 

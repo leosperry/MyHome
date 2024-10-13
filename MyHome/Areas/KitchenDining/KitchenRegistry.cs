@@ -11,13 +11,13 @@ public class KitchenRegistry : IAutomationRegistry
     private readonly IHaEntity<OnOff, LightModel> _kitchenLights;
     private readonly IHaEntity<float?, JsonElement> _solarMeter;
 
-    public KitchenRegistry(IHaServices services, IAutomationBuilder builder, IUpdatingEntityProvider updatingEntityProvider)
+    public KitchenRegistry(IHaServices services, IStartupHelpers helpers)
     {
         _services = services;
-        _builder = builder;
+        _builder = helpers.Builder;
 
-        _kitchenLights = updatingEntityProvider.GetLightEntity(Lights.KitchenLights);
-        _solarMeter = updatingEntityProvider.GetFloatEntity(Devices.SolarPower);
+        _kitchenLights = helpers.UpdatingEntityProvider.GetLightEntity(Lights.KitchenLights);
+        _solarMeter = helpers.UpdatingEntityProvider.GetFloatEntity(Devices.SolarPower);
     }
 
     public void Register(IRegistrar reg)

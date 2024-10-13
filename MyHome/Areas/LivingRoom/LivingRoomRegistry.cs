@@ -14,16 +14,16 @@ public class LivingRoomRegistry : IAutomationRegistry
     private readonly IHaEntity<MediaPlayerState, JsonElement> _rokuMediaPlayer;
     static readonly TimeSpan four_hours = TimeSpan.FromHours(4);
 
-    public LivingRoomRegistry(IAutomationFactory factory, IAutomationBuilder builder, IHaServices services, LightAlertModule lam, LivingRoomService livingRoomService, IUpdatingEntityProvider updatingEntityProvider, ILogger<LivingRoomRegistry> logger)
+    public LivingRoomRegistry(IStartupHelpers helpers, IHaServices services, LightAlertModule lam, LivingRoomService livingRoomService, ILogger<LivingRoomRegistry> logger)
     {
-        _factory = factory;
-        _builder = builder;
+        _factory = helpers.Factory;
+        _builder = helpers.Builder;
         _services = services;
         _lam = lam;
         _livingRoomService = livingRoomService;
         _logger = logger;
 
-        _rokuMediaPlayer = updatingEntityProvider.GetMediaPlayer(MediaPlayers.Roku);
+        _rokuMediaPlayer = helpers.UpdatingEntityProvider.GetMediaPlayer(MediaPlayers.Roku);
     }
 
     public void Register(IRegistrar reg)

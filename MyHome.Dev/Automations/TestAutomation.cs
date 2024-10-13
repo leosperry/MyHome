@@ -1,36 +1,67 @@
-﻿// using HaKafkaNet;
+using System;
+using HaKafkaNet;
 
-// namespace MyHome.Dev;
+namespace MyHome.Dev.Automations;
 
-// public class TestAutomation : IAutomation, IAutomationMeta
-// {
-//     private IHaServices _services;
+public class TestAutomation : IAutomation, IInitializeOnStartup
+{
+    private readonly IStartupHelpers _helpers;
+    private readonly IHaServices _services;
+    private readonly ILogger<TestAutomation> _logger;
 
-//     public TestAutomation(IHaServices services)
-//     {
-//         _services = services;
-//     }
+    const string date_helper = "input_datetime.test_date";
 
-//     public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
-//     {
-//         var converted = stateChange.ToSceneControllerEvent();
-//         System.Console.WriteLine($" converted state: {converted.New.State}");
-//         return Task.CompletedTask;
-//     }
+    public TestAutomation(IStartupHelpers helpers, IHaServices services, ILogger<TestAutomation> logger)
+    {
+        this._helpers = helpers;
+        _services = services;
+        this._logger = logger;
+    }
 
-//     public AutomationMetaData GetMetaData()
-//     {
-//         return new()
-//         {
-//             Name = "Test Automamtion",
-//             Description = "Used for testing quick scenarios",
-//             Enabled = false
-//         };
-//     }
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
 
-//     public IEnumerable<string> TriggerEntityIds()
-//     {
-//         //yield return "sun.sun";
-//         yield return "event.living_room_buttons_scene_001";
-//     }
-// }
+    public  Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    {
+        try
+        {
+            return stateChange.EntityId switch{
+                "input_button.test_button" => Button1(),
+                "input_button.test_button_2" => Button2(),
+                "input_button.test_button_3" => Button3(),
+                _ => Task.CompletedTask
+            };  
+        }
+        catch (System.Exception ex)
+        {
+            throw;
+        }
+    }
+
+    async Task Button1()
+    {
+        await _services.Api.InputDateTimeSetDateTime(date_helper, DateTime.Now);
+    }
+
+    async Task Button2()
+    {
+        //await _services.Api.InputDateTimeSetDate(date_helper, DateOnly.FromDateTime(DateTime.Now));
+        await _services.Api.InputDateTimeSetDate(date_helper, DateTime.Now);
+    }
+
+
+    async Task Button3()
+    {
+        await _services.Api.InputDateTimeSetTime(date_helper, DateTime.Now.TimeOfDay);
+    }
+
+
+    public IEnumerable<string> TriggerEntityIds()
+    {
+        yield return "input_button.test_button";
+        yield return "input_button.test_button_2";
+        yield return "input_button.test_button_3";
+    }
+}

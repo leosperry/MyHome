@@ -115,12 +115,12 @@ public static class Helpers
         ClearNotificationButton = "input_button.clear_notifications",
         LivingRoomOverride = "input_boolean.living_room_override",
         MaintenanceMode = "input_boolean.maintenance_mode",
+        OfficeBrightnessTracker = "input_number.office_brightness_tracker",
         OfficeOverride = "input_boolean.office_override",
         OfficeIlluminanceThreshold = "input_number.office_illuminance_threshold",
         //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
         RachelPhoneBatteryHelper = "binary_sensor.rachelphonebattlowhelper",
         HouseActiveTimesOfDay = "binary_sensor.house_active_times_of_day";
-
 }
 
 public static class Labels

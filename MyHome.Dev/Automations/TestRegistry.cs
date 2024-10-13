@@ -2,7 +2,7 @@
 
 namespace MyHome.Dev;
 
-public class TestRegistry : IAutomationRegistry
+public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 {
     IHaServices _services;
     IAutomationFactory _factory;
@@ -16,9 +16,15 @@ public class TestRegistry : IAutomationRegistry
         _logger = logger;
     }
 
+    public Task Initialize()
+    {
+        return Task.CompletedTask;
+    }
+
     public void Register(IRegistrar reg)
     {
-
-
+        //throw new Exception("blarg");
     }
+
+
 }

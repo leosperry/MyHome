@@ -24,7 +24,7 @@ public class OfficeService
     IHaEntity<SunState, SunAttributes> _sun;
     private IDynamicLightAdjuster.DynamicLightModel _dynamicModel;
 
-    private byte _previous = 127; // set it to something in the middle
+    private byte _previousBrightness = 127; // set it to something in the middle, init will set it otherwhise.
 
     public OfficeService(Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster> lightAdjusterFactory
         , IHaApiProvider api, IUpdatingEntityProvider updatingEntityProvider, IHaEntityProvider entityProvider, ILogger<OfficeService> logger)
@@ -55,6 +55,11 @@ public class OfficeService
             new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(20), Bytes._100pct, true));
     }
 
+    internal void Init(byte previousBrightness)
+    {
+        _previousBrightness = previousBrightness;
+    }
+
     internal async Task TurnOff(CancellationToken ct = default)
     {
         await _officeLightsCombined.TurnOff(ct);
@@ -77,7 +82,7 @@ public class OfficeService
     {
         if (triggeredByIlluminance)
         {
-            _previous = _officeLightsCombined.LatestBrightness;
+            _previousBrightness = _officeLightsCombined.LatestBrightness;
         }
         _dynamicModel.TargetIllumination = (int)(_threshold.State ?? 60f);
         if (_override.State == OnOff.On)
@@ -100,12 +105,13 @@ public class OfficeService
 
     private async Task SetBrightness(bool triggeredByIlluminance, int currentIllumination, CancellationToken cancellationToken)
     {
-        byte oldBrightness = triggeredByIlluminance ? _officeLightsCombined.LatestBrightness : _previous;
+        byte oldBrightness = triggeredByIlluminance ? _officeLightsCombined.LatestBrightness : _previousBrightness;
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
 
         await _officeLightsCombined.Set(newBrightness, GetKelvin(), cancellationToken);
         _logger.LogInformation("Set Brightness {values}", new SetBrightnessLog(triggeredByIlluminance, currentIllumination, oldBrightness, newBrightness));
+        await _api.InputNumberSet("input_number.office_brightness_tracker", newBrightness);
     }
 
     private record SetBrightnessLog(bool trigger, int currentIllum, int oldBrightness, int newBrightness);
@@ -172,7 +178,7 @@ public class OfficeService
 
         var now = DateTime.Now.TimeOfDay.TotalSeconds;
 
-        const int coolest = 9000;
+        const int coolest = 8000;
         const int warmest = 3000;
         const float coolWarmDiff = coolest - warmest;
 

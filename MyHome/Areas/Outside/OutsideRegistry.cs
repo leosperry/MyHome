@@ -7,23 +7,22 @@ namespace MyHome;
 public class OutsideRegistry : IAutomationRegistry
 {
     readonly IHaServices _services;
-    readonly IAutomationFactory _factory;
-    readonly IAutomationBuilder _builder;
+    readonly IStartupHelpers _helpers;
     readonly IGarageService _garage;
     private INotificationService _notificationService;
     private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     readonly NotificationSender _notifyAboutGarage;
 
 
-    public OutsideRegistry(IHaServices services, IAutomationFactory factory, IAutomationBuilder builder, IGarageService garageService, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider)
+    public OutsideRegistry(IHaServices services, IStartupHelpers helpers, IGarageService garageService, INotificationService notificationService)
     {
         _services = services;
-        _factory = factory;
-        _builder = builder;
+        _helpers = helpers;
+
         _garage = garageService;
         _notificationService =notificationService;
 
-        _maintenanceMode = updatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
+        _maintenanceMode = _helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
 
         var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
         {
@@ -37,9 +36,9 @@ public class OutsideRegistry : IAutomationRegistry
     public void Register(IRegistrar reg)
     {
         reg.RegisterMultiple(
-            _factory.DurableAutoOff("switch.back_flood", TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
-            _factory.DurableAutoOff("switch.back_porch_light", TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
-            _factory.DurableAutoOff("light.front_porch", TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min")
+            _helpers.Factory.DurableAutoOff("switch.back_flood", TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
+            _helpers.Factory.DurableAutoOff("switch.back_porch_light", TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
+            _helpers.Factory.DurableAutoOff("light.front_porch", TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min")
         );
 
         //door open alerts
@@ -62,7 +61,7 @@ public class OutsideRegistry : IAutomationRegistry
 
     IAutomation MakeSureGarageSwitchesAreOff()
     {
-        return _factory.SimpleAutomation([GarageService.GARAGE1_DOOR_OPENER, GarageService.GARAGE2_DOOR_OPENER],
+        return _helpers.Factory.SimpleAutomation([GarageService.GARAGE1_DOOR_OPENER, GarageService.GARAGE2_DOOR_OPENER],
                 (sc, ct) => sc.ToOnOff().New.State == OnOff.On 
                     ? _services.Api.TurnOff(sc.EntityId)
                     : Task.CompletedTask).WithMeta("Garage Door switches auto-off")
@@ -71,7 +70,7 @@ public class OutsideRegistry : IAutomationRegistry
 
     IAutomation GarageOpens_TurnOnBackHall()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Turn on back hall light when garage door opens")
             .WithTriggers("binary_sensor.garage_1_contact_opening")
             .WithExecution(async (sc, ct) => {
@@ -91,7 +90,7 @@ public class OutsideRegistry : IAutomationRegistry
 
     IAutomation OpenGarageFromSWitch()
     {
-        return _builder.CreateSimple()
+        return _helpers.Builder.CreateSimple()
             .WithName("Open Garage From switch")
             .WithTriggers("event.back_hall_light_scene_001", "event.back_hall_light_scene_002")
             .WithExecution((sc, ct) =>{
@@ -117,7 +116,7 @@ public class OutsideRegistry : IAutomationRegistry
     private IConditionalAutomation WhenDoorStaysOpen_Alert(string doorId, string doorName)
     {
         int seconds = 8;
-        return _builder.CreateConditional()
+        return _helpers.Builder.CreateConditional()
             .WithName($"{doorName} Alert")
             .WithDescription($"Notify when {doorName} stays open for {seconds} seconds")
             .WithTriggers(doorId)
@@ -163,7 +162,7 @@ public class OutsideRegistry : IAutomationRegistry
     ISchedulableAutomation GarageOpenAlert(string name, string garageContact)
     {
         var notifcationId = new NotificationId(garageContact);
-        return _builder.CreateSchedulable(enabledAtStartup: true)
+        return _helpers.Builder.CreateSchedulable(enabledAtStartup: true)
             .WithName($"{name} alert")
             .WithDescription("notify when garage door stays open")
             .WithTriggers(garageContact)
