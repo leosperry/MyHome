@@ -100,7 +100,7 @@ public class KazulRegistry : IAutomationRegistry
             })
             .Build();
         
-        reg.RegisterMultiple(kazulSunrise, kazulSunset);
-        reg.RegisterMultiple(kazulUVB, ensureOneIsOn);
+        reg.RegisterDelayed(kazulSunrise, kazulSunset);
+        reg.Register(kazulUVB, ensureOneIsOn);
     }
 }

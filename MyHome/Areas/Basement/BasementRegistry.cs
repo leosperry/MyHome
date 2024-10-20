@@ -33,7 +33,7 @@ public class BasementRegistry : IAutomationRegistry
             .Build());
 
         //dim over time
-        reg.Register(_builder.CreateSchedulable(true)
+        reg.RegisterDelayed(_builder.CreateSchedulable(true)
             .WithName("Dim Basement over time")
             .WithDescription("after 10 minutes, normalize light, then dim every minute until minimum")
             .MakeDurable()

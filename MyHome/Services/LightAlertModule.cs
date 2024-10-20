@@ -24,13 +24,12 @@ public class LightAlertModule : IDisposable
 
     static readonly string[] ALERT_LIGHTS = [Lights.Monkey, Lights.OfficeLeds];
 
-    static readonly RgbTuple _standbyRgb = (255, 215, 2);
     static LightTurnOnModel _standby = new()
     {
         EntityId = ALERT_LIGHTS,
         //ColorName = "gold",
         Brightness = Bytes._10pct,
-        RgbColor = _standbyRgb
+        RgbColor = (255, 215, 2)
     };    
 
     public async Task Start()

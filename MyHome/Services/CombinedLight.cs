@@ -41,6 +41,8 @@ public class CombinedLight
             {
                 var newBrightness = (byte)Math.Round(y);
 
+                if (newBrightness < light.MinOn) newBrightness = 0;
+
                 if (light.SetKelvin)
                 {
                     tasks.Add(_api.LightTurnOn(new LightTurnOnModel()
@@ -126,7 +128,7 @@ public class CombinedLight
     }
 }
 
-public record CombinedLightModel(string EntityId, short Min, short Max, bool SetKelvin = false)
+public record CombinedLightModel(string EntityId, short Min, short Max, bool SetKelvin = false, byte MinOn = 0)
 {
     internal float Slope {get;set;}
 }

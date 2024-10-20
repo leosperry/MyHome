@@ -30,7 +30,7 @@ public class RachelRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.Register(
             BarometricPressureAlert(),
             BrushLyraHair(),
             RachelPhoneBattery()

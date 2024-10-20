@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using HaKafkaNet;
 
 namespace MyHome.Dev.Automations;
@@ -20,6 +21,7 @@ public class TestAutomation : IAutomation, IInitializeOnStartup
 
     public Task Initialize()
     {
+        _logger.LogInformation("Simple Initialize");
         return Task.CompletedTask;
     }
 
@@ -31,6 +33,7 @@ public class TestAutomation : IAutomation, IInitializeOnStartup
                 "input_button.test_button" => Button1(),
                 "input_button.test_button_2" => Button2(),
                 "input_button.test_button_3" => Button3(),
+                "input_select.test_dropdown" => DropDown(stateChange, ct),
                 _ => Task.CompletedTask
             };  
         }
@@ -40,9 +43,36 @@ public class TestAutomation : IAutomation, IInitializeOnStartup
         }
     }
 
+    private async Task DropDown(HaEntityStateChange stateChange, CancellationToken ct)
+    {
+        // await _services.Api.InputSelect_SelectFirst(stateChange.EntityId);
+        // await Task.Delay(1000);
+        // await _services.Api.InputSelect_SelectNext(stateChange.EntityId);
+        // await Task.Delay(1000);
+        // await _services.Api.InputSelect_SelectLast(stateChange.EntityId);
+        // await Task.Delay(1000);
+        // await _services.Api.InputSelect_SelectPrevious(stateChange.EntityId);
+        // await _services.Api.InputSelect_Select(stateChange.EntityId, TestEnum.Three);
+    }
+
     async Task Button1()
     {
-        await _services.Api.InputDateTimeSetDateTime(date_helper, DateTime.Now);
+        var dropdown = "input_select.test_dropdown";
+        await _services.Api.InputSelect_SelectFirst(dropdown);
+        await Task.Delay(1000);
+        await _services.Api.InputSelect_SelectNext(dropdown);
+        await Task.Delay(1000);
+        await _services.Api.InputSelect_SelectLast(dropdown);
+        await Task.Delay(1000);
+        await _services.Api.InputSelect_SelectPrevious(dropdown);
+        await Task.Delay(1000);
+        await _services.Api.InputSelect_Select(dropdown, TestEnum.Three);
+
+        //var state = await _services.EntityProvider.GetEntity<HaEntityState<TestEnum, JsonElement>>(dropdown);
+        var state = await _services.EntityProvider.GetStateTypedEntity<TestEnum>(dropdown);
+        
+        var statStr = state?.ToString() ?? "unknown";
+        _logger.LogInformation(statStr);
     }
 
     async Task Button2()
@@ -63,5 +93,16 @@ public class TestAutomation : IAutomation, IInitializeOnStartup
         yield return "input_button.test_button";
         yield return "input_button.test_button_2";
         yield return "input_button.test_button_3";
+        yield return "input_select.test_dropdown";
     }
+}
+
+
+enum TestEnum
+{
+    One,
+    Two,
+    Three,
+    Four,
+    Five
 }

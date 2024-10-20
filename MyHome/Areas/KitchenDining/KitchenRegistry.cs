@@ -22,12 +22,12 @@ public class KitchenRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.Register(
             Zone1Enter_TurnOn(), 
             Zone2Enter_TurnOnALittle()
         );
 
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             NoOccupancy_for5min_TurnOff()
         );
     }

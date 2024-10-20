@@ -19,13 +19,13 @@ public class MainRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.Register(
             DiningRoomVolumeAdjust(),
             ClearNotifications()
             );
 
         // lights auto off
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour"),
             _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
             _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),

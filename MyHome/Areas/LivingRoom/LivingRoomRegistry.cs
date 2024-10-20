@@ -28,19 +28,19 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             Sunrise(),
             SunDusk(),
             Sunset()
         );
 
-        reg.RegisterMultiple(
+        reg.Register(
             SolarPowerChange(),
             SomeoneInLivingRoom(),
             OverrideTurnedOff_SetLights()
         );
 
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             NoOneDownstairs_for20min_PauseRoku(), 
             NoOneInLivingRoom_for5min_TurnOffLights()
         );

@@ -35,25 +35,25 @@ public class OutsideRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             _helpers.Factory.DurableAutoOff("switch.back_flood", TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
             _helpers.Factory.DurableAutoOff("switch.back_porch_light", TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
             _helpers.Factory.DurableAutoOff("light.front_porch", TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min")
         );
 
         //door open alerts
-        reg.RegisterMultiple(
+        reg.RegisterDelayed(
             WhenDoorStaysOpen_Alert("binary_sensor.inside_garage_door_contact_opening", "Inside Garage Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door")
         );
 
-        reg.RegisterMultiple(
+        reg.Register(
             MakeSureGarageSwitchesAreOff(),
             OpenGarageFromSWitch(), 
             GarageOpens_TurnOnBackHall());
 
-        reg.RegisterMultiple( 
+        reg.RegisterDelayed( 
             GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
             GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT));
 

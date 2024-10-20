@@ -28,7 +28,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.Register(
             DynamicallySetLights(),
             ReportOverrideStatus(),
             OfficeFan(),
@@ -36,7 +36,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             DyanicallyAdjustWithSwitch()
         );
 
-        reg.RegisterMultiple(NoMotion());
+        reg.RegisterDelayed(NoMotion());
     }
 
     private IAutomation TurnOffAllOfficeWithSwitch()
@@ -56,7 +56,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
     private IAutomation DyanicallyAdjustWithSwitch()
     {
         return _helpers.Builder.CreateSimple()
-            .WithName("Turn Off all office with switch")
+            .WithName("Dynamically set when switch turned on")
             .WithTriggers("event.office_lights_scene_002")
             .WithExecution(async (sc, ct) => {
                 if(sc.ToSceneControllerEvent().New.StateAndLastUpdatedWithin1Second())

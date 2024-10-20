@@ -51,7 +51,7 @@ public class OfficeService
         _sun = updatingEntityProvider.GetSun();
 
         _officeLightsCombined = new CombinedLight(_api, _logger,
-            new CombinedLightModel(Lights.OfficeLights, -40, Bytes.PercentToByte(17)),
+            new CombinedLightModel(Lights.OfficeLights, -40, Bytes.PercentToByte(20), MinOn: 22),
             new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(20), Bytes._100pct, true));
     }
 

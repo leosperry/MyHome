@@ -31,7 +31,7 @@ public class TestRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterMultiple(
+        reg.Register(
             TestButton()
         );
     }
@@ -56,10 +56,20 @@ public class TestRegistry : IAutomationRegistry
             .Build();
     }
 
-    private Task TestButtonAction()
+    private async Task TestButtonAction()
     {
-        _services.Api.PersistentNotification("this is a test");
-        return Task.CompletedTask;
+        await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_activity, new{
+            intent_package_name = "com.google.android.apps.maps",
+            intent_action = "android.intent.action.VIEW",
+            intent_uri = "google.navigation:q=arbys"
+        });
+        // await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_high_accuracy_mode, new{
+        //     command = "turn_on"
+        // });
+        // await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_high_accuracy_mode, new{
+        //     high_accuracy_update_interval = 120,
+        //     command = "high_accuracy_set_update_interval"
+        // });
     }
 
     private void TestLAM(IRegistrar reg)
