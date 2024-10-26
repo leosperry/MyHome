@@ -29,6 +29,7 @@ public static class Lights
         OfficeLights = "light.office_lights",
         OfficeLeds = "light.office_led_light",
         OfficeLightBars = "light.office_light_bars",
+        OfficeLightsCombined = "light.office_combined_light",
         PeacockLamp = "switch.peacock_lamp",
         TvBacklight = "light.tv_backlight",
         UpstairsHall = "light.upstairs_hall";

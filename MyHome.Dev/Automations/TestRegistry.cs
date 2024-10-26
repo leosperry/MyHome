@@ -31,17 +31,17 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        // reg.TryRegister(
+         reg.TryRegister(
         //     Simple,
         //     SimpleTyped,
         //     SimpleTyped2,
         //     Conditional,
         //     ConditionalTyped,
-        //     ConditionalTyped2,
+             ConditionalTyped2
         //     Scheduled,
         //     ScheduledTyped,
         //     ScheduledTyped2
-        // );
+         );
     }
 
     IAutomationBase Simple()

@@ -31,21 +31,6 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        // reg.Register(
-        //     DynamicallySetLights()
-        // );
-
-        // reg.Register(ReportOverrideStatus());
-
-        // reg.Register(OfficeFan());
-
-        // reg.Register(
-        //     TurnOffAllOfficeWithSwitch(),
-        //     DyanicallyAdjustWithSwitch()
-        // );
-
-        //reg.RegisterDelayed(NoMotion());
-
         var exceptions = reg.TryRegister(
             DynamicallySetLights,
             ReportOverrideStatus,
@@ -154,7 +139,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             .WithDescription("when office override changes, report on Office LED")
             .WithTriggers(Helpers.OfficeOverride)
             .WithExecution((sc, ct) => {
-                return sc.New.State switch{
+                return (sc.New.State switch{
                     OnOff.On => _services.Api.LightTurnOn(new LightTurnOnModel{
                         EntityId = [Lights.OfficeLeds],
                         Brightness = Bytes._10pct,
@@ -166,7 +151,11 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
                         ColorName = "blue"
                     }),
                     _ => Task.CompletedTask
-                };
+                }).ContinueWith(async t => 
+                {
+                    await Task.Delay(3000);
+                    await _services.Api.TurnOff(Lights.OfficeLeds);
+                });
             })
             .Build();
     }

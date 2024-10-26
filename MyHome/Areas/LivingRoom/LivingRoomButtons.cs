@@ -1,14 +1,15 @@
 ﻿
+using System.Text.Json;
 using HaKafkaNet;
 
 namespace MyHome;
 
-public class LivingRoomButtons : IAutomation<DateTime?, SceneControllerEvent>, IAutomationMeta, IFallbackExecution
+public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, IFallbackExecution
 {
     readonly IHaServices _services;
     readonly INotificationService _notificationService;
     readonly ILogger _logger;
-    
+    private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     LightTurnOnModel _tvBacklightPresets = new LightTurnOnModel()
     {
         EntityId = [Lights.TvBacklight],
@@ -23,11 +24,13 @@ public class LivingRoomButtons : IAutomation<DateTime?, SceneControllerEvent>, I
         RgbColor = (255, 146, 39)
     };
 
-    public LivingRoomButtons(IHaServices services, INotificationService notificationService, ILogger<LivingRoomButtons> logger)
+    public LivingRoomButtons(IHaServices services, IStartupHelpers helpers, INotificationService notificationService, ILogger<LivingRoomButtons> logger)
     {
         _services = services;
         _notificationService = notificationService;
         _logger = logger;
+
+        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode); 
     }
 
     public Task Execute(HaEntityStateChange<HaEntityState<DateTime?, SceneControllerEvent>> sceneEvent, CancellationToken ct)
@@ -49,6 +52,7 @@ public class LivingRoomButtons : IAutomation<DateTime?, SceneControllerEvent>, I
             {button: '4', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.play),
             {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
             {button: '6', keypress: KeyPress.KeyPressed}    => ClearAllNotifications(),
+            {button: '6', keypress: KeyPress.KeyPressed2x}    => ToggleMaintenanceMode(),
             {button: '8', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.select),
             _ => Task.CompletedTask //unassigned 
         };    
@@ -71,6 +75,19 @@ public class LivingRoomButtons : IAutomation<DateTime?, SceneControllerEvent>, I
     {
         _notificationService.ClearAll();
         return Task.CompletedTask;
+    }
+
+    async Task ToggleMaintenanceMode()
+    {
+        var respose = await _services.Api.Toggle(Helpers.MaintenanceMode);
+        if (!respose.IsSuccessStatusCode)
+        {
+            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "failed to toggle maintenance mode");
+        }
+        else
+        {
+            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "maintenance mode toggled");
+        }
     }
 
     private async Task ToggleLight(string lightId, CancellationToken ct)

@@ -108,6 +108,15 @@ public class OfficeService
         byte oldBrightness = triggeredByIlluminance ? _officeLightsCombined.LatestBrightness : _previousBrightness;
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
+        if (newBrightness == 0) newBrightness = Bytes.PercentToByte(1);
+
+        var combinedLightSettings = new LightTurnOnModel()
+        {
+            EntityId = [Lights.OfficeLightsCombined],
+            Kelvin = GetKelvin(),
+            Brightness = newBrightness
+        };
+        await _api.LightTurnOn(combinedLightSettings);
 
         await _officeLightsCombined.Set(newBrightness, GetKelvin(), cancellationToken);
         _logger.LogInformation("Set Brightness {values}", new SetBrightnessLog(triggeredByIlluminance, currentIllumination, oldBrightness, newBrightness));

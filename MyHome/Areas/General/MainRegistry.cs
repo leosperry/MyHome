@@ -9,6 +9,7 @@ public class MainRegistry : IAutomationRegistry
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
     private readonly INotificationService _notificationService;
+    private readonly INoTextNotificationChannel _maintenanceChannel;
 
     public MainRegistry(IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
     {
@@ -16,13 +17,23 @@ public class MainRegistry : IAutomationRegistry
         _factory = helpers.Factory;
         _builder = helpers.Builder;
         this._notificationService = notificationService;
+
+        var maintenanceModeLightSettings = new LightTurnOnModel()
+        {
+            EntityId = [Lights.Monkey],
+            RgbColor = (255, 100, 0),
+            Brightness = Bytes._75pct            
+        };
+
+        this._maintenanceChannel = _notificationService.CreateMonkeyChannel(maintenanceModeLightSettings);
     }
 
     public void Register(IRegistrar reg)
     {
         var exceptions = reg.TryRegister(
             DiningRoomVolumeAdjust,
-            ClearNotifications
+            ClearNotifications,
+            ReportMainenanceMode
         );
 
         // lights auto off
@@ -34,6 +45,25 @@ public class MainRegistry : IAutomationRegistry
             _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
                 .WithMeta("mainbedroom off on no motion","10 minutes")           
         );
+    }
+
+    IAutomationBase ReportMainenanceMode()
+    {
+        const string maintenance_notification_id = "maintenance_mode";
+        return _builder.CreateSimple<OnOff>()
+            .WithName(nameof(ReportMainenanceMode))
+            .WithTriggers(Helpers.MaintenanceMode)
+            .WithExecution(async (sc, ct) => {
+                if (sc.IsOn())
+                {
+                    await _maintenanceChannel.Send(new(maintenance_notification_id));
+                }
+                else
+                {
+                    await _notificationService.Clear(new(maintenance_notification_id));
+                }
+            })
+            .Build();
     }
 
     private IAutomation ClearNotifications()

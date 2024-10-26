@@ -6,7 +6,7 @@ namespace MyHome.Dev.Automations;
 
 public class TestAutomation : IInitializeOnStartup, 
     //IAutomation, 
-    //IAutomation<OnOff>//,
+    IAutomation<OnOff>,
     // IAutomation<OnOff, JsonElement>,
     // IConditionalAutomation,
     // IConditionalAutomation<OnOff>,
@@ -14,7 +14,7 @@ public class TestAutomation : IInitializeOnStartup,
     // ISchedulableAutomation,
     // ISchedulableAutomation<OnOff>,
     // ISchedulableAutomation<OnOff,JsonElement>,
-    IDelayableAutomation<OnOff, JsonElement>,
+    // IDelayableAutomation<OnOff, JsonElement>,
     IAutomationMeta
 {
     private readonly IStartupHelpers _helpers;
@@ -51,7 +51,6 @@ public class TestAutomation : IInitializeOnStartup,
         return Task.CompletedTask;
     }
 
-
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return Test_Switch;
@@ -59,7 +58,7 @@ public class TestAutomation : IInitializeOnStartup,
 
     public Task Execute(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> stateChange, CancellationToken ct)
     {
-        _logger.LogInformation("Execute typed");
+        _logger.LogInformation("Friendly name is : {friendly}", stateChange.New.FriendlyName("blarg"));
         return Task.CompletedTask;    
     }
 

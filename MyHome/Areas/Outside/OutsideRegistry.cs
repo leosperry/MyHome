@@ -12,7 +12,9 @@ public class OutsideRegistry : IAutomationRegistry
     private INotificationService _notificationService;
     private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     readonly NotificationSender _notifyAboutGarage;
-
+    private readonly IHaEntity<SunState, SunAttributes> _sun;
+    private readonly IHaEntity<OnOff, JsonElement> _officeDoor;
+    private readonly IHaEntity<OnOff, JsonElement> _backHallLight;
 
     public OutsideRegistry(IHaServices services, IStartupHelpers helpers, IGarageService garageService, INotificationService notificationService)
     {
@@ -31,7 +33,12 @@ public class OutsideRegistry : IAutomationRegistry
             Brightness = Bytes.Max
         });
         var phoneChannel = notificationService.CreateGroupOrDeviceChannel([Phones.LeonardPhone]);
-        _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]);    }    
+        _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]); 
+
+        this._sun = helpers.UpdatingEntityProvider.GetSun();   
+        this._officeDoor = helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeDoor);
+        this._backHallLight = helpers.UpdatingEntityProvider.GetOnOffEntity(Lights.BackHallLight);
+    }    
 
     public void Register(IRegistrar reg)
     {
@@ -45,14 +52,6 @@ public class OutsideRegistry : IAutomationRegistry
             GarageOpenAlert("Garage Door 1",GarageService.GARAGE1_CONTACT),
             GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT)
         );
-        
-        // reg.Register(
-        //     OpenGarageFromSWitch()
-        //     );
-        
-        // reg.Register(
-        //     MakeSureGarageSwitchesAreOff(), GarageOpens_TurnOnBackHall()
-        // );
 
         var exceptions = reg.TryRegister(
             OpenGarageFromSWitch,
@@ -61,7 +60,7 @@ public class OutsideRegistry : IAutomationRegistry
         );
     }
 
-    IAutomation<OnOff, JsonElement> MakeSureGarageSwitchesAreOff()
+    IAutomationBase MakeSureGarageSwitchesAreOff()
     {
         return _helpers.Factory.CreateSimple<OnOff, JsonElement>([GarageService.GARAGE1_DOOR_OPENER, GarageService.GARAGE2_DOOR_OPENER],
                 (sc, ct) => sc.New.State == OnOff.On 
@@ -70,27 +69,29 @@ public class OutsideRegistry : IAutomationRegistry
             .WithMeta("Garage door swtiches","turn them off immediately");
     }
 
-    IAutomation<OnOff,JsonElement> GarageOpens_TurnOnBackHall()
+    IAutomationBase GarageOpens_TurnOnBackHall()
     {
         return _helpers.Builder.CreateSimple<OnOff>()
             .WithName("Turn on back hall light when garage door opens")
             .WithTriggers("binary_sensor.garage_1_contact_opening")
             .WithExecution(async (sc, ct) => {
-                
                 if (sc.TurnedOn())
                 {
-                    var sun = await _services.EntityProvider.GetSun();
-                    var officeDoor = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeDoor);
-                    if (officeDoor.IsOff() || sun?.State == SunState.Below_Horizon)
-                    {
-                        await _services.Api.TurnOn(Lights.BackHallLight);
-                    }
+                    await TurnOnBackHallIfDark();
                 }
             })
             .Build();
     }
 
-    IAutomation OpenGarageFromSWitch()
+    private async Task TurnOnBackHallIfDark()
+    {
+        if (_backHallLight.IsOff() && (_officeDoor.IsOff() || _sun.State == SunState.Below_Horizon))
+        {
+            await _services.Api.TurnOn(Lights.BackHallLight);
+        }
+    }
+
+    IAutomationBase OpenGarageFromSWitch()
     {
         return _helpers.Builder.CreateSimple()
             .WithName("Open Garage From switch")
@@ -103,8 +104,8 @@ public class OutsideRegistry : IAutomationRegistry
                     var press = scene?.New.Attributes?.GetKeyPress();
                     return (btn, press) switch
                     {
-                        {btn: '1' , press: KeyPress.KeyHeldDown} => _garage.OpenCloseGarage1(true),
-                        {btn: '1' , press: KeyPress.KeyPressed2x} => _garage.OpenCloseGarage1(true),
+                        {btn: '1' , press: KeyPress.KeyHeldDown} => Task.WhenAll(_garage.OpenCloseGarage1(true), TurnOnBackHallIfDark()),
+                        {btn: '1' , press: KeyPress.KeyPressed2x} => Task.WhenAll(_garage.OpenCloseGarage1(true), TurnOnBackHallIfDark()),
                         {btn: '2', press: KeyPress.KeyHeldDown} => _garage.OpenCloseGarage1(false),
                         {btn: '2', press: KeyPress.KeyPressed2x} => _garage.OpenCloseGarage1(false),
                         _ => Task.CompletedTask
@@ -115,7 +116,7 @@ public class OutsideRegistry : IAutomationRegistry
             .Build();
     }
 
-    private IConditionalAutomation<OnOff,JsonElement> WhenDoorStaysOpen_Alert(string doorId, string doorName)
+    private IAutomationBase WhenDoorStaysOpen_Alert(string doorId, string doorName)
     {
         int seconds = 8;
         return _helpers.Builder.CreateConditional<OnOff>()
@@ -161,7 +162,7 @@ public class OutsideRegistry : IAutomationRegistry
         }
     }  
 
-    ISchedulableAutomation<OnOff, JsonElement> GarageOpenAlert(string name, string garageContact)
+    IAutomationBase GarageOpenAlert(string name, string garageContact)
     {
         var notifcationId = new NotificationId(garageContact);
         return _helpers.Builder.CreateSchedulable<OnOff>(enabledAtStartup: true)
