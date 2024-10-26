@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -6,7 +7,7 @@ namespace MyHome;
 /// most of the automations for bed time run in Home Assistant
 /// One of the more complicated routines is ensuring the garage doors are closed
 /// </summary>
-public class BedTime : IAutomation, IAutomationMeta
+public class BedTime : IAutomation<OnOff>, IAutomationMeta
 {
     private readonly IHaServices _services;
     private readonly IGarageService _garageService;
@@ -26,11 +27,11 @@ public class BedTime : IAutomation, IAutomationMeta
         this._notify = notification.CreateNotificationSender([voiceChannel]);
     }
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
+    public Task Execute(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> stateChange, CancellationToken ct)
     {
-        if (stateChange.New.GetStateEnum<OnOff>() == OnOff.On)
+        if (stateChange.IsOn())
         {
-            return RunBedtimeRoutine(cancellationToken);
+            return RunBedtimeRoutine(ct);
         }
         return Task.CompletedTask;
     }
@@ -91,4 +92,7 @@ public class BedTime : IAutomation, IAutomationMeta
                 Lights.EntryLight
             ]
         };
-    }}
+    }
+
+
+}

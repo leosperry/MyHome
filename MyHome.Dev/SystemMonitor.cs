@@ -20,9 +20,15 @@ public class SystemMonitor : ISystemMonitor
         return Task.CompletedTask;
     }
 
-    // public Task InitializationFailure(InitializationError[] errors)
-    // {
-    //     //throw new NotImplementedException();
-    //     return Task.CompletedTask;
-    // }
+    public Task InitializationFailure(InitializationError[] errors)
+    {
+        //throw new NotImplementedException();
+        return Task.CompletedTask;
+    }
+
+    public Task AutomationTypeConversionFailure(IAutomationBase auto, HaEntityStateChange sc, CancellationToken ct)
+    {
+        return Task.CompletedTask;
+    }
+    
 }

@@ -4,7 +4,7 @@ using HaKafkaNet;
 
 namespace MyHome;
 
-public class LoungeButtons : IAutomation, IAutomationMeta
+public class LoungeButtons : IAutomation<DateTime?, SceneControllerEvent>, IAutomationMeta
 {
     IHaServices _services;
 
@@ -27,10 +27,8 @@ public class LoungeButtons : IAutomation, IAutomationMeta
         // yield return "event.lounge_buttons_scene_008";
     }  
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    public Task Execute(HaEntityStateChange<HaEntityState<DateTime?, SceneControllerEvent>> sceneEvent, CancellationToken ct)
     {
-        var sceneEvent = stateChange.ToSceneControllerEvent();
-
         if(!sceneEvent.New.StateAndLastUpdatedWithin1Second()) return Task.CompletedTask;
 
         var button = sceneEvent.EntityId.Last();

@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome.Dev;
 
@@ -10,6 +11,8 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
     ILogger<TestRegistry> _logger;
 
     const string 
+        Test_Switch = "input_boolean.test_switch",
+        LEDS = "light.office_led_light",
         Light_Bars = "light.office_light_bars";
 
     public TestRegistry(IStartupHelpers startupHelpers, IHaServices services, ILogger<TestRegistry> logger) 
@@ -22,58 +25,170 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public Task Initialize()
     {
-        _logger.LogInformation ("Registry Initialize");
+        _logger.LogInformation("Registry Initialize");
         return Task.CompletedTask;
     }
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(SetTest());
-
-        // reg.RegisterTyped(
-        //     _builder.CreateSimpleTyped<OnOff, ColorLightModel>()
-        //         .WithName("Test Combined")
-        //         .WithDescription("this is my description")
-        //         .WithTriggers("light.office_combined_light")
-        //         .WithExecution(async(sc, ct) => {
-        //             if (sc.New.IsOff())
-        //             {
-        //                 await _services.Api.TurnOff("light.office_light_bars", ct);
-        //             }
-        //             else
-        //             {
-        //                 await _services.Api.TurnOn("light.office_light_bars", ct);
-        //             }
-        //         })
-        //         .Build()
+        // reg.TryRegister(
+        //     Simple,
+        //     SimpleTyped,
+        //     SimpleTyped2,
+        //     Conditional,
+        //     ConditionalTyped,
+        //     ConditionalTyped2,
+        //     Scheduled,
+        //     ScheduledTyped,
+        //     ScheduledTyped2
         // );
     }
 
-    IAutomation SetTest()
+    IAutomationBase Simple()
     {
+        string name = "Simple";
         return _builder.CreateSimple()
-            .WithName("test maker")
-            .WithTriggers("light.my_combined_light")
-            .WithExecution(async (sc, ct) => {
-                var colorLightState = sc.ToColorLight().New;
-                
-                if (colorLightState.IsOn())
-                {
-                    await _services.Api.LightTurnOn(new LightTurnOnModel()
-                    {
-                        EntityId = [Light_Bars],
-                        Brightness = colorLightState.Attributes?.Brightness,
-                        RgbColor = colorLightState.Attributes?.RGB,
-                        Kelvin = colorLightState.Attributes?.TempKelvin
-                    });
-                }
-                else
-                {
-                    await _services.Api.TurnOff(Light_Bars);
-                }
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .WithExecution((sc, ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
             })
             .Build();
     }
 
+    IAutomationBase SimpleTyped()
+    {
+        string name = "Simple Typed";
+        return _builder.CreateSimple<OnOff>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .WithExecution((sc, ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    IAutomationBase SimpleTyped2()
+    {
+        string name = "Simple Typed 2";
+        return _builder.CreateSimple<OnOff>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .WithExecution((sc, ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    
+
+    IAutomationBase Conditional()
+    {
+        string name = "Conditional";
+        return _builder.CreateConditional()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .When((sc, ct) => {
+                return Task.FromResult<bool>(sc.ToOnOff().IsOn());
+            })
+            .ForSeconds(3)
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    IAutomationBase ConditionalTyped()
+    {
+        string name = "Conditional Typed";
+        return _builder.CreateConditional<OnOff>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .When((sc, ct) => {
+                return Task.FromResult<bool>(sc.IsOn());
+            })
+            .ForSeconds(3)
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();    
+
+        }
+    
+    IAutomationBase ConditionalTyped2()
+    {
+        string name = "Conditional Typed2";
+        return _builder.CreateConditional<OnOff, JsonElement>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .When((sc, ct) => {
+                return Task.FromResult<bool>(sc.IsOn());
+            })
+            .ForSeconds(3)
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();  
+    }
+    
+    IAutomationBase Scheduled()
+    {
+        string name = "Scheduled";
+        return _builder.CreateSchedulable()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .While((sc) => {
+                return sc.ToOnOff().IsOn();
+            })
+            .ForSeconds(3)
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    IAutomationBase ScheduledTyped()
+    {
+        string name = "Scheduled Typed";
+        return _builder.CreateSchedulable<OnOff>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .While((sc) => {
+                return sc.IsOn();
+            })
+            .ForSeconds(3)
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
+
+    IAutomationBase ScheduledTyped2()
+    {
+        string name = "Scheduled Typed 2";
+        return _builder.CreateSchedulable<OnOff, JsonElement>()
+            .WithTriggers(Test_Switch)
+            .WithName(name)
+            .GetNextScheduled((sc, ct) => {
+                if (sc.IsOn())
+                {
+                    return Task.FromResult<DateTime?>(DateTime.Now.AddSeconds(3));
+                }
+                return Task.FromResult<DateTime?>(null);
+            })
+            .WithExecution((ct) => {
+                _logger.LogInformation(name);
+                return Task.CompletedTask;
+            })
+            .Build();
+    }
 
 }

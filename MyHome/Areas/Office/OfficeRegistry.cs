@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 using MyHome.Areas.Office;
 
 namespace MyHome;
@@ -8,6 +9,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
     readonly IHaServices _services;
     readonly IStartupHelpers _helpers;
     private readonly OfficeService _officeService;
+    private readonly IHaEntity<OnOff, JsonElement> _officeMotion;
 
     public OfficeRegistry(IHaServices services, IStartupHelpers helpers, 
         OfficeService officeService)
@@ -15,6 +17,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
         _services = services;
         _helpers = helpers;
         _officeService = officeService;
+        _officeMotion = _helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeMotion);
     }
 
     public async Task Initialize()
@@ -28,24 +31,38 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(
-            DynamicallySetLights(),
-            ReportOverrideStatus(),
-            OfficeFan(),
-            TurnOffAllOfficeWithSwitch(),
-            DyanicallyAdjustWithSwitch()
-        );
+        // reg.Register(
+        //     DynamicallySetLights()
+        // );
 
-        reg.RegisterDelayed(NoMotion());
+        // reg.Register(ReportOverrideStatus());
+
+        // reg.Register(OfficeFan());
+
+        // reg.Register(
+        //     TurnOffAllOfficeWithSwitch(),
+        //     DyanicallyAdjustWithSwitch()
+        // );
+
+        //reg.RegisterDelayed(NoMotion());
+
+        var exceptions = reg.TryRegister(
+            DynamicallySetLights,
+            ReportOverrideStatus,
+            OfficeFan,
+            TurnOffAllOfficeWithSwitch,
+            DyanicallyAdjustWithSwitch,
+            NoMotion
+        );
     }
 
-    private IAutomation TurnOffAllOfficeWithSwitch()
+    private IAutomation<DateTime?, SceneControllerEvent> TurnOffAllOfficeWithSwitch()
     {
-        return _helpers.Builder.CreateSimple()
+        return _helpers.Builder.CreateSimple<DateTime?, SceneControllerEvent>()
             .WithName("Turn Off all office with switch")
             .WithTriggers("event.office_lights_scene_001")
             .WithExecution(async (sc, ct) => {
-                if(sc.ToSceneControllerEvent().New.StateAndLastUpdatedWithin1Second())
+                if(sc.New.StateAndLastUpdatedWithin1Second())
                 {
                     await _officeService.TurnOff();
                 }
@@ -53,37 +70,47 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             .Build();
     }
 
-    private IAutomation DyanicallyAdjustWithSwitch()
+    private IAutomation<DateTime?, SceneControllerEvent> DyanicallyAdjustWithSwitch()
     {
-        return _helpers.Builder.CreateSimple()
+        return _helpers.Builder.CreateSimple<DateTime?, SceneControllerEvent>()
             .WithName("Dynamically set when switch turned on")
             .WithTriggers("event.office_lights_scene_002")
             .WithExecution(async (sc, ct) => {
-                if(sc.ToSceneControllerEvent().New.StateAndLastUpdatedWithin1Second())
+                if(sc.New.StateAndLastUpdatedWithin1Second())
                 {
                     await _officeService.SetLights(false ,ct);
                 }
             })
-            .Build();    }
+            .Build();   
+    }
 
-    IAutomation OfficeFan()
+    IAutomation<float, JsonElement> OfficeFan()
     {
-        return _helpers.Builder.CreateSimple()
+        return _helpers.Builder.CreateSimple<float>()
             .WithName("Office Fan")
             .WithDescription("Turn on fan when it gets warm")
             .WithTriggers(Sensors.OfficeTemp)
-            .WithExecution(this.OfficeFan)
+            .WithExecution(async (sc, ct) => {
+                if (sc.New.State > 90f && _officeMotion.State == OnOff.On)
+                {
+                    await _services.Api.TurnOn(Devices.OfficeFan);
+                }
+                else
+                {
+                    await _services.Api.TurnOff(Devices.OfficeFan);
+                }
+            })
             .WithAdditionalEntitiesToTrack(Devices.OfficeFan)
             .Build();
     }
 
-    ISchedulableAutomation NoMotion()
+    ISchedulableAutomation<OnOff, JsonElement> NoMotion()
     {
-        return _helpers.Builder.CreateSchedulable()
+        return _helpers.Builder.CreateSchedulable<OnOff>()
             .WithName("Office off with no motion")
             .MakeDurable()
             .WithTriggers(Sensors.OfficeMotion)
-            .While(sc => sc.ToOnOff().New.State == OnOff.Off)
+            .While(sc => sc.New.State == OnOff.Off)
             .For(TimeSpan.FromMinutes(10))
             .WithExecution(ct => _officeService.TurnOff(ct))
             .Build();
@@ -120,20 +147,20 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             .Build();
     }
 
-    IAutomation ReportOverrideStatus()
+    IAutomation<OnOff, JsonElement> ReportOverrideStatus()
     {
-        return _helpers.Builder.CreateSimple()
+        return _helpers.Builder.CreateSimple<OnOff>()
             .WithName("report office overrid status")
             .WithDescription("when office override changes, report on Office LED")
             .WithTriggers(Helpers.OfficeOverride)
             .WithExecution((sc, ct) => {
                 return sc.New.State switch{
-                    "on" => _services.Api.LightTurnOn(new LightTurnOnModel{
+                    OnOff.On => _services.Api.LightTurnOn(new LightTurnOnModel{
                         EntityId = [Lights.OfficeLeds],
                         Brightness = Bytes._10pct,
                         ColorName = "red"
                     }),
-                    "off" => _services.Api.LightTurnOn(new LightTurnOnModel{
+                    OnOff.Off => _services.Api.LightTurnOn(new LightTurnOnModel{
                         EntityId = [Lights.OfficeLeds],
                         Brightness = Bytes._10pct,
                         ColorName = "blue"
@@ -143,20 +170,4 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             })
             .Build();
     }
-
-    private async Task OfficeFan(HaEntityStateChange change, CancellationToken token)
-    {
-        var tempState = change.ToFloatTyped();
-        var officeMotion = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeMotion, token);
-        if (tempState.New.State > 90f && officeMotion?.State == OnOff.On)
-        {
-            await _services.Api.TurnOn(Devices.OfficeFan);
-        }
-        else
-        {
-            await _services.Api.TurnOff(Devices.OfficeFan);
-        }
-    }
-
-
 }

@@ -1,8 +1,9 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
-public class FrontPorchMotion : IAutomation, IAutomationMeta
+public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
 {
     readonly IHaApiProvider _api;
     readonly IHaEntityProvider _provider;
@@ -24,12 +25,15 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
             Brightness = Bytes._10pct
         });
         _alert = notifications.CreateNoTextNotificationSender([monkey]);
-
     }
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    public IEnumerable<string> TriggerEntityIds()
     {
-        var motionState = stateChange.ToOnOff();
+        yield return Sensors.FrontPorchMotion;
+    }
+
+    public Task Execute(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> motionState, CancellationToken ct)
+    {
         if (motionState.New.State == OnOff.On)
         {
             _alert(_porchMotionID);
@@ -92,10 +96,5 @@ public class FrontPorchMotion : IAutomation, IAutomationMeta
             Name = "Front porch motion",
             Description = "Turn on light after sunset and echo show if enabled"
         };
-    }
-
-    public IEnumerable<string> TriggerEntityIds()
-    {
-        yield return Sensors.FrontPorchMotion;
     }
 }

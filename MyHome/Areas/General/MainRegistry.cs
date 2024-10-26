@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 
 namespace MyHome;
 
@@ -19,13 +20,13 @@ public class MainRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(
-            DiningRoomVolumeAdjust(),
-            ClearNotifications()
-            );
+        var exceptions = reg.TryRegister(
+            DiningRoomVolumeAdjust,
+            ClearNotifications
+        );
 
         // lights auto off
-        reg.RegisterDelayed(
+        reg.TryRegister(
             _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour"),
             _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
             _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
@@ -44,15 +45,14 @@ public class MainRegistry : IAutomationRegistry
             .Build();
     }
 
-    IAutomation DiningRoomVolumeAdjust()
+    IAutomation<OnOff,JsonElement> DiningRoomVolumeAdjust()
     {
-        return _builder.CreateSimple()
+        return _builder.CreateSimple<OnOff>()
             .WithName("Adjust Dining room notification volume")
             .WithDescription("using binary_sensor.house_active_times_of_day adjust the volume of dining room speaker")
             .WithTriggers("binary_sensor.house_active_times_of_day")
             .WithExecution((sc, ct) => {
-                var isActive = sc.ToOnOff();
-                if (isActive.New.State == OnOff.On)
+                if (sc.IsOn())
                 {
                     return _services.Api.MediaPlayerSetVolume(MediaPlayers.DiningRoom, MediaPlayers.DiningRoomActiveVolume);
                 }

@@ -17,10 +17,10 @@ public class BasementRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(_factory.EntityOnOffWithAnother(Sensors.BasementStairMotion, Lights.BasementStair)
+        reg.TryRegister(() => _factory.EntityOnOffWithAnother(Sensors.BasementStairMotion, Lights.BasementStair)
             .WithMeta("Basement Stair motion", "set stair light with motion sensor"));
 
-        reg.Register(_builder.CreateSimple()
+        reg.TryRegister(() => _builder.CreateSimple()
             .WithName("Basement Motion")
             .WithDescription("turn on basement lights")
             .WithTriggers("binary_sensor.basement_motion_motion_detection")
@@ -33,12 +33,12 @@ public class BasementRegistry : IAutomationRegistry
             .Build());
 
         //dim over time
-        reg.RegisterDelayed(_builder.CreateSchedulable(true)
+        reg.TryRegister(() => _builder.CreateSchedulable<OnOff>(true)
             .WithName("Dim Basement over time")
             .WithDescription("after 10 minutes, normalize light, then dim every minute until minimum")
             .MakeDurable()
             .WithTriggers(Sensors.BasementMotion)
-            .While(sc => sc.ToOnOff().IsOff())
+            .While(sc => sc.IsOff())
             .For(TimeSpan.FromMinutes(10))
             .WithExecution(DimOverTime)
             .Build());

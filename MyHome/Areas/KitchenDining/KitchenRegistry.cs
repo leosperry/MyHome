@@ -22,13 +22,19 @@ public class KitchenRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(
-            Zone1Enter_TurnOn(), 
-            Zone2Enter_TurnOnALittle()
-        );
+        // reg.Register(
+        //     Zone1Enter_TurnOn(), 
+        //     Zone2Enter_TurnOnALittle()
+        // );
 
-        reg.RegisterDelayed(
-            NoOccupancy_for5min_TurnOff()
+        // reg.RegisterDelayed(
+        //     NoOccupancy_for5min_TurnOff()
+        // );
+
+        var exceptions = reg.TryRegister(
+            Zone1Enter_TurnOn,
+            Zone2Enter_TurnOnALittle,
+            NoOccupancy_for5min_TurnOff
         );
     }
 

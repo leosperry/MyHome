@@ -65,7 +65,7 @@ public class DynamicLightAdjuster : IDynamicLightAdjuster
 
         if (actualIllumination < 0)
         {
-            _logger.LogWarning("somehow calculated impossible situation. Actual illuminatin cannot be negative. Calculated: {calculated}", actualIllumination);
+            _logger.LogInformation("somehow calculated impossible situation. Actual illuminatin cannot be negative. Calculated: {calculated}", actualIllumination);
             actualIllumination = 0;
         }
 

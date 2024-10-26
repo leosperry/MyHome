@@ -111,4 +111,12 @@ public class SystemMonitor : ISystemMonitor
             await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, message, title);
         }
     }
+
+    public async Task AutomationTypeConversionFailure(IAutomationBase auto, HaEntityStateChange sc, CancellationToken ct)
+    {
+        if(sc.New.State != "unknown" && sc.New.State != "unavailable")
+        {
+            await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Type conversion failed","Breaking Change alert");
+        }
+    }
 }

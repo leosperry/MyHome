@@ -3,7 +3,7 @@ using HaKafkaNet;
 
 namespace MyHome;
 
-public class LivingRoomButtons : IAutomation, IAutomationMeta
+public class LivingRoomButtons : IAutomation<DateTime?, SceneControllerEvent>, IAutomationMeta, IFallbackExecution
 {
     readonly IHaServices _services;
     readonly INotificationService _notificationService;
@@ -30,10 +30,8 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         _logger = logger;
     }
 
-    public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    public Task Execute(HaEntityStateChange<HaEntityState<DateTime?, SceneControllerEvent>> sceneEvent, CancellationToken ct)
     {
-        var sceneEvent = stateChange.ToSceneControllerEvent();
-        
         if(!sceneEvent.New.StateAndLastUpdatedWithin1Second()) return Task.CompletedTask;
 
         var button = sceneEvent.EntityId.Last();
@@ -55,6 +53,13 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
             _ => Task.CompletedTask //unassigned 
         };    
     }
+
+    public Task FallbackExecute(Exception ex, HaEntityStateChange stateChange, CancellationToken ct)
+    {
+        _logger.LogError("could not parse scene controller event: {data}", stateChange);
+        return Task.CompletedTask;    
+    }
+
 
     Task RokuCommand(RokuCommands command)
     {
@@ -137,4 +142,5 @@ public class LivingRoomButtons : IAutomation, IAutomationMeta
         //yield return "event.living_room_buttons_scene_007";
         yield return "event.living_room_buttons_scene_008";
     }
+
 }

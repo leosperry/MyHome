@@ -28,21 +28,35 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.RegisterDelayed(
-            Sunrise(),
-            SunDusk(),
-            Sunset()
-        );
+        // reg.RegisterDelayed(
+        //     Sunrise(),
+        //     SunDusk(),
+        //     Sunset()
+        // );
 
-        reg.Register(
-            SolarPowerChange(),
-            SomeoneInLivingRoom(),
-            OverrideTurnedOff_SetLights()
-        );
+        // reg.Register(
+        //     SolarPowerChange(),
+            
+        //     OverrideTurnedOff_SetLights()
+        // );
 
-        reg.RegisterDelayed(
-            NoOneDownstairs_for20min_PauseRoku(), 
-            NoOneInLivingRoom_for5min_TurnOffLights()
+        // reg.Register(SomeoneInLivingRoom());
+
+        // reg.RegisterDelayed(
+        //     NoOneDownstairs_for20min_PauseRoku()
+            
+        // );
+        // reg.RegisterDelayed(NoOneInLivingRoom_for5min_TurnOffLights());
+
+        var exceptions = reg.TryRegister(
+            Sunrise,
+            SunDusk,
+            Sunset,
+            SolarPowerChange,
+            OverrideTurnedOff_SetLights,
+            SomeoneInLivingRoom,
+            NoOneDownstairs_for20min_PauseRoku,
+            NoOneInLivingRoom_for5min_TurnOffLights
         );
     }
 
@@ -72,16 +86,16 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    ISchedulableAutomation NoOneInLivingRoom_for5min_TurnOffLights()
+    IDelayableAutomation<OnOff, JsonElement> NoOneInLivingRoom_for5min_TurnOffLights()
     {
         var downstairsLightDelayMinutes = 10;
 
-        return _builder.CreateSchedulable()
+        return _builder.CreateSchedulable<OnOff>()
             .MakeDurable()
             .WithName("Living Room and Kitchen not occupied")
             .WithDescription($"After {downstairsLightDelayMinutes} min, Turn Off living room lights")
             .WithTriggers(Sensors.LivingRoomPresence)
-            .While(sc => sc.ToOnOff().New.State == OnOff.Off)
+            .While(sc => sc.New.IsOff())
             .For(TimeSpan.FromMinutes(downstairsLightDelayMinutes))
             .WithExecution(ct => {
                 _lam.ConfigureStandByBrightness(0);
@@ -95,14 +109,14 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    ISchedulableAutomation NoOneDownstairs_for20min_PauseRoku()
+    IDelayableAutomation<float, JsonElement> NoOneDownstairs_for20min_PauseRoku()
     {
-        return _builder.CreateSchedulable()
+        return _builder.CreateSchedulable<float>()
             .MakeDurable()
             .WithName("Living Room All zones empty")
             .WithDescription("after 30 min, pause the roku and turn off dining room")
             .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
-            .While(sc => sc.ToFloatTyped().New.State == 0)
+            .While(sc => sc.New.State == 0)
             .For(TimeSpan.FromMinutes(20))
             .WithExecution(async ct => {
                 if(_rokuMediaPlayer.State == MediaPlayerState.Playing)
@@ -114,15 +128,13 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    IAutomation SomeoneInLivingRoom()
+    IAutomation<float, JsonElement> SomeoneInLivingRoom()
     {
-        return _builder.CreateSimple()
+        return _builder.CreateSimple<float>()
             .WithName("Enter Living Room Zone 1")
             .WithDescription("sets the Monkey light standby brightness")
             .WithTriggers(Sensors.LivingRoomZone1Count)
-            .WithExecution(async (sc, ct) => {
-                var zone = sc.ToFloatTyped();
-
+            .WithExecution(async (zone, ct) => {
                 bool occupied = zone.BecameGreaterThan(0);
 
                 if (occupied)
