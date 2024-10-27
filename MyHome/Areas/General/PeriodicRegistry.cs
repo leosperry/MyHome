@@ -8,12 +8,14 @@ public class PeriodicRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly OfficeService _officeService;
+    private readonly ILogger<PeriodicRegistry> _logger;
 
-    public PeriodicRegistry(IHaServices services, IAutomationFactory factory, OfficeService officeService)
+    public PeriodicRegistry(IHaServices services, IAutomationFactory factory, OfficeService officeService, ILogger<PeriodicRegistry> logger)
     {
         _services = services;
         _factory = factory;
         _officeService = officeService;
+        this._logger = logger;
     }
 
     public void Register(IRegistrar reg)
@@ -41,6 +43,16 @@ public class PeriodicRegistry : IAutomationRegistry
         {
             await _services.Api.PersistentNotification($"{entityId} was left on", ct);
             await _services.Api.TurnOff(entityId);
+        }
+    }
+
+    async Task MakeSureReplaySetToZero()
+    {
+        var audible_alert_to_play = await _services.EntityProvider.GetFloatEntity(Helpers.AudibleAlertToPlay);
+        if (audible_alert_to_play?.State != 0)
+        {
+            _logger.LogWarning(Helpers.AudibleAlertToPlay + " was not set to zero");
+            await _services.Api.InputNumberSet(Helpers.AudibleAlertToPlay, 0);
         }
     }
 }

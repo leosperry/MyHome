@@ -1,4 +1,5 @@
 ﻿using System.Collections;
+using System.Text.Json;
 using HaKafkaNet;
 using MyHome.Services;
 
@@ -6,7 +7,6 @@ namespace MyHome;
 
 public class KazulRegistry : IAutomationRegistry
 {
-    private readonly HelpersService _helpersService;
     readonly IHaServices _services;
     readonly IAutomationFactory _factory;
     readonly IAutomationBuilder _builder;
@@ -14,14 +14,15 @@ public class KazulRegistry : IAutomationRegistry
     string[] KAZUL_UVB = ["switch.kazul_power_strip_3", "switch.kazul_power_strip_4"];
 
     NotificationSender _notifyCritical;
+    private readonly IHaEntity<OnOff, JsonElement> _mainenanceMode;
 
-    public KazulRegistry(HelpersService helpersService, IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
+    public KazulRegistry(IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
     {
-        _helpersService = helpersService;
         _services = services;
         _factory = helpers.Factory;
         _builder = helpers.Builder;
         _notifyCritical = notificationService.GetCritical();
+        this._mainenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
     }
 
     public void Register(IRegistrar reg)
@@ -72,7 +73,7 @@ public class KazulRegistry : IAutomationRegistry
             .WithTriggers(KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH)
             .TriggerOnBadState()
             .WithExecution(async (sc, ct) =>{
-                if(await _helpersService.MaintenanceModeIsOn()) return;
+                if(_mainenanceMode.IsOn()) return;
 
                 if(sc.New.Bad())
                 {

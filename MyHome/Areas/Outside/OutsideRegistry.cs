@@ -12,6 +12,7 @@ public class OutsideRegistry : IAutomationRegistry
     private INotificationService _notificationService;
     private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     readonly NotificationSender _notifyAboutGarage;
+    private readonly NotificationSender _notifyDiningRoom;
     private readonly IHaEntity<SunState, SunAttributes> _sun;
     private readonly IHaEntity<OnOff, JsonElement> _officeDoor;
     private readonly IHaEntity<OnOff, JsonElement> _backHallLight;
@@ -34,6 +35,10 @@ public class OutsideRegistry : IAutomationRegistry
         });
         var phoneChannel = notificationService.CreateGroupOrDeviceChannel([Phones.LeonardPhone]);
         _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]); 
+        
+        this._notifyDiningRoom = _notificationService.CreateNotificationSender([
+            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+        );
 
         this._sun = helpers.UpdatingEntityProvider.GetSun();   
         this._officeDoor = helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeDoor);
@@ -139,10 +144,8 @@ public class OutsideRegistry : IAutomationRegistry
         {
             do
             {
-                await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, message);
-
-                //await _services.Api.NotifyAlexaMedia(message, ["Kitchen", "Living Room"]);
-                
+                await _notifyDiningRoom(message);
+                                
                 await Task.Delay(seconds, ct); // <-- use the cancellation token
 
                 var doorState = await _services.EntityProvider.GetOnOffEntity(entityId, ct);

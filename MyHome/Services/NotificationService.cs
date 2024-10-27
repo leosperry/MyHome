@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.Services;
 
 namespace MyHome;
 
@@ -46,15 +47,18 @@ public class NotificationService : INotificationService
 {
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
-
+    private readonly INotificationObserver _notificationObserver;
+    private readonly ILogger<NotificationService> _logger;
     readonly INotificationChannel _persistent;
 
     readonly List<INotificationClearingChannel> _clearers = new();
 
-    public NotificationService(IHaServices services, LightAlertModule lam)
+    public NotificationService(IHaServices services, LightAlertModule lam, INotificationObserver notificationObserver, ILogger<NotificationService> logger)
     {
         _services = services;
         _lam = lam;
+        this._notificationObserver = notificationObserver;
+        this._logger = logger;
         _persistent = new PersistentNotificationChannel(services.Api);
     }
 
@@ -74,7 +78,7 @@ public class NotificationService : INotificationService
 
     public INotificationChannel CreateAudibleChannel(IEnumerable<string> media_player_targets, PiperSettings? voiceSettings = null)
     {
-        return new AudibleNotificationChannel(_services.Api, media_player_targets, voiceSettings);
+        return new AudibleNotificationChannel(_services.Api, media_player_targets, _logger, _notificationObserver, voiceSettings);
     }
 
     public INotificationChannel CreateGroupOrDeviceChannel(params string[] device_targets)

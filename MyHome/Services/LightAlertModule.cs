@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
+using System.Text.Json;
 using HaKafkaNet;
 
 namespace MyHome;
@@ -7,7 +8,7 @@ namespace MyHome;
 public class LightAlertModule : IDisposable
 {
     readonly IHaApiProvider _api;
-    readonly IHaEntityProvider _entityProvider;
+    private readonly IHaEntity<OnOff, JsonElement> _officeMotion;
     readonly ILogger _logger;
 
     readonly CancellationTokenSource _cancelSource = new();
@@ -22,11 +23,8 @@ public class LightAlertModule : IDisposable
     ConcurrentQueue<(string, LightTurnOnModel)> _newItems = new();
     ConcurrentDictionary<string, object?> _itemsToRemove = new();
 
-    static readonly string[] ALERT_LIGHTS = [Lights.Monkey, Lights.OfficeLeds];
-
     static LightTurnOnModel _standby = new()
     {
-        EntityId = ALERT_LIGHTS,
         //ColorName = "gold",
         Brightness = Bytes._10pct,
         RgbColor = (255, 215, 2)
@@ -39,10 +37,10 @@ public class LightAlertModule : IDisposable
         StartTracking();
     }
 
-    public LightAlertModule(IHaApiProvider api, IHaEntityProvider entityProvider, ILogger<LightAlertModule> logger)
+    public LightAlertModule(IHaApiProvider api, IStartupHelpers helpers, ILogger<LightAlertModule> logger)
     {
         _api = api;
-        _entityProvider = entityProvider;
+        this._officeMotion = helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeMotion);
         _logger = logger;
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         StartTracking();
@@ -51,6 +49,7 @@ public class LightAlertModule : IDisposable
     public void ConfigureStandByBrightness(Byte brightness)
     {
         _standby.Brightness = brightness;
+        _standby.EntityId = GetAlertLights();
         _api.LightTurnOn(_standby);
     }
 
@@ -73,6 +72,15 @@ public class LightAlertModule : IDisposable
             _itemsToRemove.TryAdd(item.Item1, null);
         }
         _ = RunNow();
+    }
+
+    private IEnumerable<string> GetAlertLights()
+    {
+        if (_officeMotion.IsOn())
+        {
+            yield return Lights.OfficeLeds;
+        }
+        yield return Lights.Monkey;
     }
 
     private async Task SetStandby()
@@ -155,7 +163,7 @@ public class LightAlertModule : IDisposable
             else if (_current is null || itemToSet != _current)
             {
                 var settings = itemToSet.Value.Item2;
-                settings.EntityId = ALERT_LIGHTS;
+                settings.EntityId = GetAlertLights();
                 settings.Transition = 2;
 
                 await _api.LightTurnOn(itemToSet.Value.Item2);

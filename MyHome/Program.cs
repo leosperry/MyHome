@@ -97,7 +97,7 @@ services
         model => new DynamicLightAdjuster(model, sp.GetRequiredService<ILogger<DynamicLightAdjuster>>()))
     .AddSingleton<INotificationService, NotificationService>()
     .AddSingleton<LightAlertModule>()
-    .AddSingleton<HelpersService>()
+    .AddSingleton<INotificationObserver, NotificationObserver>()
     .AddSingleton<OfficeService>();
 
 services.AddHaKafkaNet(config, (kafka, cluster) =>{ });
@@ -112,6 +112,11 @@ app.UseCors("hknDev");
 
 await app.StartHaKafkaNet();
 
+// start my home stuff
+await app.Services.GetRequiredService<INotificationObserver>().Init();
+
 app.MapGet("/", () => Results.Redirect("hakafkanet"));
 
 app.Run();
+
+

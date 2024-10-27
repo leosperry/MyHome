@@ -8,13 +8,15 @@ public class KitchenRegistry : IAutomationRegistry
 {
     readonly IHaServices _services;
     readonly IAutomationBuilder _builder;
+    private readonly ILogger<KitchenRegistry> _logger;
     private readonly IHaEntity<OnOff, LightModel> _kitchenLights;
     private readonly IHaEntity<float?, JsonElement> _solarMeter;
 
-    public KitchenRegistry(IHaServices services, IStartupHelpers helpers)
+    public KitchenRegistry(IHaServices services, IStartupHelpers helpers, ILogger<KitchenRegistry> logger)
     {
         _services = services;
         _builder = helpers.Builder;
+        this._logger = logger;
 
         _kitchenLights = helpers.UpdatingEntityProvider.GetLightEntity(Lights.KitchenLights);
         _solarMeter = helpers.UpdatingEntityProvider.GetFloatEntity(Devices.SolarPower);
@@ -22,20 +24,36 @@ public class KitchenRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        // reg.Register(
-        //     Zone1Enter_TurnOn(), 
-        //     Zone2Enter_TurnOnALittle()
-        // );
-
-        // reg.RegisterDelayed(
-        //     NoOccupancy_for5min_TurnOff()
-        // );
-
         var exceptions = reg.TryRegister(
             Zone1Enter_TurnOn,
             Zone2Enter_TurnOnALittle,
-            NoOccupancy_for5min_TurnOff
+            NoOccupancy_for5min_TurnOff,
+            ReplayNotification
         );
+    }
+
+    IAutomationBase ReplayNotification()
+    {
+        return _builder.CreateSimple<float>()
+            .WithTriggers(Helpers.AudibleAlertToPlay)
+            .WithName("Replay notification")
+            .WithExecution(async (sc, ct) => {                
+                if (sc.BecameGreaterThan(0))
+                {
+                    _logger.LogInformation("became greater than 0");
+                    var msgToPlay = (await _services.EntityProvider.GetEntity($"input_text.audible_alert_{sc.New.State}"))?.State;
+                    if (msgToPlay is null)
+                    {
+                        await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "could not retrieve message", true);
+                    }
+                    else
+                    {
+                        await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, msgToPlay);
+                    }
+                    await _services.Api.InputNumberSet(Helpers.AudibleAlertToPlay, 0);
+                }
+            })
+            .Build();
     }
 
     IAutomation Zone2Enter_TurnOnALittle()

@@ -8,7 +8,7 @@ public class RachelRegistry : IAutomationRegistry
     IAutomationBuilder _builder;
     IHaServices _services;
     readonly INotificationService _notificationService;
-    readonly NotificationSender _notifyKitchenLivingRoom;
+    readonly NotificationSender _notifyDiningAndMainBedroom;
     readonly NotificationSenderNoText _notifyPressure;
     
     public RachelRegistry(IAutomationBuilder builder, IHaServices services, INotificationService notificationService)
@@ -17,8 +17,8 @@ public class RachelRegistry : IAutomationRegistry
         _services = services;
         _notificationService = notificationService;
 
-        var channel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom]);
-        _notifyKitchenLivingRoom = notificationService.CreateNotificationSender([channel]);
+        var channel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom, MediaPlayers.MainBedroom]);
+        _notifyDiningAndMainBedroom = notificationService.CreateNotificationSender([channel]);
 
         _notifyPressure = _notificationService.CreateNoTextNotificationSender([_notificationService.CreateMonkeyChannel(new()
         {
@@ -59,7 +59,7 @@ public class RachelRegistry : IAutomationRegistry
             .WithName("Lyra Brush Hair")
             .WithTriggers("binary_sensor.lyra_brush_hair")
             .WithExecution((sc, ct) => {
-                _notifyKitchenLivingRoom("Time to brush Lyra's hair");
+                _notifyDiningAndMainBedroom("Time to brush Lyra's hair");
                 return Task.CompletedTask;
             })
             .Build();
@@ -79,7 +79,7 @@ public class RachelRegistry : IAutomationRegistry
                     var batteryState = await _services.EntityProvider.GetBatteryStateEntity("sensor.rachel_phone_battery_state");
                     if (batteryState?.State != BatteryState.Charging)
                     {
-                        await _notifyKitchenLivingRoom("Rachel, your phone battery is low");
+                        await _notifyDiningAndMainBedroom("Rachel, your phone battery is low");
                     }
                 }
             })

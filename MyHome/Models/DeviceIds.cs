@@ -112,6 +112,7 @@ public static class MediaPlayers
 public static class Helpers
 {
     public const string
+        AudibleAlertToPlay = "input_number.audible_alert_to_play",
         BedTime = "input_boolean.bedtime_switch",
         ClearNotificationButton = "input_button.clear_notifications",
         LivingRoomOverride = "input_boolean.living_room_override",

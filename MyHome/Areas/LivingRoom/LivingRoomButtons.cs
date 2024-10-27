@@ -10,6 +10,7 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
     readonly INotificationService _notificationService;
     readonly ILogger _logger;
     private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
+    private readonly NotificationSender _diningRoomChannel;
     LightTurnOnModel _tvBacklightPresets = new LightTurnOnModel()
     {
         EntityId = [Lights.TvBacklight],
@@ -31,6 +32,10 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         _logger = logger;
 
         this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode); 
+
+        this._diningRoomChannel = _notificationService.CreateNotificationSender([
+            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+        );
     }
 
     public Task Execute(HaEntityStateChange<HaEntityState<DateTime?, SceneControllerEvent>> sceneEvent, CancellationToken ct)
@@ -82,11 +87,13 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         var respose = await _services.Api.Toggle(Helpers.MaintenanceMode);
         if (!respose.IsSuccessStatusCode)
         {
-            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "failed to toggle maintenance mode");
+            await _diningRoomChannel("failed to toggle maintenance mode");
+            //await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, );
         }
         else
         {
-            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "maintenance mode toggled");
+            await _diningRoomChannel("maintenance mode toggled");
+            //await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "maintenance mode toggled");
         }
     }
 

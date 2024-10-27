@@ -1,15 +1,15 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 using MyHome.Services;
 
 namespace MyHome;
 
 public class SystemMonitor : ISystemMonitor
 {
-    private readonly HelpersService _helpersService;
     readonly IHaServices _services;
     readonly LightAlertModule _lam;
     readonly ILogger<SystemMonitor> _logger;
-
+    private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
     private bool _sendBadStateEvents = true;
 
     /// <summary>
@@ -17,17 +17,17 @@ public class SystemMonitor : ISystemMonitor
     /// </summary>
     public static DateTime StartTime { get; private set; }
 
-    public SystemMonitor(HelpersService helpersService, IHaServices services, LightAlertModule lam, ILogger<SystemMonitor> logger)
+    public SystemMonitor(IHaServices services, LightAlertModule lam, IStartupHelpers helpers, ILogger<SystemMonitor> logger)
     {
-        _helpersService = helpersService;
         _services = services;
         _lam = lam;
         _logger = logger;
+        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
     }
 
     public async Task BadEntityStateDiscovered(BadEntityState badStates)
     {
-        if (badStates.EntityId.StartsWith("event") || await _helpersService.MaintenanceModeIsOn())
+        if (badStates.EntityId.StartsWith("event") || _maintenanceMode.IsOn())
         {
             return;
         }
@@ -79,7 +79,7 @@ public class SystemMonitor : ISystemMonitor
 
     public async Task HaApiResponse(HaServiceResponseArgs args, CancellationToken ct)
     {
-        if (await _helpersService.MaintenanceModeIsOn())
+        if (_maintenanceMode.IsOn())
         {
             return;
         }

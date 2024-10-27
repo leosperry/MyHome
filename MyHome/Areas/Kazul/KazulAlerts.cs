@@ -1,4 +1,5 @@
-﻿using HaKafkaNet;
+﻿using System.Text.Json;
+using HaKafkaNet;
 using MyHome.Services;
 
 namespace MyHome;
@@ -23,19 +24,19 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         {CERAMIC_POWER, (CERAMIC_SWITCH, "ceramic heater")},
         {HALOGEN_POWER, (HALOGEN_SWITCH, "halogen lamp")}
     };
-    private readonly HelpersService _helpersService;
     private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entities;
     private readonly NotificationSender _notifyCritical;
     private readonly NotificationSender _notifyInformational;
+    private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
 
-    public KazulAlerts(HelpersService helpersService, IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService)
+    public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService, IStartupHelpers startupHelpers)
     {
-        _helpersService = helpersService;
         _api = api;
         _entities = entities;
         _notifyCritical = notificationService.GetCritical();
         _notifyInformational = notificationService.CreateInformationalSender();
+        this._maintenanceMode = startupHelpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
     }
 
 
@@ -46,7 +47,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
 
     public async Task Execute(HaEntityStateChange stateChange, CancellationToken cancellationToken)
     {
-        if (await _helpersService.MaintenanceModeIsOn())
+        if (_maintenanceMode.IsOn())
         {
             return;
         }

@@ -11,6 +11,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     readonly INotificationService _notificationService;
     readonly ILogger _logger;
     private readonly IHaEntity<MediaPlayerState, SonosAttributes> _asherMediaPlayer;
+    private readonly NotificationSender _diningRoomChannel;
 
     public DiningRoomButtons(IHaServices servcies, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider, ILogger<DiningRoomButtons> logger)
     {
@@ -19,6 +20,10 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         _logger = logger;
 
         _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+
+        this._diningRoomChannel = _notificationService.CreateNotificationSender([
+            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+        );        
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
@@ -147,7 +152,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         else
         {
             _logger.LogWarning("Asher speaker state is {AsherState}", _asherMediaPlayer?.State.ToString() ?? "null" );
-            await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "Something is wrong with Asher's speaker");
+            await _diningRoomChannel("Something is wrong with Asher's speaker");
         }
     }
 
