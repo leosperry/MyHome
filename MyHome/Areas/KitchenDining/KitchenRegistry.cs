@@ -37,10 +37,9 @@ public class KitchenRegistry : IAutomationRegistry
         return _builder.CreateSimple<float>()
             .WithTriggers(Helpers.AudibleAlertToPlay)
             .WithName("Replay notification")
-            .WithExecution(async (sc, ct) => {                
+            .WithExecution(async (sc, ct) => {
                 if (sc.BecameGreaterThan(0))
                 {
-                    _logger.LogInformation("became greater than 0");
                     var msgToPlay = (await _services.EntityProvider.GetEntity($"input_text.audible_alert_{sc.New.State}"))?.State;
                     if (msgToPlay is null)
                     {
@@ -56,13 +55,13 @@ public class KitchenRegistry : IAutomationRegistry
             .Build();
     }
 
-    IAutomation Zone2Enter_TurnOnALittle()
+    IAutomationBase Zone2Enter_TurnOnALittle()
     {
-        return _builder.CreateSimple()
+        return _builder.CreateSimple<int>()
             .WithName("Zone2Enter - Turn on a little")
             .WithTriggers(Sensors.KitchenZone2AllCount)
             .WithExecution(async (sc,ct) => {
-                if (_solarMeter.State < 1100)
+                if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
                     if (_kitchenLights.IsOff())
                     {
@@ -73,17 +72,16 @@ public class KitchenRegistry : IAutomationRegistry
             .Build();
     }
 
-    IAutomation Zone1Enter_TurnOn()
+    IAutomationBase Zone1Enter_TurnOn()
     {
-        return _builder.CreateSimple()
+        return _builder.CreateSimple<int>()
             .WithName("Turn On Kithen Lights")
             .WithDescription("If ambient light is low, turn on kitchen lights")
             .WithTriggers(Sensors.KitchenZone1AllCount)
             .WithExecution(async (sc, ct) => {
-                if (_solarMeter.State < 1100)
+                if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
-                    var lightStatus = await _services.EntityProvider.GetLightEntity(Lights.KitchenLights);
-                    if (lightStatus.IsOff() || lightStatus!.Attributes!.Brightness < Bytes.PercentToByte(20))
+                    if (_kitchenLights.IsOff() || _kitchenLights.Attributes?.Brightness < Bytes.PercentToByte(20))
                     {
                         await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._20pct);
                     }
@@ -92,16 +90,16 @@ public class KitchenRegistry : IAutomationRegistry
             .Build();
     }
 
-    ISchedulableAutomation NoOccupancy_for5min_TurnOff()
+    IAutomationBase NoOccupancy_for5min_TurnOff()
     {
         var minutesToLeaveOn = 5;
 
-        return _builder.CreateSchedulable()
+        return _builder.CreateSchedulable<OnOff>()
             .WithName("Turn Off Kitchen Lights")
             .WithDescription($"Turn off the kitchen lights when unoccupied for {minutesToLeaveOn} minutes")
             .MakeDurable()
             .WithTriggers(Sensors.KitchenPresence)
-            .While(sc => sc.ToOnOff().IsOff() && _kitchenLights.IsOn())
+            .While(sc => sc.IsOff() && _kitchenLights.IsOn())
             .For(TimeSpan.FromMinutes(minutesToLeaveOn))
             .WithExecution(ct => {
                 return _services.Api.TurnOff(Lights.KitchenLights);

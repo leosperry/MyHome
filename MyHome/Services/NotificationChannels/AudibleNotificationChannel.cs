@@ -23,7 +23,7 @@ public class AudibleNotificationChannel : INotificationChannel
 
     public async Task Send(NotificationId id, string message, string? title = null)
     {
-        var response = await _api.SpeakPiper(_targets, message, true, _voiceSettings);
+        var response = await _api.SpeakPiper(_targets, title ?? message, true, _voiceSettings);
         if(!response.IsSuccessStatusCode)
         {
             _logger.LogError("piper did not succeed - status:{status_code}, reason:{reason}", response.StatusCode, response.ReasonPhrase);

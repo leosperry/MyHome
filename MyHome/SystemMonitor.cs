@@ -27,7 +27,16 @@ public class SystemMonitor : ISystemMonitor
 
     public async Task BadEntityStateDiscovered(BadEntityState badStates)
     {
-        if (badStates.EntityId.StartsWith("event") || _maintenanceMode.IsOn())
+        var maintenanceModeIsOn = false;
+        try
+        {
+            maintenanceModeIsOn = _maintenanceMode.IsOn();
+        }
+        catch (System.Exception)
+        {
+            _logger.LogInformation("maintenance mode was not initialilzed");
+        }
+        if (badStates.EntityId.StartsWith("event") || maintenanceModeIsOn)
         {
             return;
         }
@@ -83,18 +92,8 @@ public class SystemMonitor : ISystemMonitor
         {
             return;
         }
-        if (args.Exception is not null)
-        {
-            _logger.LogCritical(args.Exception, "critical failure calling HA service");
-        }
-        else if (args.Response is not null)
-        {
-            _logger.LogError("HA service response:{response_code}, reason:{reason}, data:{data}", args.Response.StatusCode, args.Response.ReasonPhrase, args.Data);
-        }
-        else
-        {
-            _logger.LogError("should not happen");
-        }
+
+        _logger.LogError("HA service response:{response_code}, reason:{reason}, data:{data}, exception {exception}", args.Response?.StatusCode, args.Response?.ReasonPhrase, args.Data, args.Exception);
 
         string title = "HA Service call failed.";
         string message = $"{args.Domain}.{args.Service} was sent {args.Data}";
@@ -116,7 +115,14 @@ public class SystemMonitor : ISystemMonitor
     {
         if(sc.New.State != "unknown" && sc.New.State != "unavailable")
         {
+            string? automationName = null;
+            if (auto is IAutomationMeta automationMeta)
+            {
+                automationName = automationMeta.GetMetaData().Name;
+            }
+            _logger.LogError("Type Conversion Failure in {automation_name} of type {automation_type}. State: {failed_state}", auto.GetType().Name, automationName, sc);
             await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Type conversion failed","Breaking Change alert");
+
         }
     }
 }

@@ -48,9 +48,9 @@ public class OutsideRegistry : IAutomationRegistry
     public void Register(IRegistrar reg)
     {
         reg.TryRegister(
-            _helpers.Factory.DurableAutoOff("switch.back_flood", TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
-            _helpers.Factory.DurableAutoOff("switch.back_porch_light", TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
-            _helpers.Factory.DurableAutoOff("light.front_porch", TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min"),
+            _helpers.Factory.DurableAutoOff(Lights.BackFlood, TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
+            _helpers.Factory.DurableAutoOff(Lights.BackPorch, TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
+            _helpers.Factory.DurableAutoOff(Lights.FrontPorchLight, TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min"),
             WhenDoorStaysOpen_Alert("binary_sensor.inside_garage_door_contact_opening", "Inside Garage Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door"),
@@ -58,7 +58,7 @@ public class OutsideRegistry : IAutomationRegistry
             GarageOpenAlert("Garage Door 2",GarageService.GARAGE2_CONTACT)
         );
 
-        var exceptions = reg.TryRegister(
+        reg.TryRegister(
             OpenGarageFromSWitch,
             MakeSureGarageSwitchesAreOff,
             GarageOpens_TurnOnBackHall
@@ -98,11 +98,10 @@ public class OutsideRegistry : IAutomationRegistry
 
     IAutomationBase OpenGarageFromSWitch()
     {
-        return _helpers.Builder.CreateSimple()
+        return _helpers.Builder.CreateSceneController()
             .WithName("Open Garage From switch")
             .WithTriggers("event.back_hall_light_scene_001", "event.back_hall_light_scene_002")
-            .WithExecution((sc, ct) =>{
-                var scene = sc.ToSceneControllerEvent();
+            .WithExecution((scene, ct) =>{
                 if(scene.New.StateAndLastUpdatedWithin1Second())
                 {
                     var btn = scene.EntityId.Last();
@@ -183,7 +182,7 @@ public class OutsideRegistry : IAutomationRegistry
                 }
                 else
                 {
-                    return _maintenanceMode.IsOn();
+                    return true;
                 }
             })
             .For(TimeSpan.FromHours(1))

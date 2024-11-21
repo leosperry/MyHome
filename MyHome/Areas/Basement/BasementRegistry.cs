@@ -1,4 +1,5 @@
 ﻿using HaKafkaNet;
+using MyHome.People;
 
 namespace MyHome;
 
@@ -7,16 +8,20 @@ public class BasementRegistry : IAutomationRegistry
     readonly IHaServices _services;
     readonly IAutomationBuilder _builder;
     readonly IAutomationFactory _factory;
+    private readonly AsherService _asherService;
 
-    public BasementRegistry(IHaServices services, IStartupHelpers helpers)
+    public BasementRegistry(AsherService asherService, IHaServices services, IStartupHelpers helpers)
     {
         _services = services;
         _builder = helpers.Builder;
         _factory = helpers.Factory;
+        _asherService = asherService;
     }
 
     public void Register(IRegistrar reg)
     {
+        reg.TryRegister(CallAsherFromDashboard);
+        
         reg.TryRegister(() => _factory.EntityOnOffWithAnother(Sensors.BasementStairMotion, Lights.BasementStair)
             .WithMeta("Basement Stair motion", "set stair light with motion sensor"));
 
@@ -42,6 +47,22 @@ public class BasementRegistry : IAutomationRegistry
             .For(TimeSpan.FromMinutes(10))
             .WithExecution(DimOverTime)
             .Build());
+    }
+
+    IAutomationBase CallAsherFromDashboard()
+    {
+        return _builder.CreateSimple<DateTime?>()
+            .WithName("Call Asher from dashboard")
+            .WithDescription("Uses a helpert to trigger random message to play to call Asher")
+            .WithTriggers(Helpers.AsherDashboardButton)
+            .WithExecution(async (sc, ct) =>
+            {
+                if (sc.New.StateAndLastUpdatedWithin1Second())
+                {
+                    await _asherService.PlayRandom(0.25f, ct);
+                }
+            })
+            .Build();
     }
 
     async Task<byte> GetBasementAverageBrighness(CancellationToken ct)

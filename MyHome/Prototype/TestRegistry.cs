@@ -45,7 +45,7 @@ public class TestRegistry : IAutomationRegistry
                 try
                 {
                     await TestButtonAction();
-                    _logger.LogWarning("test automation success");
+                    _logger.LogTrace("test automation success");
                 }
                 catch (System.Exception ex)
                 {

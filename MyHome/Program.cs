@@ -3,6 +3,7 @@ using KafkaFlow;
 using Microsoft.AspNetCore.DataProtection;
 using MyHome;
 using MyHome.Areas.Office;
+using MyHome.People;
 using MyHome.Services;
 using NLog.Extensions.Logging;
 using NLog.Web;
@@ -14,6 +15,7 @@ using OpenTelemetry.Trace;
 using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Logging.ClearProviders();
 builder.Host.UseNLog();
 
 var services = builder.Services;
@@ -66,6 +68,7 @@ builder.Logging.AddOpenTelemetry(logging => {
         });
 });
 
+
 // for local development of dashboard only
 services.AddCors(options => {
     options.AddPolicy("hknDev", policy =>{
@@ -91,6 +94,7 @@ services.AddDataProtection()
 
 //my services
 services
+    .AddSingleton<AsherService>()
     .AddSingleton<IGarageService, GarageService>()
     .AddSingleton<LivingRoomService>()
     .AddSingleton<Func<IDynamicLightAdjuster.DynamicLightModel, IDynamicLightAdjuster>>(sp => 
@@ -105,6 +109,10 @@ services.AddHaKafkaNet(config, (kafka, cluster) =>{ });
 
 var app = builder.Build();
 
+
+
+var logger = app.Services.GetRequiredService<ILogger<Program>>();
+
 NLog.LogManager.Configuration = new NLogLoggingConfiguration(builder.Configuration.GetSection("NLog"));
 
 // for local development of dashboard only
@@ -112,11 +120,21 @@ app.UseCors("hknDev");
 
 await app.StartHaKafkaNet();
 
+
 // start my home stuff
 await app.Services.GetRequiredService<INotificationObserver>().Init();
 
 app.MapGet("/", () => Results.Redirect("hakafkanet"));
 
-app.Run();
+try
+{
+    app.Run();
+}
+catch (System.Exception ex)
+{
+    app.Logger.LogCritical(ex, "application is shutting down");
+    throw;
+}
 
+app.Logger.LogCritical("applicatin has shut down");
 

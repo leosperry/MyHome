@@ -1,17 +1,16 @@
-using System;
+using System.Text.Json.Serialization;
 using HaKafkaNet;
-using Microsoft.VisualBasic;
 
 namespace MyHome.Automations;
 
-public class WeatherAlerts : IAutomation, IAutomationMeta
+public class WeatherAlerts : IAutomation<int, WeatherAlertsAttributes>, IAutomationMeta, IFallbackExecution
 {
     readonly IHaServices _services;
     readonly ILogger<WeatherAlerts> _logger;
     readonly AutomationMetaData _meta;
     readonly NotificationSender _alertCritical;
 
-    Dictionary<string, WeatherAlertAttributes> _weatherAlerts = new();
+    public EventTiming EventTimings { get => EventTiming.Durable | EventTiming.PreStartupSameAsLastCached; }
 
     public WeatherAlerts(IHaServices services, ILogger<WeatherAlerts> logger, INotificationService notificationService)
     {
@@ -27,89 +26,127 @@ public class WeatherAlerts : IAutomation, IAutomationMeta
         };
     }
 
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    public async Task FallbackExecute(Exception ex, HaEntityStateChange stateChange, CancellationToken ct)
     {
-        var alertState = stateChange.ToOnOff<WeatherAlertAttributes>();
-        var alert = alertState.New.Attributes;
-        if (alert?.alert_id is not null)
-        {
-            bool isNew = _weatherAlerts.ContainsKey(alert.alert_id);
-            _weatherAlerts[alert.alert_id] = alert;
-            if (isNew && alert.alert_event?.ToLower().Contains("warning") == true)
-            {
-                await _alertCritical(alert.spoken_message ?? alert.spoken_title ?? alert.alert_title ?? "check weather alerts", alert.alert_id);
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Could not parse weather alert");
-        }
+        await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, "Got a weather alert that didn't parse");
     }
 
     public AutomationMetaData GetMetaData() => _meta;
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        //yield return "sensor.weatheralerts_1_active_alerts";
-        yield return "sensor.weatheralerts_1_alert_1";
-        yield return "sensor.weatheralerts_1_alert_2";
-        yield return "sensor.weatheralerts_1_alert_3";
-        yield return "sensor.weatheralerts_1_alert_4";
-        yield return "sensor.weatheralerts_1_alert_5";
+        yield return "sensor.nws_alerts";
+        yield return "sensor.nws_alerts_2";
+    }
+
+    public async Task Execute(HaEntityStateChange<HaEntityState<int, WeatherAlertsAttributes>> stateChange, CancellationToken ct)
+    {
+        var alerts = stateChange.New.Attributes?.Alerts;
+        if (alerts?.Length > 0)
+        {
+            foreach (var alert in alerts)
+            {
+                if (alert.ID is not null)
+                {
+                    var alertId = alert.ID.ToString()!;
+                    var cached = await _services.Cache.GetUserDefinedObject<WeatherAlert>(alertId);
+                    HandleNewWeatherAlert(cached, alert);
+                    await _services.Cache.SetUserDefinedObject(alertId, alert);
+                }                
+            }
+        }
+        
+        await Task.CompletedTask;
+    }
+
+    private void HandleNewWeatherAlert(WeatherAlert? cached, WeatherAlert alert)
+    {
+        if (cached is null)
+        {
+            // it's a new one
+            if ( alert.Certainty >= WeatherAlertCertainty.Likely && alert.Severity >= WeatherAlertSeverity.Severe)
+            {
+                _alertCritical(alert.Description, alert.Headline ?? "Severe Weather Alert", new NotificationId(alert.ID.ToString()!));
+            }
+        }
     }
 }
 
-
-internal class WeatherAlertAttributes
+public record WeatherAlertsAttributes
 {
-    public string? alert_id { get; set; }
-    public string? alert_event { get; set; }
-    public string? alert_area { get; set; }
-    public string? alert_NWSheadline { get; set; }
-    public string? alert_description { get; set; }
-    public string? alert_messageType { get; set; }
-    public string? alert_status { get; set; }
-    public string? alert_category { get; set; }
-    public string? alert_urgency { get; set; }
-    public string? alert_severity { get; set; }
-    public string? alert_certainty { get; set; }
-    public string? alert_response { get; set; }
-    public string? alert_instruction { get; set; }
-    public string? alert_sent { get; set; }
-    public string? alert_effective { get; set; }
-    public string? alert_onset { get; set; }
-    public string? alert_expires { get; set; }
-    public string? alert_title { get; set; }
-    public string? display_title { get; set; }
-    public string? alert_zoneid { get; set; }
-    public string? display_message { get; set; }
-    public string? spoken_title { get; set; }
-    public string? spoken_message { get; set; }
-    /*
-alert_id: null
-alert_event: null
-alert_area: null
-alert_NWSheadline: null
-alert_description: null
-alert_messageType: null
-alert_status: null
-alert_category: null
-alert_urgency: null
-alert_severity: null
-alert_certainty: null
-alert_response: null
-alert_instruction: null
-alert_sent: null
-alert_effective: null
-alert_onset: null
-alert_expires: null
-alert_title: null
-display_title: null
-alert_zoneid: null
-display_message: null
-spoken_title: null
-spoken_message: null
-icon: hass:alert-rhombus
-friendly_name: Weather Alert 1
-    */
+    public WeatherAlert[]? Alerts { get; set; }  
+
+    [JsonPropertyName("friendly_name")]
+    public string? FriendlyName { get; set; }  
+}
+
+public record WeatherAlert
+{
+    public string? Event { get; set; }
+    public Guid? ID { get; set; }
+    public string? URL { get; set; }
+    public string? Headline { get; set; }
+    public WeatherAlertType? Type { get; set; }
+    public WeatherAlertStatus? Status { get; set; }
+    public WeatherAlertSeverity? Severity { get; set; }
+    public WeatherAlertCertainty? Certainty { get; set; }
+    public DateTime? Sent { get; set; }
+    public DateTime? Onset { get; set; }
+    public DateTime? Expires { get; set; }
+    public DateTime? Ends { get; set; }
+    public string? AreasAffected { get; set; }
+    public required string Description { get; set; }
+    public string? Instruction { get; set; }
+    public WeatherAlertResponseType? Response { get; set; }
+
+    public string? Urgency { get; set; }
+
+    public string? Category { get; set; }
+}
+
+public enum WeatherAlertSeverity
+{
+    Unknown = 0,
+    Minor = 1,
+    Moderate = 2,
+    Severe = 3,
+    Extreme = 4
+}
+
+public enum WeatherAlertResponseType
+{
+    Shelter = 8,
+    Evacuate = 7,
+    Prepare = 6,
+    Execute = 5,
+    Avoid = 4,
+    Monitor = 3,
+    Assess = 2,
+    AllClear = 1,
+    None = 0
+}
+
+public enum WeatherAlertCertainty
+{
+    Unknown = 0,
+    Unlikely = 1,
+    Possible = 2,
+    Likely = 3,
+    Observed = 4
+}
+
+public enum WeatherAlertStatus
+{
+    Actual, Exercise, System, Test, Draft
+}
+
+public enum WeatherAlertType
+{
+    Alert, Update, Cancel, Ack, Error
+}
+
+public enum WeatherAlertUrgency
+{
+    Unknown,
+    Immediate, Expected, Future, Past, 
 }

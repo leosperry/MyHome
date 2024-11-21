@@ -28,27 +28,7 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        // reg.RegisterDelayed(
-        //     Sunrise(),
-        //     SunDusk(),
-        //     Sunset()
-        // );
-
-        // reg.Register(
-        //     SolarPowerChange(),
-            
-        //     OverrideTurnedOff_SetLights()
-        // );
-
-        // reg.Register(SomeoneInLivingRoom());
-
-        // reg.RegisterDelayed(
-        //     NoOneDownstairs_for20min_PauseRoku()
-            
-        // );
-        // reg.RegisterDelayed(NoOneInLivingRoom_for5min_TurnOffLights());
-
-        var exceptions = reg.TryRegister(
+        reg.TryRegister(
             Sunrise,
             SunDusk,
             Sunset,
@@ -56,8 +36,24 @@ public class LivingRoomRegistry : IAutomationRegistry
             OverrideTurnedOff_SetLights,
             SomeoneInLivingRoom,
             NoOneDownstairs_for20min_PauseRoku,
-            NoOneInLivingRoom_for5min_TurnOffLights
+            NoOneInLivingRoom_forXmin_TurnOffLights,
+            FindRokuFromDashboard
         );
+    }
+
+    private IAutomationBase FindRokuFromDashboard()
+    {
+        return _builder.CreateSimple<DateTime?>()
+            .WithName("Find Roku Remote from dashboard")
+            .WithTriggers(Helpers.FindRoku)
+            .WithExecution(async (sc, ct) =>
+            {
+                if (sc.New.StateAndLastUpdatedWithin1Second())
+                {
+                    await _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString());
+                }
+            })
+            .Build();
     }
 
     private IAutomation SolarPowerChange()
@@ -72,7 +68,6 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     Task RokuCommand(RokuCommands command)
     {
-        _logger.LogWarning("{command} Remote command sent to roku", command);
         return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
     }
 
@@ -86,9 +81,9 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    IDelayableAutomation<OnOff, JsonElement> NoOneInLivingRoom_for5min_TurnOffLights()
+    IDelayableAutomation<OnOff, JsonElement> NoOneInLivingRoom_forXmin_TurnOffLights()
     {
-        var downstairsLightDelayMinutes = 10;
+        var downstairsLightDelayMinutes = 15;
 
         return _builder.CreateSchedulable<OnOff>()
             .MakeDurable()
@@ -96,7 +91,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithDescription($"After {downstairsLightDelayMinutes} min, Turn Off living room lights")
             .WithTriggers(Sensors.LivingRoomPresence)
             .While(sc => sc.New.IsOff())
-            .For(TimeSpan.FromMinutes(downstairsLightDelayMinutes))
+            .ForMinutes(downstairsLightDelayMinutes)
             .WithExecution(ct => {
                 _lam.ConfigureStandByBrightness(0);
                 return Task.WhenAll(
@@ -117,7 +112,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             .WithDescription("after 30 min, pause the roku and turn off dining room")
             .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
             .While(sc => sc.New.State == 0)
-            .For(TimeSpan.FromMinutes(20))
+            .ForMinutes(20)
             .WithExecution(async ct => {
                 if(_rokuMediaPlayer.State == MediaPlayerState.Playing)
                 {

@@ -47,7 +47,6 @@ public class LivingRoomService
 
         if (occupiedAt is null)
         {
-            _logger.LogWarning("could not get living room occupied state");
             return null;
         }
         
@@ -58,6 +57,7 @@ public class LivingRoomService
     {
         if (_presence.Bad())
         {
+            _logger.LogWarning(Sensors.LivingRoomPresence + " is in a bad state: {state}", _presence.State);
             return null;
         }
         if (_presence.IsOn())

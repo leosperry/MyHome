@@ -14,10 +14,10 @@ public class GarageService : IGarageService
 {
     public const string GARAGE1_CONTACT = "binary_sensor.garage_1_contact_opening";
     public const string GARAGE2_CONTACT = "binary_sensor.garage_2_contact_opening";
-    public const string GARAGE1_TILT = "binary_sensor.garage_door_1_tilt_sensor_state_any";
-    public const string GARAGE2_TILT = "binary_sensor.garage_door_2_tilt_sensor_state_any";
-    public const string GARAGE1_DOOR_OPENER = "switch.garage_door_opener";
-    public const string GARAGE2_DOOR_OPENER = "switch.garage_door_opener_2";
+    public const string GARAGE1_TILT = "binary_sensor.garage_1_tilt_sensor_state_any";
+    public const string GARAGE2_TILT = "binary_sensor.garage_2_tilt_sensor_state_any";
+    public const string GARAGE1_DOOR_OPENER = "light.garage_1_opener";
+    public const string GARAGE2_DOOR_OPENER = "light.garage_2_opener";
     public const string BACK_HALL_LIGHT = "switch.back_hall_light";
 
     private IHaEntityProvider _entityProvider;

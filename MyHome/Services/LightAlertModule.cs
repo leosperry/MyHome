@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Diagnostics.Contracts;
 using System.Text.Json;
 using HaKafkaNet;
 
@@ -9,7 +8,7 @@ public class LightAlertModule : IDisposable
 {
     readonly IHaApiProvider _api;
     private readonly IHaEntity<OnOff, JsonElement> _officeMotion;
-    readonly ILogger _logger;
+    readonly ILogger<LightAlertModule> _logger;
 
     readonly CancellationTokenSource _cancelSource = new();
     readonly PeriodicTimer _timer;
@@ -55,18 +54,21 @@ public class LightAlertModule : IDisposable
 
     public void Add(NotificationId id, LightTurnOnModel options)
     {
+        _logger.LogWithStack("Adding Notification {notification_id}", id.Value);
         _newItems.Enqueue((id, options));
         _ = RunNow();
     }
 
     public void Clear(NotificationId id)
     {
+        _logger.LogWithStack("Clearing Notification {notification_id}", id.Value);
         _itemsToRemove.TryAdd(id, null);
         _ = RunNow();
     }
 
     public void ClearAll()
     {
+        _logger.LogWithStack("Clearing All Notifications");
         foreach (var item in _alerts)
         {
             _itemsToRemove.TryAdd(item.Item1, null);
@@ -85,6 +87,7 @@ public class LightAlertModule : IDisposable
 
     private async Task SetStandby()
     {
+        _logger.LogInformation("setting standby. settings : {standby}", _standby);
         await _api.LightTurnOn(_standby);
     }
 

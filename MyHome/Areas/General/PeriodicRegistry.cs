@@ -45,14 +45,4 @@ public class PeriodicRegistry : IAutomationRegistry
             await _services.Api.TurnOff(entityId);
         }
     }
-
-    async Task MakeSureReplaySetToZero()
-    {
-        var audible_alert_to_play = await _services.EntityProvider.GetFloatEntity(Helpers.AudibleAlertToPlay);
-        if (audible_alert_to_play?.State != 0)
-        {
-            _logger.LogWarning(Helpers.AudibleAlertToPlay + " was not set to zero");
-            await _services.Api.InputNumberSet(Helpers.AudibleAlertToPlay, 0);
-        }
-    }
 }

@@ -37,7 +37,6 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
 
         if(!sceneState.New.StateAndLastUpdatedWithin1Second())
         {
-            _logger.LogWarning("Exiting. Not within 1 second");
             return Task.CompletedTask;
         }
         

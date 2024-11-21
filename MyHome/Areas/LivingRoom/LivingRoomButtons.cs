@@ -72,7 +72,6 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
 
     Task RokuCommand(RokuCommands command)
     {
-        _logger.LogWarning("{command} Remote command sent to roku", command);
         return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
     }
 
@@ -163,7 +162,7 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         yield return "event.living_room_buttons_scene_004";
         yield return "event.living_room_buttons_scene_005";
         yield return "event.living_room_buttons_scene_006";
-        //yield return "event.living_room_buttons_scene_007";
+        yield return "event.living_room_buttons_scene_007";
         yield return "event.living_room_buttons_scene_008";
     }
 

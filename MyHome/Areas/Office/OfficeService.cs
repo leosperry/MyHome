@@ -13,15 +13,13 @@ public class OfficeService
     private readonly IDynamicLightAdjuster _lightAdjuster;
     private readonly ILogger<OfficeService> _logger;
     private readonly IEntityStateProvider _entityProvider;
-    private CombinedLight _officeLightsCombined;
 
-    // IHaEntity<OnOff, LightModel> _officeLights;
-    // IHaEntity<OnOff, ColorLightModel> _officeLightBars;
     IHaEntity<int?, JsonElement> _officeIlluminance;
     IHaEntity<OnOff, JsonElement> _officeMotion;
     IHaEntity<float?, JsonElement> _threshold;
     IHaEntity<OnOff, JsonElement> _override;
     IHaEntity<SunState, SunAttributes> _sun;
+    private readonly IUpdatingEntity<OnOff, ColorLightModel> _combinedLightState;
     private IDynamicLightAdjuster.DynamicLightModel _dynamicModel;
 
     private byte _previousBrightness = 127; // set it to something in the middle, init will set it otherwhise.
@@ -50,9 +48,8 @@ public class OfficeService
         _officeMotion = updatingEntityProvider.GetOnOffEntity(Sensors.OfficeMotion);
         _sun = updatingEntityProvider.GetSun();
 
-        _officeLightsCombined = new CombinedLight(_api, _logger,
-            new CombinedLightModel(Lights.OfficeLights, -40, Bytes.PercentToByte(20), MinOn: 22),
-            new CombinedLightModel(Lights.OfficeLightBars, Bytes.PercentToByte(20), Bytes._100pct, true));
+        _combinedLightState = updatingEntityProvider.GetColorLightEntity(Lights.OfficeLightsCombined);
+
     }
 
     internal void Init(byte previousBrightness)
@@ -62,8 +59,10 @@ public class OfficeService
 
     internal async Task TurnOff(CancellationToken ct = default)
     {
-        await _officeLightsCombined.TurnOff(ct);
-        await _api.TurnOff([Devices.OfficeFan, Lights.OfficeLeds], ct);
+        await _api.TurnOff([
+            Lights.OfficeLightsCombined,
+            Devices.OfficeFan, 
+            Lights.OfficeLeds], ct);
         await _api.TurnOffByLabel(Labels.OfficeDevices, ct);
     }
 
@@ -74,7 +73,6 @@ public class OfficeService
     internal async Task PeriodicTasks()
     {
         // adjust target threshold if needed
-        await adjustTargetThresholdBasedOnSun();
         await checkForOutsideAdjustments();
     }
 
@@ -82,7 +80,7 @@ public class OfficeService
     {
         if (triggeredByIlluminance)
         {
-            _previousBrightness = _officeLightsCombined.LatestBrightness;
+            _previousBrightness = _combinedLightState.Attributes?.Brightness ?? byte.MinValue;
         }
         _dynamicModel.TargetIllumination = (int)(_threshold.State ?? 60f);
         if (_override.State == OnOff.On)
@@ -105,7 +103,7 @@ public class OfficeService
 
     private async Task SetBrightness(bool triggeredByIlluminance, int currentIllumination, CancellationToken cancellationToken)
     {
-        byte oldBrightness = triggeredByIlluminance ? _officeLightsCombined.LatestBrightness : _previousBrightness;
+        byte oldBrightness = triggeredByIlluminance ? _combinedLightState.Attributes?.Brightness ?? byte.MinValue : _previousBrightness;
 
         var newBrightness = (byte)Math.Round(_lightAdjuster.GetAppropriateBrightness(currentIllumination, oldBrightness));
         if (newBrightness == 0) newBrightness = Bytes.PercentToByte(1);
@@ -118,7 +116,6 @@ public class OfficeService
         };
         await _api.LightTurnOn(combinedLightSettings);
 
-        await _officeLightsCombined.Set(newBrightness, GetKelvin(), cancellationToken);
         _logger.LogInformation("Set Brightness {values}", new SetBrightnessLog(triggeredByIlluminance, currentIllumination, oldBrightness, newBrightness));
         await _api.InputNumberSet("input_number.office_brightness_tracker", newBrightness);
     }
@@ -145,7 +142,7 @@ public class OfficeService
         }
         else if (sunState == SunState.Above_Horizon && threshold < maxThreshold && _override.State == OnOff.Off)
         {
-            var currentBrightness = _officeLightsCombined.LatestBrightness;
+            var currentBrightness = _combinedLightState.Attributes?.Brightness ?? byte.MinValue;
 
             if (_officeIlluminance.Bad())
             {
@@ -172,11 +169,6 @@ public class OfficeService
         {
             _logger.LogWarning("something is wrong with the light bars");
             return;
-        }
-
-        if (lightBarStat.IsOff())
-        {
-            await _officeLightsCombined.TurnOff();
         }
     }
 

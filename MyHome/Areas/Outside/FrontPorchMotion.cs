@@ -37,6 +37,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
         if (motionState.New.State == OnOff.On)
         {
             _alert(_porchMotionID);
+            
             return Task.WhenAll(
                 HandleNight(ct)
                 //HandleCamera(ct)
@@ -51,7 +52,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
 
     // private async Task HandleCamera(CancellationToken ct)
     // {
-    //     //this code has been disabled
+    //     // this code has been disabled
     //     // stupid Alexa can't do this without making an audible noise
     //     // so the dog goes ape shit.
     //     // If there's an amazon developer reading this,
@@ -94,7 +95,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
         return new()
         {
             Name = "Front porch motion",
-            Description = "Turn on light after sunset and echo show if enabled"
+            Description = "Turn on light after sunset"
         };
     }
 }

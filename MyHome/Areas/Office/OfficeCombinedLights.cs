@@ -13,7 +13,7 @@ public class OfficeCombinedLights : IAutomation_ColorLight
     private readonly CombinedLightModel2 _caseLightModel = new()
     {
         TurnOnAt = 127,
-        Min = 22,
+        Min = 25,
         Max = Bytes.PercentToByte(20)
     };
     private readonly CombinedLightModel2 _LightBarsModel = new()
@@ -66,7 +66,6 @@ public class OfficeCombinedLights : IAutomation_ColorLight
     private async Task TurnOff()
     {
         await _services.Api.TurnOff(_colorLights.Append(Lights.OfficeLights));
-        //await _services.Api.TurnOff(Lights.OfficeLights);
     }
 
     public IEnumerable<string> TriggerEntityIds()

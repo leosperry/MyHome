@@ -38,10 +38,11 @@ public class MainRegistry : IAutomationRegistry
 
         // lights auto off
         reg.TryRegister(
-            _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour"),
-            _factory.DurableAutoOff("switch.back_hall_light", TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
-            _factory.DurableAutoOff("light.upstairs_hall", TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
-            _factory.DurableAutoOff("light.entry_light", TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
+            _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour")
+            ,
+            _factory.DurableAutoOff(Lights.BackHallLight, TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
+            _factory.DurableAutoOff(Lights.UpstairsHall, TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
+            _factory.DurableAutoOff(Lights.EntryLight, TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
             _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
                 .WithMeta("mainbedroom off on no motion","10 minutes")           
         );
@@ -66,12 +67,17 @@ public class MainRegistry : IAutomationRegistry
             .Build();
     }
 
-    private IAutomation ClearNotifications()
+    private IAutomationBase ClearNotifications()
     {
-        return _builder.CreateSimple()
+        return _builder.CreateSimple<DateTime?>()
             .WithName("clear notifications")
             .WithTriggers(Helpers.ClearNotificationButton)
-            .WithExecution((sc, ct) => _notificationService.ClearAll())
+            .WithExecution(async (sc, ct) => {
+                if (sc.New.StateAndLastUpdatedWithin1Second())
+                {
+                    await _notificationService.ClearAll();
+                }
+            })
             .Build();
     }
 
