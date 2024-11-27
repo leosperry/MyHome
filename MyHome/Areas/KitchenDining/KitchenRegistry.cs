@@ -63,7 +63,12 @@ public class KitchenRegistry : IAutomationRegistry
             .WithExecution(async (sc,ct) => {
                 if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
-                    if (_kitchenLights.IsOff())
+                    // sometimes zone 1 turns on light, but _kitchenLights is not updated yet. 
+                    // so go manually get the latest state
+                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, JsonElement>>(Lights.KitchenLights);
+                    kitchResponse.response.EnsureSuccessStatusCode();
+
+                    if (kitchResponse.entityState.IsOff())
                     {
                         await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._5pct);
                     }                

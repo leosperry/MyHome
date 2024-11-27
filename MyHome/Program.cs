@@ -21,6 +21,7 @@ builder.Host.UseNLog();
 var services = builder.Services;
 
 var otlpEndpoint = "http://172.17.1.3:4317";
+//var otlpEndpoint = "http://172.17.1.3:24317";
 
 services.AddOpenTelemetry()
     .ConfigureResource(resource => {
@@ -43,12 +44,6 @@ services.AddOpenTelemetry()
             .AddHaKafkaNetInstrumentation()
             .AddAspNetCoreInstrumentation()
             .AddHttpClientInstrumentation()
-            .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
-                exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
-                exporterOptions.Endpoint = new Uri("http://localhost:24317");
-                exporterOptions.ExportProcessorType = ExportProcessorType.Batch;
-                metricReaderOptions.PeriodicExportingMetricReaderOptions.ExportIntervalMilliseconds = 15000;
-            })
             .AddOtlpExporter((exporterOptions, metricReaderOptions) =>{
                 exporterOptions.Protocol = OpenTelemetry.Exporter.OtlpExportProtocol.Grpc;
                 exporterOptions.Endpoint = new Uri(otlpEndpoint);

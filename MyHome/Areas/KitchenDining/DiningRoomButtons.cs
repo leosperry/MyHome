@@ -1,21 +1,22 @@
-﻿using System.Diagnostics;
-using System.Text.Json;
-using HaKafkaNet;
+﻿using HaKafkaNet;
 using MyHome.Models;
+using MyHome.People;
 
 namespace MyHome;
 
 public class DiningRoomButtons : IAutomation, IAutomationMeta
 {
     readonly IHaServices _services;
+    private readonly AsherService _asherService;
     readonly INotificationService _notificationService;
     readonly ILogger _logger;
     private readonly IHaEntity<MediaPlayerState, SonosAttributes> _asherMediaPlayer;
     private readonly NotificationSender _diningRoomChannel;
 
-    public DiningRoomButtons(IHaServices servcies, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider, ILogger<DiningRoomButtons> logger)
+    public DiningRoomButtons(IHaServices servcies, AsherService asherService, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider, ILogger<DiningRoomButtons> logger)
     {
         _services = servcies;
+        _asherService = asherService;
         _notificationService = notificationService;
         _logger = logger;
 
@@ -30,7 +31,10 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     {
         if (stateChange.EntityId == Helpers.LivingRoomOverride)
         {
-            return SetHelperState((HaEntityState<OnOff, JsonElement>)stateChange.New, ct);
+            return _services.Api.SetZoozSceneControllerButtonColorFromOverrideState(
+                Lights.DiningRoomLights,
+                stateChange.ToOnOff().New.State, 1, ct);
+            //return SetHelperState((HaEntityState<OnOff, JsonElement>)stateChange.New, ct);
         }
         
         var sceneState = stateChange.ToSceneControllerEvent();
@@ -72,11 +76,11 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
     public IEnumerable<string> TriggerEntityIds()
     {
         yield return Helpers.LivingRoomOverride;
-        yield return "event.dining_room_scene_001";
-        //yield return "event.dining_room_scene_002";
-        yield return "event.dining_room_scene_003";
-        yield return "event.dining_room_scene_004";
-        //yield return "event.dining_room_scene_005";
+        yield return "event.dining_room_lights_scene_001";
+        yield return "event.dining_room_lights_scene_002";
+        yield return "event.dining_room_lights_scene_003";
+        yield return "event.dining_room_lights_scene_004";
+        yield return "event.dining_room_lights_scene_005";
     }
 
     async Task AsherButton(float targetVolume ,CancellationToken ct)
@@ -85,16 +89,12 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         {
             return;
         }
-        /* 
-        Step 1
-            Play random
-            Set 1 light on and 1 off
-        Step 2
-            repeat 4 times
-            toggle lights
-        Step 3
-            set lights to 40%*/
-        _ = PlayRandom(targetVolume, ct);
+
+        await Task.WhenAll(
+            _asherService.PlayRandom(targetVolume, ct),
+            _asherService.Toggle3Times(ct)
+        );
+        
         await Task.WhenAll(
             _services.Api.TurnOn(Lights.Basement1, ct),
             _services.Api.TurnOff(Lights.Basement2, ct)
@@ -111,49 +111,50 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
     }
 
-    static readonly string[] _messages = [ 
-            "My lord. Your presence is requested in the main chamber",
-            "Prince Asher, the king and queen have summoned you",
-            "Hey you. Yes, you. Please come upstairs",
-            "The parental units have requested of the carbon based lifeform known as Asher to vacate his domicile and return upstairs",
-            "The crown has requested a status report from the dungeons forthwith",
-            "Your assignment is as follows, collect dishes and return to base. This message will self destruct",
-            "Brave knight. You have been given a valiant quest to return to the overworld",
-            "Random message to see if you're paying attention" ];
+    // static readonly string[] _messages = [ 
+    //         "My lord. Your presence is requested in the main chamber",
+    //         "Prince Asher, the king and queen have summoned you",
+    //         "Hey you. Yes, you. Please come upstairs",
+    //         "The parental units have requested of the carbon based lifeform known as Asher to vacate his domicile and return upstairs",
+    //         "The crown has requested a status report from the dungeons forthwith",
+    //         "Your assignment is as follows, collect dishes and return to base. This message will self destruct",
+    //         "Brave knight. You have been given a valiant quest to return to the overworld",
+    //         "Random message to see if you're paying attention" ];
     
-    static readonly PiperSettings[] _voices = [Voices.Buttler, Voices.Female, Voices.Mundane];
-    static readonly Random _random = new();
-    async Task PlayRandom(float targetVolume, CancellationToken ct)
-    {
-        // get a message
-        var message = _messages[_random.Next(0, _messages.Length)];
-        var voice = _voices[_random.Next(0, _voices.Length)];
+    //static readonly PiperSettings[] _voices = [Voices.Buttler, Voices.Female, Voices.Mundane];
 
-        // get the volume
+    //static readonly Random _random = new();
+    // async Task PlayRandom(float targetVolume, CancellationToken ct)
+    // {
+    //     // get a message
+    //     var message = _messages[_random.Next(0, _messages.Length)];
+    //     var voice = _voices[_random.Next(0, _voices.Length)];
 
-        if (!_asherMediaPlayer.Bad())
-        {
-            float? previousVolume = _asherMediaPlayer.Attributes?.VolumeLevel;
-            if (previousVolume < targetVolume)
-            {
-                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, targetVolume);
-                await Task.Delay(TimeSpan.FromSeconds(2));
-            }
+    //     // get the volume
 
-            await _services.Api.SpeakPiper(MediaPlayers.Asher, message, true, voice);
-            await Task.Delay(TimeSpan.FromSeconds(10));
+    //     if (!_asherMediaPlayer.Bad())
+    //     {
+    //         float? previousVolume = _asherMediaPlayer.Attributes?.VolumeLevel;
+    //         if (previousVolume < targetVolume)
+    //         {
+    //             await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, targetVolume);
+    //             await Task.Delay(TimeSpan.FromSeconds(2));
+    //         }
 
-            if (previousVolume is not null && previousVolume != targetVolume)
-            {
-                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, previousVolume.Value);
-            }
-        }
-        else
-        {
-            _logger.LogWarning("Asher speaker state is {AsherState}", _asherMediaPlayer?.State.ToString() ?? "null" );
-            await _diningRoomChannel("Something is wrong with Asher's speaker");
-        }
-    }
+    //         await _services.Api.SpeakPiper(MediaPlayers.Asher, message, true, voice);
+    //         await Task.Delay(TimeSpan.FromSeconds(10));
+
+    //         if (previousVolume is not null && previousVolume != targetVolume)
+    //         {
+    //             await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, previousVolume.Value);
+    //         }
+    //     }
+    //     else
+    //     {
+    //         _logger.LogWarning("Asher speaker state is {AsherState}", _asherMediaPlayer?.State.ToString() ?? "null" );
+    //         await _diningRoomChannel("Something is wrong with Asher's speaker");
+    //     }
+    // }
 
     static DateTime _lastPressed = SystemMonitor.StartTime; // hack
     static object _presslock = new {};
@@ -177,31 +178,25 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         }
     }
 
-    Task SetHelperState(HaEntityState<OnOff, JsonElement>? helperState, CancellationToken ct)
-    {
-        (ZoozColor color, int parameter) settings = helperState switch
-        {
-            {State : OnOff.On, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Yellow, 7),
-            {State : OnOff.Off, EntityId : Helpers.LivingRoomOverride} => (ZoozColor.Cyan, 7),
-            _ => throw new Exception("unknown setup for dining room LED status indicators")
-        };
+    // Task SetHelperState(HaEntityState<OnOff, JsonElement> helperState, CancellationToken ct)
+    // {
+    //     // var color = helperState switch
+    //     // {
+    //     //     {State : OnOff.On, EntityId : Helpers.LivingRoomOverride} => ZoozColor.Yellow,
+    //     //     {State : OnOff.Off, EntityId : Helpers.LivingRoomOverride} => ZoozColor.Cyan,
+    //     //     _ => ZoozColor.Red
+    //     // };
 
-        return _services.Api.ZwaveJs_SetConfigParameter(new{
-            entity_id = Lights.DiningRoomLights,
-            endpoint = 0,
-            settings.parameter,
-            value = (int)settings.color
-        }, ct);
-    }
+    //     return _services.Api.SetZoozSceneControllerButtonColorFromToggleState(
+    //         helperState, 1, ct);
 
-    enum ZoozColor
-    {
-        White = 0,
-        Blue = 1,
-        Green = 2,
-        Red = 3, 
-        Magenta = 4,
-        Yellow = 5,
-        Cyan = 6
-    }
+    //     // return _services.Api.ZwaveJs_SetConfigParameter(new{
+    //     //     entity_id = Lights.DiningRoomLights,
+    //     //     endpoint = 0,
+    //     //     settings.parameter,
+    //     //     value = (int)settings.color
+    //     // }, ct);
+    // }
+
+    
 }

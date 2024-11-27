@@ -4,7 +4,7 @@ using HaKafkaNet;
 namespace MyHome.Areas.Office;
 
 
-public class OfficeCombinedLights : IAutomation_ColorLight
+public class OfficeCombinedLights : IAutomation_ColorLight, IAutomationMeta
 {
     private readonly IHaServices _services;
 
@@ -95,6 +95,15 @@ public class OfficeCombinedLights : IAutomation_ColorLight
         return new LightTurnOnModel()
         {
             Brightness = lightModel.Brightness
+        };
+    }
+
+    public AutomationMetaData GetMetaData()
+    {
+        return new AutomationMetaData()
+        {
+            Name = "Office Lights Combined",
+            Mode = AutomationMode.Smart
         };
     }
 }

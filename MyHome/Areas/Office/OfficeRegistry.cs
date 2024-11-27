@@ -22,17 +22,18 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public async Task Initialize()
     {
-        var trackerState = await _services.EntityProvider.GetFloatEntity(Helpers.OfficeBrightnessTracker);
-        if (!trackerState.Bad() && trackerState.State is not null)
+        var trackerState = await _services.EntityProvider.GetLightEntity(Lights.OfficeLightsCombined);
+        if (!trackerState.Bad())
         {
-            _officeService.Init((byte)trackerState.State.Value);
-        }    
+            _officeService.Init(trackerState.Attributes?.Brightness ?? 127);
+        }
     }
 
     public void Register(IRegistrar reg)
     {
         var exceptions = reg.TryRegister(
             DynamicallySetLights,
+            DynamicallySetLightsFromTarget,
             ReportOverrideStatus,
             OfficeFan,
             TurnOffAllOfficeWithSwitch,
@@ -108,10 +109,9 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
             .WithDescription("dynamically set the office lights")
             .WithTimings(EventTiming.PostStartup | EventTiming.PreStartupPostLastCached)
             .WithTriggers(
-                Sensors.OfficeIlluminance, 
                 Sensors.OfficeMotion, 
                 Helpers.OfficeOverride, 
-                Helpers.OfficeIlluminanceThreshold
+                Sensors.OfficeIlluminance
             )
             .WithExecution(async (sc, ct) => {
                 if (sc.EntityId == Sensors.OfficeMotion)
@@ -127,10 +127,25 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
                 {
                     await _officeService.SetLights(sc.EntityId == Sensors.OfficeIlluminance, ct);
                 }
-                
             })
             .Build();
     }
+
+    IAutomation DynamicallySetLightsFromTarget()
+    {
+        return _helpers.Builder.CreateSimple()
+            .WithName("Set Office Lights from illuminance")
+            .WithDescription("dynamically set the office lights")
+            .WithTimings(EventTiming.PostStartup | EventTiming.PreStartupPostLastCached)
+            .WithMode(AutomationMode.Smart)
+            .WithTriggers(
+                Helpers.OfficeIlluminanceThreshold
+            )
+            .WithExecution(async (sc, ct) => {
+                await _officeService.SetLights(true, ct);
+            })
+            .Build();
+        }
 
     IAutomation<OnOff, JsonElement> ReportOverrideStatus()
     {

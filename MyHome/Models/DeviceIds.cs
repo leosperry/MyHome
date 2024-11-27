@@ -7,6 +7,7 @@ public static class Lights
         BackPorch = "switch.back_porch_light",
         BackFlood = "switch.back_flood",
         BasementStair = "switch.basement_stair_light",
+        BasementGroup = "light.basement_light_group",
         Basement1 = "light.basement_light_1",
         Basement2 = "light.basement_light_2",
         BasementWork = "light.basement_light_3",
@@ -15,10 +16,10 @@ public static class Lights
         Couch2 = "light.wiz_rgbw_tunable_79aab4",
         Couch3 = "light.wiz_rgbw_tunable_8d7d54",
         CraftRoomLights = "light.craft_room_light", 
-        DiningRoomLights = "switch.dining_room",
+        DiningRoomLights = "switch.dining_room_lights",
         EntryLight = "light.entry_light",
         FrontRoomLight = "light.front_room_light",
-        FrontPorchLight = "light.front_porch_lights",
+        FrontPorchLight = "light.front_porch_light",
         KitchenLights = "light.kitchen_lights",
         LivingLamp1 = "light.living_lamp_1",
         LivingLamp2 = "light.living_lamp_2",
@@ -41,6 +42,7 @@ public static class Devices
         FrontDoorLock = "lock.aqara_smart_lock_u100",
         Roku = "remote.roku_ultra",
         OfficeFan = "switch.office_fan_switch",
+        PlantPlug1 = "switch.plant_plug_1",
         SolarPower = "sensor.solaredge_current_power";
 }
 
@@ -114,12 +116,12 @@ public static class Helpers
     public const string
         AsherDashboardButton = "input_button.asher_button",
         AudibleAlertToPlay = "input_number.audible_alert_to_play",
+        BasementOverride = "input_boolean.basement_override",
         BedTime = "input_boolean.bedtime_switch",
         ClearNotificationButton = "input_button.clear_notifications",
         FindRoku = "input_button.find_roku_remote",
         LivingRoomOverride = "input_boolean.living_room_override",
         MaintenanceMode = "input_boolean.maintenance_mode",
-        OfficeBrightnessTracker = "input_number.office_brightness_tracker",
         OfficeOverride = "input_boolean.office_override",
         OfficeIlluminanceThreshold = "input_number.office_illuminance_threshold",
         //PorchMotionEnable = "input_boolean.front_porch_motion_enable",
@@ -130,6 +132,7 @@ public static class Helpers
 public static class Labels
 {
     public const string
+        BasementLights = "basement_lights",
         BedTimeOff = "bedtimeoff",
         OfficeDevices = "office_switches";
 

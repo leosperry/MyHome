@@ -37,7 +37,7 @@ public class OfficeService
             MinBrightness = Bytes.PercentToByte(1),
             MaxLightBrightness = Bytes._100pct, 
             IlluminationAddedAtMin = 4,
-            IlluminationAddedAtMax = 50
+            IlluminationAddedAtMax = 55
         };
 
         _lightAdjuster = lightAdjusterFactory(_dynamicModel);
@@ -74,6 +74,7 @@ public class OfficeService
     {
         // adjust target threshold if needed
         await checkForOutsideAdjustments();
+        await adjustTargetThresholdBasedOnSun();
     }
 
     public async Task SetLights(bool triggeredByIlluminance, CancellationToken ct = default)
@@ -96,6 +97,7 @@ public class OfficeService
 
         if (_officeMotion.State == OnOff.On || DateTime.Now - _officeMotion.LastChanged < TimeSpan.FromMinutes(10))
         {
+            if (ct.IsCancellationRequested) return;
             await SetBrightness(triggeredByIlluminance, _officeIlluminance.State!.Value, ct);
             // we'll turn them off in another automation
         }
@@ -114,10 +116,11 @@ public class OfficeService
             Kelvin = GetKelvin(),
             Brightness = newBrightness
         };
-        await _api.LightTurnOn(combinedLightSettings);
+        if (cancellationToken.IsCancellationRequested) return;
+
+        await _api.LightTurnOn(combinedLightSettings, cancellationToken);
 
         _logger.LogInformation("Set Brightness {values}", new SetBrightnessLog(triggeredByIlluminance, currentIllumination, oldBrightness, newBrightness));
-        await _api.InputNumberSet("input_number.office_brightness_tracker", newBrightness);
     }
 
     private record SetBrightnessLog(bool trigger, int currentIllum, int oldBrightness, int newBrightness);

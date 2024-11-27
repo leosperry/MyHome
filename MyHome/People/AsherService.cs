@@ -1,4 +1,5 @@
 using System;
+using System.Text.Json;
 using HaKafkaNet;
 using Microsoft.Extensions.Logging;
 using MyHome.Models;
@@ -11,7 +12,9 @@ public class AsherService
     private readonly ILogger<AsherService> _logger;
 
     private readonly IHaEntity<MediaPlayerState, SonosAttributes> _asherMediaPlayer;
+    private readonly IUpdatingEntity<OnOff, JsonElement> _override;
     private readonly NotificationSender _diningRoomChannel;
+    private readonly IUpdatingEntity<OnOff, LightModel> _basementGroup;
 
     public AsherService(INotificationService notificationService, IHaServices services, IUpdatingEntityProvider updatingEntityProvider, ILogger<AsherService> logger)
     {
@@ -19,9 +22,12 @@ public class AsherService
         this._logger = logger;
 
         _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+        _override = updatingEntityProvider.GetOnOffEntity(Helpers.BasementOverride);
 
         this._diningRoomChannel = notificationService.CreateNotificationSender(
             [notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]);
+
+        _basementGroup = updatingEntityProvider.GetLightEntity(Lights.BasementGroup);
     }
 
     static readonly string[] _messages = [ 
@@ -37,6 +43,33 @@ public class AsherService
     
     static readonly PiperSettings[] _voices = [Voices.Buttler, Voices.Female, Voices.Mundane];
     static readonly Random _random = new();
+
+    public async Task Toggle3Times(CancellationToken ct)
+    {
+        /* 
+        Step 1
+            Set 1 light on and 1 off
+        Step 2
+            repeat 4 times
+            toggle lights
+        Step 3
+            set lights to 40%*/
+        await Task.WhenAll(
+            _services.Api.TurnOn(Lights.Basement1, ct),
+            _services.Api.TurnOff(Lights.Basement2, ct)
+        );
+
+        int count = 0;
+        while(++count <= 4)
+        {
+            await Task.WhenAll(
+                Task.Delay(3000, ct),
+                _services.Api.Toggle([Lights.Basement1, Lights.Basement2], ct)
+            );
+        }
+        await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
+    }
+
     public async Task PlayRandom(float targetVolume, CancellationToken ct)
     {
         // get a message
@@ -67,5 +100,57 @@ public class AsherService
             _logger.LogWarning("Asher speaker state is {AsherState}", _asherMediaPlayer?.State.ToString() ?? "null" );
             await _diningRoomChannel("Something is wrong with Asher's speaker");
         }
+    }
+
+    public async Task IncreaseLights(CancellationToken ct)
+    {
+        switch (_basementGroup.Snapshot().State)
+        {
+            case OnOff.Off:
+                await _services.Api.LightSetBrightness(Lights.BasementGroup, Bytes._20pct, ct);
+                break;
+            case OnOff.On:
+                if (_basementGroup.Attributes?.Brightness < Bytes._20pct)
+                {
+                    await _services.Api.LightSetBrightness(Lights.BasementGroup, Bytes._20pct, ct);
+                }
+                else
+                {
+                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = 10});
+                }
+                break;
+            default:
+                return;
+        }
+    }
+
+    public async Task DecreaseLights(CancellationToken ct)
+    {
+        switch (_basementGroup.Snapshot().State)
+        {
+            case OnOff.Off:
+                await Task.CompletedTask;
+                break;
+            case OnOff.On:
+                if (_basementGroup.Attributes?.Brightness <= Bytes._20pct)
+                {
+                    await TurnOff(ct);
+                }
+                else
+                {
+                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = -10});
+                }
+                break;
+            default:
+                return;
+        }    
+    }
+
+    public Task TurnOff(CancellationToken ct)
+    {
+        return Task.WhenAll(
+            _services.Api.TurnOff([Lights.Basement2, Lights.BasementWork], ct),
+            _services.Api.LightSetBrightness(Lights.Basement1, Bytes._20pct)
+        );    
     }
 }

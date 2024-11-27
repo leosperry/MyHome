@@ -5,16 +5,7 @@ using HaKafkaNet;
 namespace MyHome.Dev.Automations;
 
 public class TestAutomation : IInitializeOnStartup, 
-    //IAutomation, 
-    IAutomation<OnOff>,
-    // IAutomation<OnOff, JsonElement>,
-    // IConditionalAutomation,
-    // IConditionalAutomation<OnOff>,
-    // IConditionalAutomation<OnOff, JsonElement>,
-    // ISchedulableAutomation,
-    // ISchedulableAutomation<OnOff>,
-    // ISchedulableAutomation<OnOff,JsonElement>,
-    // IDelayableAutomation<OnOff, JsonElement>,
+    IAutomation<float?>,
     IAutomationMeta
 {
     private readonly IStartupHelpers _helpers;
@@ -45,44 +36,17 @@ public class TestAutomation : IInitializeOnStartup,
         return Task.CompletedTask;
     }
 
-    public  Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
+    public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        _logger.LogInformation("Execute");
-        return Task.CompletedTask;
+        var lightStateChange =  stateChange.ToOnOff<ColorLightModel>();
+        // work with stronly typed properties
+        await Task.CompletedTask;
     }
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        yield return Test_Switch;
-    }
-
-    public Task Execute(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> stateChange, CancellationToken ct)
-    {
-        _logger.LogInformation("Friendly name is : {friendly}", stateChange.New.FriendlyName("blarg"));
-        return Task.CompletedTask;    
-    }
-
-    public Task<bool> ContinuesToBeTrue(HaEntityStateChange stateChange, CancellationToken ct)
-    {
-        _logger.LogInformation("Continues to be true");
-        return Task.FromResult(stateChange.ToOnOff().IsOn());    
-    }
-
-    public Task Execute(CancellationToken ct)
-    {
-        _logger.LogInformation("Execute delayed");
-        return Task.CompletedTask;    
-    }
-
-    public Task<bool> ContinuesToBeTrue(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> stateChange, CancellationToken ct)
-    {
-        _logger.LogInformation("Continues to be true typed");
-        return Task.FromResult(stateChange.IsOn());    
-    }
-
-    public DateTime? GetNextScheduled()
-    {
-        return DateTime.Now.AddSeconds(3);
+        //yield return Test_Switch;
+        yield return "input_number.test_input_number";
     }
 
     int metaCount = 5;
@@ -90,8 +54,23 @@ public class TestAutomation : IInitializeOnStartup,
     {
         return new()
         {
-            Name = $"Uber {++metaCount}"
+            Name = $"testing the mode",
+            Enabled = true,
+            Mode = AutomationMode.Parallel
         };
+    }
+
+    public async Task Execute(HaEntityStateChange<HaEntityState<float?, JsonElement>> stateChange, CancellationToken ct)
+    {
+        try
+        {
+            _logger.LogInformation("running test automation. Time: {time}", stateChange.New.LastChanged);
+            await Task.Delay(1000, ct);
+        }
+        catch (System.Exception)
+        {
+            throw;
+        }
     }
 }
 

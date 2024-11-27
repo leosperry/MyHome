@@ -31,17 +31,17 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-         reg.TryRegister(
-        //     Simple,
-        //     SimpleTyped,
-        //     SimpleTyped2,
-        //     Conditional,
-        //     ConditionalTyped,
-             ConditionalTyped2
-        //     Scheduled,
-        //     ScheduledTyped,
-        //     ScheduledTyped2
-         );
+        //  reg.TryRegister(
+        // //     Simple,
+        // //     SimpleTyped,
+        // //     SimpleTyped2,
+        // //     Conditional,
+        // //     ConditionalTyped,
+        // //     ConditionalTyped2
+        // //     Scheduled,
+        //      ScheduledTyped
+        // //     ScheduledTyped2
+        //  );
     }
 
     IAutomationBase Simple()
@@ -157,11 +157,11 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
     IAutomationBase ScheduledTyped()
     {
         string name = "Scheduled Typed";
-        return _builder.CreateSchedulable<OnOff>()
+        return _builder.CreateSchedulable<OnOff?>()
             .WithTriggers(Test_Switch)
             .WithName(name)
             .While((sc) => {
-                return sc.IsOn();
+                return true;
             })
             .ForSeconds(3)
             .WithExecution((ct) => {

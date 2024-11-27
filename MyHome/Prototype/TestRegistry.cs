@@ -58,11 +58,11 @@ public class TestRegistry : IAutomationRegistry
 
     private async Task TestButtonAction()
     {
-        await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_activity, new{
-            intent_package_name = "com.google.android.apps.maps",
-            intent_action = "android.intent.action.VIEW",
-            intent_uri = "google.navigation:q=arbys"
-        });
+        // await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_activity, new{
+        //     intent_package_name = "com.google.android.apps.maps",
+        //     intent_action = "android.intent.action.VIEW",
+        //     intent_uri = "google.navigation:q=arbys"
+        // });
         // await _services.Api.NotifyCommand(Phones.LeonardPhone, AndroidCommand.command_high_accuracy_mode, new{
         //     command = "turn_on"
         // });
