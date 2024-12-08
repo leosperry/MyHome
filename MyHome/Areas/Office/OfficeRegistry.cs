@@ -46,7 +46,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
     {
         return _helpers.Builder.CreateSimple<DateTime?, SceneControllerEvent>()
             .WithName("Turn Off all office with switch")
-            .WithTriggers("event.office_lights_scene_001")
+            .WithTriggers("event.office_display_lights_scene_001")
             .WithExecution(async (sc, ct) => {
                 if(sc.New.StateAndLastUpdatedWithin1Second())
                 {
@@ -60,7 +60,7 @@ public class OfficeRegistry : IAutomationRegistry, IInitializeOnStartup
     {
         return _helpers.Builder.CreateSimple<DateTime?, SceneControllerEvent>()
             .WithName("Dynamically set when switch turned on")
-            .WithTriggers("event.office_lights_scene_002")
+            .WithTriggers("event.office_display_lights_scene_002")
             .WithExecution(async (sc, ct) => {
                 if(sc.New.StateAndLastUpdatedWithin1Second())
                 {

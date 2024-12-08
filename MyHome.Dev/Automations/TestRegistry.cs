@@ -31,28 +31,38 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        //  reg.TryRegister(
-        // //     Simple,
-        // //     SimpleTyped,
-        // //     SimpleTyped2,
-        // //     Conditional,
-        // //     ConditionalTyped,
-        // //     ConditionalTyped2
-        // //     Scheduled,
-        //      ScheduledTyped
-        // //     ScheduledTyped2
-        //  );
+        var simpleAutomation = _builder.CreateSimple()
+            .WithTriggers("switch.my_switch")
+            .WithName("This is my simple automation")
+            .WithExecution(async (sc, ct) => {
+                // do work
+                return;
+            })
+            .Build();
+
+        reg.Register(simpleAutomation);
+
+        var typedDurable = _builder.CreateSchedulable<OnOff>()
+            .WithTriggers("input_boolean.my_motion_sensor")
+            .WithName("Turn off the lights when no one is around")
+            .WithDescription("an optional description")
+            .While(sc => sc.IsOff())
+            .ForMinutes(30)  
+            .WithExecution(ct => _services.Api.TurnOffByLabel("my_label", ct))
+            .MakeDurable()
+            .Build();
+
+        reg.TryRegister(typedDurable);
     }
 
     IAutomationBase Simple()
     {
-        string name = "Simple";
         return _builder.CreateSimple()
-            .WithTriggers(Test_Switch)
-            .WithName(name)
-            .WithExecution((sc, ct) => {
-                _logger.LogInformation(name);
-                return Task.CompletedTask;
+            .WithTriggers("switch.my_switch")
+            .WithName("This is my simple automation")
+            .WithExecution(async (sc, ct) => {
+                // do work
+                return;
             })
             .Build();
     }

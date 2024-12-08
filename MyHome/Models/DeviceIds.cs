@@ -27,7 +27,7 @@ public static class Lights
         MainBedroomLight1 = "light.main_bedroom_light_1",
         MainBedroomLight2 = "light.main_bedroom_light_2",
         Monkey = "light.monkey_light",
-        OfficeLights = "light.office_lights",
+        OfficeLights = "light.office_display_lights",
         OfficeLeds = "light.office_led_light",
         OfficeLightBars = "light.office_light_bars",
         OfficeLightsCombined = "light.office_combined_light",

@@ -32,21 +32,13 @@ public class TestAutomation : IInitializeOnStartup,
 
     public Task Initialize()
     {
-        _logger.LogInformation("Simple Initialize");
         return Task.CompletedTask;
-    }
-
-    public async Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
-    {
-        var lightStateChange =  stateChange.ToOnOff<ColorLightModel>();
-        // work with stronly typed properties
-        await Task.CompletedTask;
     }
 
     public IEnumerable<string> TriggerEntityIds()
     {
         //yield return Test_Switch;
-        yield return "input_number.test_input_number";
+        yield return "input_number.trigger_from_hakafkanet";
     }
 
     int metaCount = 5;
@@ -54,9 +46,9 @@ public class TestAutomation : IInitializeOnStartup,
     {
         return new()
         {
-            Name = $"testing the mode",
+            Name = $"testing from HaKafkaNet",
             Enabled = true,
-            Mode = AutomationMode.Parallel
+            Mode = AutomationMode.Smart
         };
     }
 
@@ -64,8 +56,7 @@ public class TestAutomation : IInitializeOnStartup,
     {
         try
         {
-            _logger.LogInformation("running test automation. Time: {time}", stateChange.New.LastChanged);
-            await Task.Delay(1000, ct);
+            await _services.Api.InputNumberIncrement("input_number.count_from_hakafkanet");
         }
         catch (System.Exception)
         {

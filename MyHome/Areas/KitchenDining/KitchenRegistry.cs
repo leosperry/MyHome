@@ -86,7 +86,10 @@ public class KitchenRegistry : IAutomationRegistry
             .WithExecution(async (sc, ct) => {
                 if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
-                    if (_kitchenLights.IsOff() || _kitchenLights.Attributes?.Brightness < Bytes.PercentToByte(20))
+                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, LightModel>>(Lights.KitchenLights);
+                    kitchResponse.response.EnsureSuccessStatusCode();
+                    
+                    if (kitchResponse.entityState.IsOff() || kitchResponse.entityState?.Attributes?.Brightness < Bytes.PercentToByte(20))
                     {
                         await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._20pct);
                     }
