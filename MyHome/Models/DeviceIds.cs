@@ -24,6 +24,9 @@ public static class Lights
         LivingLamp1 = "light.living_lamp_1",
         LivingLamp2 = "light.living_lamp_2",
         LoungeCeiling = "light.lounge_lights",
+        MainBedroomDadSideSwitch = "switch.mbr_dad_side_switch",
+        MainBedroomDresserSwitch = "switch.mbr_dresser_plug",
+        MainBedroomOverhead = "light.main_bedroom_overhead",
         MainBedroomLight1 = "light.main_bedroom_light_1",
         MainBedroomLight2 = "light.main_bedroom_light_2",
         Monkey = "light.monkey_light",
@@ -51,6 +54,7 @@ public static class Sensors
     public const string
         BasementMotion = "binary_sensor.basement_motion_motion_detection",
         BasementStairMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_2",
+        BackHallCoatClosetContact = "binary_sensor.back_hall_coat_closet_contact_opening",
         FrontPorchMotion = "binary_sensor.lumi_lumi_sensor_motion_aq2_motion_3",
         MainBedroom4in1Motion = "binary_sensor.4_in_1_sensor_motion_detection",
         OfficeDoor = "binary_sensor.office_door_opening",
@@ -64,7 +68,9 @@ public static class Sensors
         LivingRoomZone1Count = "sensor.esphome_living_room_zone_1_all_target_count",
         LivingRoomZone2Count = "sensor.esphome_living_room_zone_2_all_target_count",
         LivingRoomZone3AllCount = "sensor.esphome_living_room_zone_3_all_target_count",
-        LivingRoomAndKitchenPresenceCount = "sensor.livingroomandkitchenpresencecount";
+        LivingRoomAndKitchenPresenceCount = "sensor.livingroomandkitchenpresencecount",
+        MainBedroomMotion1 = "binary_sensor.mbr_motion_1_motion",
+        MainBedroomMotion2 = "binary_sensor.mbr_motion_2_motion";
 }
 
 public static class NotificationGroups

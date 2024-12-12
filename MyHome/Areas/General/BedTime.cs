@@ -48,6 +48,7 @@ public class BedTime : IAutomation<OnOff>, IAutomationMeta
             _services.Api.LockLock(Devices.FrontDoorLock, ct),
             _garageService.EnsureGarageClosed(_notify,ct),
             EnsureOfficeClosed(ct),
+            _services.Api.TurnOn([Lights.MainBedroomDadSideSwitch, Lights.MainBedroomDresserSwitch], ct),
             _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._20pct ,ct),
             _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
             _services.Api.TurnOffByLabel("bedtimeoff"),
