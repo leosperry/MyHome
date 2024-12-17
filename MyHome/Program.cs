@@ -2,7 +2,6 @@ using HaKafkaNet;
 using KafkaFlow;
 using Microsoft.AspNetCore.DataProtection;
 using MyHome;
-using MyHome.Areas.Office;
 using MyHome.People;
 using MyHome.Services;
 using NLog.Extensions.Logging;

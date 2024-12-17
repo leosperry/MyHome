@@ -23,7 +23,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         _livingRoomService = livingRoomService;
         _logger = logger;
 
-        _rokuMediaPlayer = helpers.UpdatingEntityProvider.GetMediaPlayer(MediaPlayers.Roku);
+        _rokuMediaPlayer = helpers.UpdatingEntityProvider.GetMediaPlayer(Media_Player.RokuUltra);
     }
 
     public void Register(IRegistrar reg)
@@ -45,12 +45,12 @@ public class LivingRoomRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple<DateTime?>()
             .WithName("Find Roku Remote from dashboard")
-            .WithTriggers(Helpers.FindRoku)
+            .WithTriggers(Input_Button.FindRokuRemote)
             .WithExecution(async (sc, ct) =>
             {
                 if (sc.New.StateAndLastUpdatedWithin1Second())
                 {
-                    await _services.Api.RemoteSendCommand(Devices.Roku, RokuCommands.find_remote.ToString());
+                    await _services.Api.RemoteSendCommand(Remote.RokuUltra, RokuCommands.find_remote.ToString());
                 }
             })
             .Build();
@@ -68,7 +68,7 @@ public class LivingRoomRegistry : IAutomationRegistry
 
     Task RokuCommand(RokuCommands command)
     {
-        return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
+        return _services.Api.RemoteSendCommand(Remote.RokuUltra, command.ToString());
     }
 
     IAutomation OverrideTurnedOff_SetLights()
@@ -76,7 +76,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         return _builder.CreateSimple()
             .WithName("Living Room - Set lights when override disabled")
             .WithDescription("When the living room override is turned off, set the lights based on power reading")
-            .WithTriggers(Helpers.LivingRoomOverride)
+            .WithTriggers(Input_Boolean.LivingRoomOverride)
             .WithExecution((sc, ct) => _livingRoomService.SetLights(ct))
             .Build();
     }
@@ -89,14 +89,14 @@ public class LivingRoomRegistry : IAutomationRegistry
             .MakeDurable()
             .WithName("Living Room and Kitchen not occupied")
             .WithDescription($"After {downstairsLightDelayMinutes} min, Turn Off living room lights")
-            .WithTriggers(Sensors.LivingRoomPresence)
+            .WithTriggers(Binary_Sensor.EsphomeLivingRoomPresence) //esphome_living_room_presence
             .While(sc => sc.New.IsOff())
             .ForMinutes(downstairsLightDelayMinutes)
             .WithExecution(ct => {
                 _lam.ConfigureStandByBrightness(0);
                 return Task.WhenAll(
                     _services.Api.TurnOff([
-                        Lights.TvBacklight, Lights.Couch1, Lights.Couch2, Lights.PeacockLamp
+                        Light.TvBacklight, Light.CouchOverhead, Switch.PeacockLamp
                         // leave on Couch3 for nightlight
                         ])
                 );
@@ -110,7 +110,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             .MakeDurable()
             .WithName("Living Room All zones empty")
             .WithDescription("after 30 min, pause the roku and turn off dining room")
-            .WithTriggers(Sensors.LivingRoomAndKitchenPresenceCount)
+            .WithTriggers(Sensor.Livingroomandkitchenpresencecount)
             .While(sc => sc.New.State == 0)
             .ForMinutes(20)
             .WithExecution(async ct => {
@@ -118,7 +118,7 @@ public class LivingRoomRegistry : IAutomationRegistry
                 {
                     await RokuCommand(RokuCommands.play);
                 }
-                await _services.Api.TurnOff(Lights.DiningRoomLights); 
+                await _services.Api.TurnOff(Switch.DiningRoomLights); 
             })
             .Build();
     }
@@ -128,7 +128,7 @@ public class LivingRoomRegistry : IAutomationRegistry
         return _builder.CreateSimple<float>()
             .WithName("Enter Living Room Zone 1")
             .WithDescription("sets the Monkey light standby brightness")
-            .WithTriggers(Sensors.LivingRoomZone1Count)
+            .WithTriggers(Sensor.EsphomeLivingRoomZone1AllTargetCount)
             .WithExecution(async (zone, ct) => {
                 bool occupied = zone.BecameGreaterThan(0);
 
@@ -164,7 +164,7 @@ public class LivingRoomRegistry : IAutomationRegistry
     {
         return _factory.SunRiseAutomation(async ct => { 
             // turn off night light.
-            await _services.Api.TurnOff([Lights.Couch1], ct);
+            await _services.Api.TurnOff([Light.CouchOverhead], ct);
             _lam.ConfigureStandByBrightness(Bytes.PercentToByte(9));
             })
         .WithMeta("Sunrise", "turn off couch 1");
@@ -173,7 +173,7 @@ public class LivingRoomRegistry : IAutomationRegistry
     ISchedulableAutomation Sunset()
     {
         return _factory.SunSetAutomation(async ct => {
-            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1Count);
+            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensor.EsphomeLivingRoomZone1AllTargetCount);
             if (zone1!.State > 0)
             {
                 _lam.ConfigureStandByBrightness(Bytes.PercentToByte(6));
@@ -184,7 +184,7 @@ public class LivingRoomRegistry : IAutomationRegistry
     ISchedulableAutomation SunDusk()
     {
         return _factory.SunDuskAutomation(async ct => {
-            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensors.LivingRoomZone1Count);
+            var zone1 = await _services.EntityProvider.GetIntegerEntity(Sensor.EsphomeLivingRoomZone1AllTargetCount);
             if (zone1!.State > 0)
             {
                 _lam.ConfigureStandByBrightness(Bytes.PercentToByte(3));

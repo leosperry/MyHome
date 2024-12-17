@@ -35,12 +35,12 @@ public class NotificationObserver : INotificationObserver
         Update();
     }
 
-    private async void Update()
+    private  void Update()
     {
         int index = 1;
         foreach (var item in _notifications)
         {
-            await _services.Api.InputTextSet($"input_text.audible_alert_{index}", item);
+            _services.Api.InputTextSet($"input_text.audible_alert_{index}", item).Wait();
             index++;
         }
     }

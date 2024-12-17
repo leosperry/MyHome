@@ -20,7 +20,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
 
         var monkey = notifications.CreateMonkeyChannel(new LightTurnOnModel()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             ColorName = "darkgreen",
             Brightness = Bytes._10pct
         });
@@ -29,7 +29,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        yield return Sensors.FrontPorchMotion;
+        yield return "";// Sensor.FrontPorchMotion; Todo: fix
     }
 
     public Task Execute(HaEntityStateChange<HaEntityState<OnOff, JsonElement>> motionState, CancellationToken ct)
@@ -86,7 +86,7 @@ public class FrontPorchMotion : IAutomation<OnOff>, IAutomationMeta
         var sun = await _provider.GetSun();
         if (sun!.State == SunState.Below_Horizon)
         {
-            await _api.TurnOn(Lights.FrontPorchLight, ct);
+            await _api.TurnOn(Light.FrontPorchLight, ct);
         }
     }
 

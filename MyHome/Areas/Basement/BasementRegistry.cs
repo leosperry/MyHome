@@ -18,15 +18,15 @@ public class BasementRegistry : IAutomationRegistry
         _builder = helpers.Builder;
         _factory = helpers.Factory;
         _asherService = asherService;
-        _override = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.BasementOverride);
+        _override = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.BasementOverride);
     }
 
     public void Register(IRegistrar reg)
     {
-        reg.TryRegister(() => _factory.EntityOnOffWithAnother(Sensors.BasementStairMotion, Lights.BasementStair)
+        reg.TryRegister(() => _factory.EntityOnOffWithAnother(Binary_Sensor.BasementStairMotionAq2Motion2, Switch.BasementStairLight)
             .WithMeta("Basement Stair motion", "set stair light with motion sensor"));
 
-        reg.TryRegister(() => _factory.DurableAutoOn(Helpers.BasementOverride, TimeSpan.FromHours(6))
+        reg.TryRegister(() => _factory.DurableAutoOff(Input_Boolean.BasementOverride, TimeSpan.FromHours(6))
             .WithMeta("Auto off basement override"));
 
         reg.TryRegister(
@@ -40,11 +40,11 @@ public class BasementRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple<OnOff>()
             .WithName("Update basement override display")
-            .WithTriggers(Helpers.BasementOverride)
+            .WithTriggers(Input_Boolean.BasementOverride)
             .WithExecution(async (sc, ct) => 
             {
                 await _services.Api.SetZoozSceneControllerButtonColorFromOverrideState(
-                    Lights.BasementStair, sc.New.State, 4, ct);
+                    Switch.BasementStairLight, sc.New.State, 4, ct);
             })
             .Build();
     }
@@ -73,7 +73,7 @@ public class BasementRegistry : IAutomationRegistry
             .WithName("Dim Basement over time")
             .WithDescription("after 10 minutes, normalize light, then dim every minute until minimum")
             .MakeDurable()
-            .WithTriggers(Sensors.BasementMotion)
+            .WithTriggers(Binary_Sensor.BasementMotion2Motion)
             .While(sc => sc.IsOff())
             .For(TimeSpan.FromMinutes(10))
             .WithExecution(DimOverTime)
@@ -85,7 +85,7 @@ public class BasementRegistry : IAutomationRegistry
         return _builder.CreateSimple<DateTime?>()
             .WithName("Call Asher from dashboard")
             .WithDescription("Uses a helpert to trigger random message to play to call Asher")
-            .WithTriggers(Helpers.AsherDashboardButton)
+            .WithTriggers(Input_Button.AsherButton)
             .WithExecution(async (sc, ct) =>
             {
                 if (sc.New.StateAndLastUpdatedWithin1Second())
@@ -98,7 +98,7 @@ public class BasementRegistry : IAutomationRegistry
 
     async Task<byte> GetBasementAverageBrighness(CancellationToken ct)
     {
-        var group = await _services.EntityProvider.GetLightEntity(Lights.BasementGroup);
+        var group = await _services.EntityProvider.GetLightEntity(Light.BasementLightGroup);
         return group?.Attributes?.Brightness ?? throw new Exception("could not get basement group brightness");
         // var lights = await Task.WhenAll(
         //     _services.EntityProvider.GetLightEntity(Lights.Basement1, ct),

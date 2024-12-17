@@ -21,13 +21,13 @@ public class AsherService
         this._services = services;
         this._logger = logger;
 
-        _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
-        _override = updatingEntityProvider.GetOnOffEntity(Helpers.BasementOverride);
+        _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(Media_Player.AsherRoomSpeaker);
+        _override = updatingEntityProvider.GetOnOffEntity(Input_Boolean.BasementOverride);
 
         this._diningRoomChannel = notificationService.CreateNotificationSender(
-            [notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]);
+            [notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker])]);
 
-        _basementGroup = updatingEntityProvider.GetLightEntity(Lights.BasementGroup);
+        _basementGroup = updatingEntityProvider.GetLightEntity(Light.BasementLightGroup);
     }
 
     static readonly string[] _messages = [ 
@@ -55,8 +55,8 @@ public class AsherService
         Step 3
             set lights to 40%*/
         await Task.WhenAll(
-            _services.Api.TurnOn(Lights.Basement1, ct),
-            _services.Api.TurnOff(Lights.Basement2, ct)
+            _services.Api.TurnOn(Light.BasementLight1, ct),
+            _services.Api.TurnOff(Light.BasementLight2, ct)
         );
 
         int count = 0;
@@ -64,10 +64,10 @@ public class AsherService
         {
             await Task.WhenAll(
                 Task.Delay(3000, ct),
-                _services.Api.Toggle([Lights.Basement1, Lights.Basement2], ct)
+                _services.Api.Toggle([Light.BasementLight1, Light.BasementLight2], ct)
             );
         }
-        await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
+        await _services.Api.LightSetBrightness([Light.BasementLight1, Light.BasementLight2], Bytes._40pct, ct);
     }
 
     public async Task PlayRandom(float targetVolume, CancellationToken ct)
@@ -83,16 +83,16 @@ public class AsherService
             float? previousVolume = _asherMediaPlayer.Attributes?.VolumeLevel;
             if (previousVolume < targetVolume)
             {
-                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, targetVolume);
+                await _services.Api.MediaPlayerSetVolume(Media_Player.AsherRoomSpeaker, targetVolume);
                 await Task.Delay(TimeSpan.FromSeconds(2));
             }
 
-            await _services.Api.SpeakPiper(MediaPlayers.Asher, message, true, voice);
+            await _services.Api.SpeakPiper(Media_Player.AsherRoomSpeaker, message, true, voice);
             await Task.Delay(TimeSpan.FromSeconds(10));
 
             if (previousVolume is not null && previousVolume != targetVolume)
             {
-                await _services.Api.MediaPlayerSetVolume(MediaPlayers.Asher, previousVolume.Value);
+                await _services.Api.MediaPlayerSetVolume(Media_Player.AsherRoomSpeaker, previousVolume.Value);
             }
         }
         else
@@ -107,16 +107,16 @@ public class AsherService
         switch (_basementGroup.Snapshot().State)
         {
             case OnOff.Off:
-                await _services.Api.LightSetBrightness(Lights.BasementGroup, Bytes._20pct, ct);
+                await _services.Api.LightSetBrightness(Light.BasementLightGroup, Bytes._20pct, ct);
                 break;
             case OnOff.On:
                 if (_basementGroup.Attributes?.Brightness < Bytes._20pct)
                 {
-                    await _services.Api.LightSetBrightness(Lights.BasementGroup, Bytes._20pct, ct);
+                    await _services.Api.LightSetBrightness(Light.BasementLightGroup, Bytes._20pct, ct);
                 }
                 else
                 {
-                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = 10});
+                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Light.BasementLightGroup], BrightnessStepPct = 10});
                 }
                 break;
             default:
@@ -138,7 +138,7 @@ public class AsherService
                 }
                 else
                 {
-                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = -10});
+                    await _services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Light.BasementLightGroup], BrightnessStepPct = -10});
                 }
                 break;
             default:
@@ -149,8 +149,8 @@ public class AsherService
     public Task TurnOff(CancellationToken ct)
     {
         return Task.WhenAll(
-            _services.Api.TurnOff([Lights.Basement2, Lights.BasementWork], ct),
-            _services.Api.LightSetBrightness(Lights.Basement1, Bytes._20pct)
+            _services.Api.TurnOff([Light.BasementLight2, Light.BasementLight3], ct),
+            _services.Api.LightSetBrightness(Light.BasementLight1, Bytes._20pct)
         );    
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json;
 using HaKafkaNet;
 using MyHome.Services;
 
-namespace MyHome.Areas.Office;
+namespace MyHome;
 
 public class OfficeService
 {
@@ -42,13 +42,13 @@ public class OfficeService
 
         _lightAdjuster = lightAdjusterFactory(_dynamicModel);
 
-        _officeIlluminance = updatingEntityProvider.GetIntegerEntity(Sensors.OfficeIlluminance);
-        _threshold = updatingEntityProvider.GetFloatEntity(Helpers.OfficeIlluminanceThreshold);
-        _override = updatingEntityProvider.GetOnOffEntity(Helpers.OfficeOverride);
-        _officeMotion = updatingEntityProvider.GetOnOffEntity(Sensors.OfficeMotion);
+        _officeIlluminance = updatingEntityProvider.GetIntegerEntity(Sensor.OfficeMotionIlluminance);
+        _threshold = updatingEntityProvider.GetFloatEntity(Input_Number.OfficeIlluminanceThreshold);
+        _override = updatingEntityProvider.GetOnOffEntity(Input_Boolean.OfficeOverride);
+        _officeMotion = updatingEntityProvider.GetOnOffEntity(Binary_Sensor.OfficeMotionMotion);
         _sun = updatingEntityProvider.GetSun();
 
-        _combinedLightState = updatingEntityProvider.GetColorLightEntity(Lights.OfficeLightsCombined);
+        _combinedLightState = updatingEntityProvider.GetColorLightEntity(Light.OfficeCombinedLight);
 
     }
 
@@ -60,10 +60,10 @@ public class OfficeService
     internal async Task TurnOff(CancellationToken ct = default)
     {
         await _api.TurnOff([
-            Lights.OfficeLightsCombined,
-            Devices.OfficeFan, 
-            Lights.OfficeLeds], ct);
-        await _api.TurnOffByLabel(Labels.OfficeDevices, ct);
+            Light.OfficeCombinedLight,
+            Switch.OfficeFanSwitch, 
+            Light.OfficeLedLight], ct);
+        await _api.TurnOffByLabel(Labels.OfficeSwitches, ct);
     }
 
     /// <summary>
@@ -112,7 +112,7 @@ public class OfficeService
 
         var combinedLightSettings = new LightTurnOnModel()
         {
-            EntityId = [Lights.OfficeLightsCombined],
+            EntityId = [Light.OfficeCombinedLight],
             Kelvin = GetKelvin(),
             Brightness = newBrightness
         };
@@ -140,7 +140,7 @@ public class OfficeService
                 : DateTime.Now - _officeMotion.LastChanged;
             if (timeSinceMotion > TimeSpan.FromHours(4))
             {
-                await _api.InputNumberSet(Helpers.OfficeIlluminanceThreshold, smallestThreshold);
+                await _api.InputNumberSet(Input_Number.OfficeIlluminanceThreshold, smallestThreshold);
             }
         }
         else if (sunState == SunState.Above_Horizon && threshold < maxThreshold && _override.State == OnOff.Off)
@@ -160,14 +160,14 @@ public class OfficeService
             if(sunIllumination >= threshold)
             {
                 _logger.LogInformation("adjusting office lights target threshold. Was:{was}, Now:{now}", threshold, sunIllumination);
-                await _api.InputNumberSet(Helpers.OfficeIlluminanceThreshold, Math.Min(maxThreshold, (int)sunIllumination));
+                await _api.InputNumberSet(Input_Number.OfficeIlluminanceThreshold, Math.Min(maxThreshold, (int)sunIllumination));
             }
         }
     }
 
     private async Task checkForOutsideAdjustments()
     {
-        var lightBarStat = await _entityProvider.GetColorLightEntity(Lights.OfficeLightBars);
+        var lightBarStat = await _entityProvider.GetColorLightEntity(Light.OfficeLightBars);
         if (lightBarStat.Bad()|| lightBarStat.Attributes is null)
         {
             _logger.LogWarning("something is wrong with the light bars");

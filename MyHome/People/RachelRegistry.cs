@@ -17,13 +17,13 @@ public class RachelRegistry : IAutomationRegistry
         _services = services;
         _notificationService = notificationService;
 
-        var channel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom]);
+        var channel = notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker]);
         //var channel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom, MediaPlayers.MainBedroom]);
         _notifyDiningAndMainBedroom = notificationService.CreateNotificationSender([channel]);
 
         _notifyPressure = _notificationService.CreateNoTextNotificationSender([_notificationService.CreateMonkeyChannel(new()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             ColorName = "darkslateblue",
             Brightness = Bytes._50pct,
         })]);
@@ -71,7 +71,7 @@ public class RachelRegistry : IAutomationRegistry
         return _builder.CreateSimple()
             .WithName("Rachel Phone Battery")
             .WithDescription("Alert when her battery is low")
-            .WithTriggers(Helpers.RachelPhoneBatteryHelper)
+            .WithTriggers(Binary_Sensor.Rachelphonebattlowhelper)
             .WithExecution(async (sc, ct) =>
             {
                 var onOff = sc.ToOnOff();

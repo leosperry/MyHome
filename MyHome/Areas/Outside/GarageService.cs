@@ -30,7 +30,7 @@ public class GarageService : IGarageService
         _entityProvider = cache;
         _api = api;
 
-        var diningRoomChannel = notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom], Voices.Mundane);
+        var diningRoomChannel = notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker], Voices.Mundane);
         _notifyOffice = notificationService.CreateNotificationSender([diningRoomChannel]);
     }
 

@@ -1,7 +1,7 @@
 using System.Text.Json.Serialization;
 using HaKafkaNet;
 
-namespace MyHome.Automations;
+namespace MyHome;
 
 public class WeatherAlerts : IAutomation<int, WeatherAlertsAttributes>, IAutomationMeta, IFallbackExecution
 {

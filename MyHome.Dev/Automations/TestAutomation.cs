@@ -25,6 +25,8 @@ public class TestAutomation : IInitializeOnStartup,
 
     public TestAutomation(IStartupHelpers helpers, IHaServices services, ILogger<TestAutomation> logger)
     {
+
+
         this._helpers = helpers;
         _services = services;
         this._logger = logger;
@@ -33,6 +35,7 @@ public class TestAutomation : IInitializeOnStartup,
     public Task Initialize()
     {
         return Task.CompletedTask;
+        //var test = HaKafkaNet.AutoGen.SomeDomain.SomeEntity
     }
 
     public IEnumerable<string> TriggerEntityIds()
@@ -41,7 +44,6 @@ public class TestAutomation : IInitializeOnStartup,
         yield return "input_number.trigger_from_hakafkanet";
     }
 
-    int metaCount = 5;
     public AutomationMetaData GetMetaData()
     {
         return new()

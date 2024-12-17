@@ -20,9 +20,9 @@ public class LivingRoomService
         _entityProvider = entityProvider;
         _logger = logger;
 
-        _powerSensor = updatingEntityProvider.GetFloatEntity(Devices.SolarPower);
-        _override = updatingEntityProvider.GetOnOffEntity(Helpers.LivingRoomOverride);
-        _presence = updatingEntityProvider.GetOnOffEntity(Sensors.LivingRoomPresence);
+        _powerSensor = updatingEntityProvider.GetFloatEntity(Sensor.SolaredgeCurrentPower);
+        _override = updatingEntityProvider.GetOnOffEntity(Input_Boolean.LivingRoomOverride);
+        _presence = updatingEntityProvider.GetOnOffEntity(Binary_Sensor.EsphomeLivingRoomPresence); //esphome_living_room_presence
     }
 
     public async Task SetLights(CancellationToken ct = default)
@@ -33,7 +33,7 @@ public class LivingRoomService
             if (HasBeenUnoccupiedForXminutes(10) == true)
             {
                 // turn off
-                await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
+                await _api.TurnOff([Light.TvBacklight, Light.CouchOverhead]);
                 return;
             }
 
@@ -57,7 +57,7 @@ public class LivingRoomService
     {
         if (_presence.Bad())
         {
-            _logger.LogWarning(Sensors.LivingRoomPresence + " is in a bad state: {state}", _presence.State);
+            _logger.LogWarning(Binary_Sensor.EsphomeLivingRoomPresence + " is in a bad state: {state}", _presence.State);
             return null;
         }
         if (_presence.IsOn())
@@ -78,7 +78,7 @@ public class LivingRoomService
         if (currentPower > THRESHOLD)
         {
             // turn off when we have plenty of light
-            await _api.TurnOff([Lights.TvBacklight, Lights.CounchOverhead]);
+            await _api.TurnOff([Light.TvBacklight, Light.CouchOverhead]);
         }
         else
         {
@@ -92,13 +92,13 @@ public class LivingRoomService
             await Task.WhenAll(
                 _api.LightTurnOn(new LightTurnOnModel()
                 {
-                    EntityId = [Lights.TvBacklight],
+                    EntityId = [Light.TvBacklight],
                     Brightness = (byte)Math.Round(unmodifiedValue * 0.6),
                     Kelvin = 2202,
                 },ct),
                 _api.LightTurnOn(new LightTurnOnModel()
                 {
-                    EntityId = [Lights.CounchOverhead],
+                    EntityId = [Light.CouchOverhead],
                     Brightness = (byte)Math.Round(unmodifiedValue * 0.25),
                     RgbColor = (255, 146, 39),
                 }, ct)

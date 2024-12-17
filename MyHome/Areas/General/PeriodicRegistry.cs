@@ -1,5 +1,4 @@
 ﻿using HaKafkaNet;
-using MyHome.Areas.Office;
 
 namespace MyHome;
 
@@ -28,7 +27,7 @@ public class PeriodicRegistry : IAutomationRegistry
     Task Periodic(HaEntityStateChange stateChange, CancellationToken ct)
     {
         return Task.WhenAll(
-            EnforceOff(Helpers.BedTime, ct),
+            EnforceOff(Input_Boolean.BedtimeSwitch, ct),
             EnforceOff(GarageService.GARAGE1_DOOR_OPENER, ct),
             EnforceOff(GarageService.GARAGE2_DOOR_OPENER, ct),
             _officeService.PeriodicTasks()

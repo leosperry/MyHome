@@ -25,11 +25,11 @@ public class OutsideRegistry : IAutomationRegistry
         _garage = garageService;
         _notificationService =notificationService;
 
-        _maintenanceMode = _helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
+        _maintenanceMode = _helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
 
         var garageAlertChannel = notificationService.CreateMonkeyChannel(new LightTurnOnModel()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             ColorName = "saddlebrown",
             Brightness = Bytes.Max
         });
@@ -37,20 +37,20 @@ public class OutsideRegistry : IAutomationRegistry
         _notifyAboutGarage = notificationService.CreateNotificationSender([phoneChannel],[garageAlertChannel]); 
         
         this._notifyDiningRoom = _notificationService.CreateNotificationSender([
-            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+            _notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker])]
         );
 
         this._sun = helpers.UpdatingEntityProvider.GetSun();   
-        this._officeDoor = helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeDoor);
-        this._backHallLight = helpers.UpdatingEntityProvider.GetOnOffEntity(Lights.BackHallLight);
+        this._officeDoor = helpers.UpdatingEntityProvider.GetOnOffEntity(Binary_Sensor.OfficeDoorOpening);
+        this._backHallLight = helpers.UpdatingEntityProvider.GetOnOffEntity(Switch.BackHallLight);
     }    
 
     public void Register(IRegistrar reg)
     {
         reg.TryRegister(
-            _helpers.Factory.DurableAutoOff(Lights.BackFlood, TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
-            _helpers.Factory.DurableAutoOff(Lights.BackPorch, TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
-            _helpers.Factory.DurableAutoOff(Lights.FrontPorchLight, TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min"),
+            _helpers.Factory.DurableAutoOff(Switch.BackFlood, TimeSpan.FromMinutes(30)).WithMeta("auto off back flood","30 min"),
+            _helpers.Factory.DurableAutoOff(Switch.BackPorchLight, TimeSpan.FromMinutes(30)).WithMeta("auto off back porch","30 min"),
+            _helpers.Factory.DurableAutoOff(Light.FrontPorchLight, TimeSpan.FromMinutes(10)).WithMeta("auto off front porch","10 min"),
             WhenDoorStaysOpen_Alert("binary_sensor.inside_garage_door_contact_opening", "Inside Garage Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.front_door_contact_opening", "Front Door"),
             WhenDoorStaysOpen_Alert("binary_sensor.back_door_contact_opening", "Back Door"),
@@ -92,7 +92,7 @@ public class OutsideRegistry : IAutomationRegistry
     {
         if (_backHallLight.IsOff() && (_officeDoor.IsOff() || _sun.State == SunState.Below_Horizon))
         {
-            await _services.Api.TurnOn(Lights.BackHallLight);
+            await _services.Api.TurnOn(Switch.BackHallLight);
         }
     }
 

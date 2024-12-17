@@ -18,8 +18,8 @@ public class KitchenRegistry : IAutomationRegistry
         _builder = helpers.Builder;
         this._logger = logger;
 
-        _kitchenLights = helpers.UpdatingEntityProvider.GetLightEntity(Lights.KitchenLights);
-        _solarMeter = helpers.UpdatingEntityProvider.GetFloatEntity(Devices.SolarPower);
+        _kitchenLights = helpers.UpdatingEntityProvider.GetLightEntity(Light.KitchenLights);
+        _solarMeter = helpers.UpdatingEntityProvider.GetFloatEntity(Sensor.SolaredgeCurrentPower);
     }
 
     public void Register(IRegistrar reg)
@@ -35,7 +35,7 @@ public class KitchenRegistry : IAutomationRegistry
     IAutomationBase ReplayNotification()
     {
         return _builder.CreateSimple<float>()
-            .WithTriggers(Helpers.AudibleAlertToPlay)
+            .WithTriggers(Input_Number.AudibleAlertToPlay)
             .WithName("Replay notification")
             .WithExecution(async (sc, ct) => {
                 if (sc.BecameGreaterThan(0))
@@ -43,13 +43,13 @@ public class KitchenRegistry : IAutomationRegistry
                     var msgToPlay = (await _services.EntityProvider.GetEntity($"input_text.audible_alert_{sc.New.State}"))?.State;
                     if (msgToPlay is null)
                     {
-                        await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, "could not retrieve message", true);
+                        await _services.Api.SpeakPiper(Media_Player.DiningRoomSpeaker, "could not retrieve message", true);
                     }
                     else
                     {
-                        await _services.Api.SpeakPiper(MediaPlayers.DiningRoom, msgToPlay);
+                        await _services.Api.SpeakPiper(Media_Player.DiningRoomSpeaker, msgToPlay);
                     }
-                    await _services.Api.InputNumberSet(Helpers.AudibleAlertToPlay, 0);
+                    await _services.Api.InputNumberSet(Input_Number.AudibleAlertToPlay, 0);
                 }
             })
             .Build();
@@ -59,18 +59,18 @@ public class KitchenRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple<int>()
             .WithName("Zone2Enter - Turn on a little")
-            .WithTriggers(Sensors.KitchenZone2AllCount)
+            .WithTriggers(Sensor.EsphomekitchenmotionZone2AllTargetCount) //sensor.esphomekitchenmotion_zone_2_all_target_count
             .WithExecution(async (sc,ct) => {
                 if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
                     // sometimes zone 1 turns on light, but _kitchenLights is not updated yet. 
                     // so go manually get the latest state
-                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, JsonElement>>(Lights.KitchenLights);
+                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, JsonElement>>(Light.KitchenLights);
                     kitchResponse.response.EnsureSuccessStatusCode();
 
                     if (kitchResponse.entityState.IsOff())
                     {
-                        await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._5pct);
+                        await _services.Api.LightSetBrightness(Light.KitchenLights, Bytes._5pct);
                     }                
                 }
             })
@@ -82,16 +82,16 @@ public class KitchenRegistry : IAutomationRegistry
         return _builder.CreateSimple<int>()
             .WithName("Turn On Kithen Lights")
             .WithDescription("If ambient light is low, turn on kitchen lights")
-            .WithTriggers(Sensors.KitchenZone1AllCount)
+            .WithTriggers(Sensor.EsphomekitchenmotionZone1AllTargetCount)
             .WithExecution(async (sc, ct) => {
                 if (sc.BecameGreaterThan(0) && _solarMeter.State < 1100)
                 {
-                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, LightModel>>(Lights.KitchenLights);
+                    var kitchResponse = await _services.Api.GetEntity<HaEntityState<OnOff, LightModel>>(Light.KitchenLights);
                     kitchResponse.response.EnsureSuccessStatusCode();
                     
                     if (kitchResponse.entityState.IsOff() || kitchResponse.entityState?.Attributes?.Brightness < Bytes.PercentToByte(20))
                     {
-                        await _services.Api.LightSetBrightness(Lights.KitchenLights, Bytes._20pct);
+                        await _services.Api.LightSetBrightness(Light.KitchenLights, Bytes._20pct);
                     }
                 }
             })
@@ -106,11 +106,11 @@ public class KitchenRegistry : IAutomationRegistry
             .WithName("Turn Off Kitchen Lights")
             .WithDescription($"Turn off the kitchen lights when unoccupied for {minutesToLeaveOn} minutes")
             .MakeDurable()
-            .WithTriggers(Sensors.KitchenPresence)
+            .WithTriggers( Sensor.Livingroomandkitchenpresencecount) //livingroomandkitchenpresencecount
             .While(sc => sc.IsOff() && _kitchenLights.IsOn())
             .For(TimeSpan.FromMinutes(minutesToLeaveOn))
             .WithExecution(ct => {
-                return _services.Api.TurnOff(Lights.KitchenLights);
+                return _services.Api.TurnOff(Light.KitchenLights);
             })
             .Build();
     }

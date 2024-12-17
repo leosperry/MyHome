@@ -20,9 +20,9 @@ public class MainRegistry : IAutomationRegistry
 
         var maintenanceModeLightSettings = new LightTurnOnModel()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             RgbColor = (255, 100, 0),
-            Brightness = Bytes._75pct            
+            Brightness = Bytes._75pct
         };
 
         this._maintenanceChannel = _notificationService.CreateMonkeyChannel(maintenanceModeLightSettings);
@@ -38,13 +38,9 @@ public class MainRegistry : IAutomationRegistry
 
         // lights auto off
         reg.TryRegister(
-            _factory.DurableAutoOff(Helpers.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour")
-            ,
-            _factory.DurableAutoOff(Lights.BackHallLight, TimeSpan.FromMinutes(10)).WithMeta("auto off back hall","10 min"),
-            _factory.DurableAutoOff(Lights.UpstairsHall, TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
-            _factory.DurableAutoOff(Lights.EntryLight, TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min"),
-            _factory.DurableAutoOffOnEntityOff([Lights.MainBedroomLight1, Lights.MainBedroomLight2, Lights.CraftRoomLights], Sensors.MainBedroom4in1Motion, TimeSpan.FromMinutes(10))
-                .WithMeta("mainbedroom off on no motion","10 minutes")           
+            _factory.DurableAutoOff(Input_Boolean.MaintenanceMode, TimeSpan.FromHours(1)).WithMeta("auto off maintenance mode", "1 hour"),
+            _factory.DurableAutoOff(Light.UpstairsHall, TimeSpan.FromMinutes(30)).WithMeta("auto off upstairs hall","30 min"),
+            _factory.DurableAutoOff(Light.EntryLight, TimeSpan.FromMinutes(30)).WithMeta("auto off entry light","30 min")
         );
     }
 
@@ -53,7 +49,7 @@ public class MainRegistry : IAutomationRegistry
         const string maintenance_notification_id = "maintenance_mode";
         return _builder.CreateSimple<OnOff>()
             .WithName(nameof(ReportMainenanceMode))
-            .WithTriggers(Helpers.MaintenanceMode)
+            .WithTriggers(Input_Boolean.MaintenanceMode)
             .WithExecution(async (sc, ct) => {
                 if (sc.IsOn())
                 {
@@ -71,7 +67,7 @@ public class MainRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple<DateTime?>()
             .WithName("clear notifications")
-            .WithTriggers(Helpers.ClearNotificationButton)
+            .WithTriggers(Input_Button.ClearNotifications)
             .WithExecution(async (sc, ct) => {
                 if (sc.New.StateAndLastUpdatedWithin1Second())
                 {
@@ -90,11 +86,11 @@ public class MainRegistry : IAutomationRegistry
             .WithExecution((sc, ct) => {
                 if (sc.IsOn())
                 {
-                    return _services.Api.MediaPlayerSetVolume(MediaPlayers.DiningRoom, MediaPlayers.DiningRoomActiveVolume);
+                    return _services.Api.MediaPlayerSetVolume(Media_Player.DiningRoomSpeaker, MediaPlayer.DiningRoomActiveVolume);
                 }
                 else
                 {
-                    return _services.Api.MediaPlayerSetVolume(MediaPlayers.DiningRoom, MediaPlayers.DiningRoomInActiveVolume);
+                    return _services.Api.MediaPlayerSetVolume(Media_Player.DiningRoomSpeaker, MediaPlayer.DiningRoomInActiveVolume);
                 }
             })
             .Build();

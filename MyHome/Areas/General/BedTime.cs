@@ -23,7 +23,7 @@ public class BedTime : IAutomation<OnOff>, IAutomationMeta
         this._garageService = garageService;
         this._logger = logger;
 
-        var voiceChannel = notification.CreateAudibleChannel([MediaPlayers.DiningRoom]);
+        var voiceChannel = notification.CreateAudibleChannel([Media_Player.DiningRoomSpeaker]);
         this._notify = notification.CreateNotificationSender([voiceChannel]);
     }
 
@@ -38,19 +38,21 @@ public class BedTime : IAutomation<OnOff>, IAutomationMeta
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        yield return Helpers.BedTime;
+        yield return Input_Boolean.BedtimeSwitch;
     }
 
     async Task RunBedtimeRoutine(CancellationToken ct)
     {
+        var couch1 = Light.WizRgbwTunable79A59C;
+
         Task[] taskList = [
-            _services.Api.TurnOff(Helpers.BedTime),
-            _services.Api.LockLock(Devices.FrontDoorLock, ct),
+            _services.Api.TurnOff(Input_Boolean.BedtimeSwitch),
+            _services.Api.LockLock(Lock.AqaraSmartLockU100, ct),
             _garageService.EnsureGarageClosed(_notify,ct),
             EnsureOfficeClosed(ct),
-            _services.Api.TurnOn([Lights.MainBedroomDadSideSwitch, Lights.MainBedroomDresserSwitch], ct),
-            _services.Api.LightSetBrightness(Lights.EntryLight, Bytes._20pct ,ct),
-            _services.Api.LightSetBrightness(Lights.Couch1, Bytes._10pct),
+            _services.Api.TurnOn([Switch.MbrFloorLights], ct),
+            _services.Api.LightSetBrightness(Light.EntryLight, Bytes._20pct ,ct),
+            _services.Api.LightSetBrightness(couch1, Bytes._10pct),
             _services.Api.TurnOffByLabel("bedtimeoff"),
             ];
         try
@@ -67,12 +69,12 @@ public class BedTime : IAutomation<OnOff>, IAutomationMeta
 
     async Task EnsureOfficeClosed(CancellationToken ct)
     {
-        var officeDoor = await _services.EntityProvider.GetOnOffEntity(Sensors.OfficeDoor, ct);
+        var officeDoor = await _services.EntityProvider.GetOnOffEntity(Binary_Sensor.OfficeDoorOpening, ct);
         if (officeDoor.Bad() || officeDoor!.State == OnOff.On)
         {
             await Task.WhenAll(
                 _notify("The office is open"),
-                _services.Api.TurnOn(Lights.BackHallLight, ct));
+                _services.Api.TurnOn(Switch.BackHallLight, ct));
         }
     }
 
@@ -90,7 +92,7 @@ public class BedTime : IAutomation<OnOff>, IAutomationMeta
                 GarageService.GARAGE2_CONTACT,
                 GarageService.GARAGE2_DOOR_OPENER,
                 GarageService.GARAGE2_TILT,
-                Lights.EntryLight
+                Light.EntryLight
             ]
         };
     }

@@ -28,7 +28,7 @@ public class AudibleNotificationChannel : INotificationChannel
         {
             _logger.LogError("piper did not succeed - status:{status_code}, reason:{reason}", response.StatusCode, response.ReasonPhrase);
         }
-        if (_targets.Contains(MediaPlayers.DiningRoom))
+        if (_targets.Contains(Media_Player.DiningRoomSpeaker))
         {
             _notificationObserver.OnNotificationSent(message);
         }

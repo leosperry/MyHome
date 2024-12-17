@@ -20,19 +20,19 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         _notificationService = notificationService;
         _logger = logger;
 
-        _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(MediaPlayers.Asher);
+        _asherMediaPlayer = updatingEntityProvider.GetMediaPlayer<SonosAttributes>(Media_Player.AsherRoomSpeaker);
 
         this._diningRoomChannel = _notificationService.CreateNotificationSender([
-            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+            _notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker])]
         );        
     }
 
     public Task Execute(HaEntityStateChange stateChange, CancellationToken ct)
     {
-        if (stateChange.EntityId == Helpers.LivingRoomOverride)
+        if (stateChange.EntityId == Input_Boolean.LivingRoomOverride)
         {
             return _services.Api.SetZoozSceneControllerButtonColorFromOverrideState(
-                Lights.DiningRoomLights,
+                Switch.DiningRoomLights,
                 stateChange.ToOnOff().New.State, 1, ct);
             //return SetHelperState((HaEntityState<OnOff, JsonElement>)stateChange.New, ct);
         }
@@ -48,7 +48,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         var press = sceneState?.New.Attributes?.GetKeyPress();
         return (btn, press) switch
         {
-            {btn: '1', press: KeyPress.KeyPressed} => _services.Api.Toggle(Helpers.LivingRoomOverride, ct),
+            {btn: '1', press: KeyPress.KeyPressed} => _services.Api.Toggle(Input_Boolean.LivingRoomOverride, ct),
             {btn: '3', press: KeyPress.KeyPressed} => _notificationService.ClearAll(),
             {btn: '4', press: KeyPress.KeyPressed} => AsherButton(0.15f, ct),
             {btn: '4', press: KeyPress.KeyPressed2x} => AsherButton(0.20f, ct),
@@ -75,7 +75,7 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        yield return Helpers.LivingRoomOverride;
+        yield return Input_Boolean.LivingRoomOverride;
         yield return "event.dining_room_lights_scene_001";
         yield return "event.dining_room_lights_scene_002";
         yield return "event.dining_room_lights_scene_003";
@@ -96,8 +96,8 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         );
         
         await Task.WhenAll(
-            _services.Api.TurnOn(Lights.Basement1, ct),
-            _services.Api.TurnOff(Lights.Basement2, ct)
+            _services.Api.TurnOn(Light.BasementLight1, ct),
+            _services.Api.TurnOff(Light.BasementLight2, ct)
         );
 
         int count = 0;
@@ -105,10 +105,10 @@ public class DiningRoomButtons : IAutomation, IAutomationMeta
         {
             await Task.WhenAll(
                 Task.Delay(3000, ct),
-                _services.Api.Toggle([Lights.Basement1, Lights.Basement2], ct)
+                _services.Api.Toggle([Light.BasementLight1, Light.BasementLight2], ct)
             );
         }
-        await _services.Api.LightSetBrightness([Lights.Basement1, Lights.Basement2], Bytes._40pct, ct);
+        await _services.Api.LightSetBrightness([Light.BasementLight1, Light.BasementLight2], Bytes._40pct, ct);
     }
 
     // static readonly string[] _messages = [ 

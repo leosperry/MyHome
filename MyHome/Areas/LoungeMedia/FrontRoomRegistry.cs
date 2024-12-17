@@ -1,7 +1,7 @@
 using System;
 using HaKafkaNet;
 
-namespace MyHome.Areas.LoungeMedia;
+namespace MyHome;
 
 public class FrontRoomRegistry : IAutomationRegistry
 {
@@ -16,7 +16,7 @@ public class FrontRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.TryRegister(() => _helpers.Factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", Devices.PlantPlug1)
+        reg.TryRegister(() => _helpers.Factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", Switch.PlantPlug1)
             .WithMeta("Plant plug 1", "Uses Kazul's UVB schedule"));
     }
 

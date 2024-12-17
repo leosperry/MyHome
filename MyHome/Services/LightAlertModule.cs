@@ -39,7 +39,7 @@ public class LightAlertModule : IDisposable
     public LightAlertModule(IHaApiProvider api, IStartupHelpers helpers, ILogger<LightAlertModule> logger)
     {
         _api = api;
-        this._officeMotion = helpers.UpdatingEntityProvider.GetOnOffEntity(Sensors.OfficeMotion);
+        this._officeMotion = helpers.UpdatingEntityProvider.GetOnOffEntity(Binary_Sensor.OfficeMotionMotion);
         _logger = logger;
         _timer = new PeriodicTimer(TimeSpan.FromSeconds(5));
         StartTracking();
@@ -80,9 +80,9 @@ public class LightAlertModule : IDisposable
     {
         if (_officeMotion.IsOn())
         {
-            yield return Lights.OfficeLeds;
+            yield return Light.OfficeLedLight;
         }
-        yield return Lights.Monkey;
+        yield return Light.MonkeyLight;
     }
 
     private async Task SetStandby()

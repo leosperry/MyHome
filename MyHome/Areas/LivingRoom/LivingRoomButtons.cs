@@ -13,14 +13,14 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
     private readonly NotificationSender _diningRoomChannel;
     LightTurnOnModel _tvBacklightPresets = new LightTurnOnModel()
     {
-        EntityId = [Lights.TvBacklight],
+        EntityId = [Light.TvBacklight],
         Brightness = 153,
         Kelvin = 2202
     };
 
     LightTurnOnModel _overheadPresets = new LightTurnOnModel()
     {
-        EntityId = [Lights.CounchOverhead],
+        EntityId = [Light.CouchOverhead],
         Brightness = 64,
         RgbColor = (255, 146, 39)
     };
@@ -31,10 +31,10 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         _notificationService = notificationService;
         _logger = logger;
 
-        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode); 
+        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode); 
 
         this._diningRoomChannel = _notificationService.CreateNotificationSender([
-            _notificationService.CreateAudibleChannel([MediaPlayers.DiningRoom])]
+            _notificationService.CreateAudibleChannel([Media_Player.DiningRoomSpeaker])]
         );
     }
 
@@ -46,16 +46,16 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         var keypress = sceneEvent.New.Attributes?.GetKeyPress();
         return (button,keypress) switch 
         {
-            {button: '1', keypress: KeyPress.KeyPressed}    => ToggleLight(Lights.TvBacklight, ct),
-            {button: '1', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Lights.TvBacklight, ct),
-            {button: '1', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Lights.TvBacklight, ct),
-            {button: '2', keypress: KeyPress.KeyPressed}    => ToggleLight(Lights.CounchOverhead, ct),
-            {button: '2', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Lights.CounchOverhead, ct),
-            {button: '2', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Lights.CounchOverhead, ct),
-            {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Lights.KitchenLights, Lights.DiningRoomLights, Lights.FrontRoomLight, Lights.BackHallLight],ct),
+            {button: '1', keypress: KeyPress.KeyPressed}    => ToggleLight(Light.TvBacklight, ct),
+            {button: '1', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Light.TvBacklight, ct),
+            {button: '1', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Light.TvBacklight, ct),
+            {button: '2', keypress: KeyPress.KeyPressed}    => ToggleLight(Light.CouchOverhead, ct),
+            {button: '2', keypress: KeyPress.KeyHeldDown}   => IncreaseBrightness(Light.CouchOverhead, ct),
+            {button: '2', keypress: KeyPress.KeyPressed2x}  => ReduceBrightness(Light.CouchOverhead, ct),
+            {button: '3', keypress: KeyPress.KeyPressed}    => _services.Api.TurnOff([Light.KitchenLights, Switch.DiningRoomLights, Light.FrontRoomLight, Switch.BackHallLight],ct),
             {button: '4', keypress: KeyPress.KeyPressed2x}  => RokuCommand(RokuCommands.find_remote),
             {button: '4', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.play),
-            {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Lights.PeacockLamp, ct),
+            {button: '5', keypress: KeyPress.KeyPressed}    => _services.Api.Toggle(Switch.PeacockLamp, ct),
             {button: '6', keypress: KeyPress.KeyPressed}    => ClearAllNotifications(),
             {button: '6', keypress: KeyPress.KeyPressed2x}    => ToggleMaintenanceMode(),
             {button: '8', keypress: KeyPress.KeyPressed}    => RokuCommand(RokuCommands.select),
@@ -72,7 +72,7 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
 
     Task RokuCommand(RokuCommands command)
     {
-        return _services.Api.RemoteSendCommand(Devices.Roku, command.ToString());
+        return _services.Api.RemoteSendCommand(Remote.RokuUltra, command.ToString());
     }
 
     Task ClearAllNotifications()
@@ -83,7 +83,7 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
 
     async Task ToggleMaintenanceMode()
     {
-        var respose = await _services.Api.Toggle(Helpers.MaintenanceMode);
+        var respose = await _services.Api.Toggle(Input_Boolean.MaintenanceMode);
         if (!respose.IsSuccessStatusCode)
         {
             await _diningRoomChannel("failed to toggle maintenance mode");
@@ -112,10 +112,10 @@ public class LivingRoomButtons : IAutomation_SceneController, IAutomationMeta, I
         {
             switch (lightId)
             {
-                case Lights.TvBacklight:
+                case Light.TvBacklight:
                     await _services.Api.LightTurnOn(_tvBacklightPresets, ct);
                     break;
-                case Lights.CounchOverhead:
+                case Light.CouchOverhead:
                     await _services.Api.LightTurnOn(_overheadPresets, ct);
                     break;
                 default:

@@ -33,11 +33,11 @@ public class LaundryAlerts : IAutomation, IAutomationMeta
 
         var monkeyChannel = _notifications.CreateMonkeyChannel(new()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             ColorName = "aquamarine",
             Brightness = Bytes._30pct
         });
-        var audioChannel = _notifications.CreateAudibleChannel([MediaPlayers.DiningRoom]);
+        var audioChannel = _notifications.CreateAudibleChannel([Media_Player.DiningRoomSpeaker]);
         _regularAlert = _notifications.CreateNotificationSender([audioChannel], [monkeyChannel]);
 
         _soapAlert = _notifications.CreateInformationalSender();

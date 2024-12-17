@@ -31,16 +31,16 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        var simpleAutomation = _builder.CreateSimple()
-            .WithTriggers("switch.my_switch")
-            .WithName("This is my simple automation")
-            .WithExecution(async (sc, ct) => {
-                // do work
-                return;
-            })
-            .Build();
+        // var simpleAutomation = _builder.CreateSimple()
+        //     .WithTriggers("switch.my_switch")
+        //     .WithName("This is my simple automation")
+        //     .WithExecution(async (sc, ct) => {
+        //         // do work
+        //         return;
+        //     })
+        //     .Build();
 
-        reg.Register(simpleAutomation);
+        //reg.Register(simpleAutomation);
 
         var typedDurable = _builder.CreateSchedulable<OnOff>()
             .WithTriggers("input_boolean.my_motion_sensor")
@@ -55,17 +55,17 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
         reg.TryRegister(typedDurable);
     }
 
-    IAutomationBase Simple()
-    {
-        return _builder.CreateSimple()
-            .WithTriggers("switch.my_switch")
-            .WithName("This is my simple automation")
-            .WithExecution(async (sc, ct) => {
-                // do work
-                return;
-            })
-            .Build();
-    }
+    // IAutomationBase Simple()
+    // {
+    //     return _builder.CreateSimple()
+    //         .WithTriggers("switch.my_switch")
+    //         .WithName("This is my simple automation")
+    //         .WithExecution(async (sc, ct) => {
+    //             // do work
+    //             return;
+    //         })
+    //         .Build();
+    // }
 
     IAutomationBase SimpleTyped()
     {

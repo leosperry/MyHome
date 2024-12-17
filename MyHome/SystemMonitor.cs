@@ -22,7 +22,7 @@ public class SystemMonitor : ISystemMonitor
         _services = services;
         _lam = lam;
         _logger = logger;
-        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
+        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
     }
 
     public async Task BadEntityStateDiscovered(BadEntityState badStates)

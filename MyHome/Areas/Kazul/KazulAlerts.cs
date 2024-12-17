@@ -36,7 +36,7 @@ public class KazulAlerts : IAutomation, IAutomationMeta
         _entities = entities;
         _notifyCritical = notificationService.GetCritical();
         _notifyInformational = notificationService.CreateInformationalSender();
-        this._maintenanceMode = startupHelpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
+        this._maintenanceMode = startupHelpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
     }
 
 

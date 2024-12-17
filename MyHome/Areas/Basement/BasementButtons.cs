@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.VisualBasic;
 using MyHome.People;
 
-namespace MyHome.Areas.Basement;
+namespace MyHome;
 
 public class BasementButtons : IAutomation_SceneController , IAutomationMeta
 {
@@ -19,7 +19,7 @@ public class BasementButtons : IAutomation_SceneController , IAutomationMeta
         _logger = logger;
         _services = services;
 
-        _basementGroup = helpers.UpdatingEntityProvider.GetLightEntity(Lights.BasementGroup);
+        _basementGroup = helpers.UpdatingEntityProvider.GetLightEntity(Light.BasementLightGroup);
     }
 
     public IEnumerable<string> TriggerEntityIds()
@@ -39,11 +39,11 @@ public class BasementButtons : IAutomation_SceneController , IAutomationMeta
         var press = stateChange?.New.Attributes?.GetKeyPress();
         return (btn, press) switch
         {
-            {btn : '1', press: KeyPress.KeyPressed} => _services.Api.TurnOn(Lights.BasementGroup),
+            {btn : '1', press: KeyPress.KeyPressed} => _services.Api.TurnOn(Light.BasementLightGroup),
             {btn : '3', press: KeyPress.KeyPressed} => _asherService.TurnOff(ct),
             {btn : '1', press: KeyPress.KeyHeldDown} => _asherService.IncreaseLights(ct), //_services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = 5}),
             {btn : '3', press: KeyPress.KeyHeldDown} => _asherService.DecreaseLights(ct), //_services.Api.LightTurnOn(new LightTurnOnModel(){EntityId = [Lights.BasementGroup], BrightnessStepPct = -5}),
-            {btn: '4', press: KeyPress.KeyPressed} => _services.Api.Toggle(Helpers.BasementOverride),
+            {btn: '4', press: KeyPress.KeyPressed} => _services.Api.Toggle(Input_Boolean.BasementOverride),
             _ => HandleNoMatch(btn, press)
         };
     }

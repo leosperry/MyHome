@@ -22,7 +22,7 @@ public class KazulRegistry : IAutomationRegistry
         _factory = helpers.Factory;
         _builder = helpers.Builder;
         _notifyCritical = notificationService.GetCritical();
-        this._mainenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Helpers.MaintenanceMode);
+        this._mainenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
     }
 
     public void Register(IRegistrar reg)

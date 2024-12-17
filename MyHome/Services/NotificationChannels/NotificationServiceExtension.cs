@@ -13,11 +13,11 @@ public static class NotificationServiceExtension
 
     private static NotificationSender MakeCritical(INotificationService service)
     {
-        var audible = service.CreateAudibleChannel([MediaPlayers.DiningRoom, MediaPlayers.MainBedroom]);
+        var audible = service.CreateAudibleChannel([Media_Player.DiningRoomSpeaker, Media_Player.MainBedroomSpeaker]);
         var phones = service.CreateGroupOrDeviceChannel(Phones.LeonardPhone, Phones.RachelPhone);
         var monkey = service.CreateMonkeyChannel(new()
         {
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             RgbColor = (255, 0, 88),
             Flash = HaKafkaNet.Flash.Short,
             Brightness = Bytes.Max

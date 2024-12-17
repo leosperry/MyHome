@@ -34,7 +34,7 @@
 //     {
 //         return _builder.CreateSimple()
 //             .WithName("Office lights on motion")
-//             .WithTriggers(Sensors.OfficeMotion)
+//             .WithTriggers(Binary_Sensor.OfficeMotionMotion)
 //             .WithExecution(async (sc, ct) =>{
 //                 var motionState = sc.ToOnOff();
 //                 if (!motionState.New.Bad() && motionState.New.IsOn())

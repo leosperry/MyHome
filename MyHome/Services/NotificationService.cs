@@ -96,7 +96,7 @@ public class NotificationService : INotificationService
     public NotificationSender CreateInformationalSender()
     {
         return CreateNotificationSender([Persistent], [CreateMonkeyChannel(new LightTurnOnModel{
-            EntityId = [Lights.Monkey],
+            EntityId = [Light.MonkeyLight],
             ColorName = "lightpink",
             Brightness = Bytes._30pct
         })]);

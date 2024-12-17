@@ -1,7 +1,7 @@
 using System;
 using HaKafkaNet;
 
-namespace MyHome.Areas.Office;
+namespace MyHome;
 
 
 public class OfficeCombinedLights : IAutomation_ColorLight, IAutomationMeta
@@ -43,7 +43,7 @@ public class OfficeCombinedLights : IAutomation_ColorLight, IAutomationMeta
         }
     }
 
-    static readonly string[] _colorLights = [Lights.OfficeLeds, Lights.OfficeLightBars];
+    static readonly string[] _colorLights = [Light.OfficeLedLight, Light.OfficeLightBars];
 
     private async Task TurnOn(ColorLightModel attributes)
     {
@@ -58,19 +58,19 @@ public class OfficeCombinedLights : IAutomation_ColorLight, IAutomationMeta
         var caseBrightness = _caseLightModel.GetBrightness(inputBrightness);
 
         await Task.WhenAll(
-            _services.Api.LightSetBrightness(Lights.OfficeLights, caseBrightness),
+            _services.Api.LightSetBrightness(Light.OfficeDisplayLights, caseBrightness),
             _services.Api.LightTurnOn(newModelFromInput)
         );
     }
 
     private async Task TurnOff()
     {
-        await _services.Api.TurnOff(_colorLights.Append(Lights.OfficeLights));
+        await _services.Api.TurnOff(_colorLights.Append(Light.OfficeDisplayLights));
     }
 
     public IEnumerable<string> TriggerEntityIds()
     {
-        yield return Lights.OfficeLightsCombined;
+        yield return Light.OfficeCombinedLight;
     }
 
     private LightTurnOnModel GetFromState(ColorLightModel lightModel)
