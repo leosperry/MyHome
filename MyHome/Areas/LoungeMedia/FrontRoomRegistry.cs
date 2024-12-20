@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using HaKafkaNet;
 
 namespace MyHome;
@@ -16,8 +17,10 @@ public class FrontRoomRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.TryRegister(() => _helpers.Factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", Switch.PlantPlug1)
-            .WithMeta("Plant plug 1", "Uses Kazul's UVB schedule"));
+        reg.TryRegister(
+            () => _helpers.Factory.EntityOnOffWithAnother(Binary_Sensor.KazulLightTimeSensor, Switch.PlantPlug1).WithMeta("Plant plug 1", "Uses Kazul's UVB schedule"),
+            () => _helpers.Factory.EntityOnOffWithAnother(Light.FrontRoomLight, Switch.FrontRoomComputerLamp).WithMeta("Front Room Computer Lamp","Turn on/off the computer lamp wiht the room light"));
     }
+
 
 }

@@ -102,12 +102,12 @@ public class KitchenRegistry : IAutomationRegistry
     {
         var minutesToLeaveOn = 5;
 
-        return _builder.CreateSchedulable<OnOff>()
-            .WithName("Turn Off Kitchen Lights")
+        return _builder.CreateSchedulable()
+            .WithName("Turn off the kitchen lights")
             .WithDescription($"Turn off the kitchen lights when unoccupied for {minutesToLeaveOn} minutes")
             .MakeDurable()
-            .WithTriggers( Sensor.Livingroomandkitchenpresencecount) //livingroomandkitchenpresencecount
-            .While(sc => sc.IsOff() && _kitchenLights.IsOn())
+            .WithTriggers(Sensor.EsphomekitchenmotionPresenceTargetCount)
+            .While(sc => sc.ToIntTyped().New.State == 0)
             .For(TimeSpan.FromMinutes(minutesToLeaveOn))
             .WithExecution(ct => {
                 return _services.Api.TurnOff(Light.KitchenLights);

@@ -54,8 +54,12 @@ public class SystemMonitor : ISystemMonitor
     public async Task StateHandlerInitialized()
     {
         StartTime = DateTime.Now; //hack
+        
+        await Task.WhenAll(
+            _services.Api.InputDateTimeSetDateTime(Input_Datetime.HakafkanetStartTime, StartTime),
+            _lam.Start()
+        );
 
-        await _lam.Start();
         _logger.LogInformation("State Handler Initialized");
     }
 
