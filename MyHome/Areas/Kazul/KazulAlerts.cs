@@ -12,31 +12,30 @@ namespace MyHome;
 /// </summary>
 public class KazulAlerts : IAutomation, IAutomationMeta
 {
-    public const string TEMP = "sensor.kazul_temp_humidity_air_temperature";
-    public const string TEMP_BATTERY = "sensor.kazul_temp_humidity_battery_level";
-    public const string CERAMIC_SWITCH = "switch.kazul_power_strip_1";
-    public const string CERAMIC_POWER = "sensor.kazul_power_strip_electric_consumption_w_1";
-    public const string HALOGEN_SWITCH = "switch.kazul_power_strip_2";
-    public const string HALOGEN_POWER = "sensor.kazul_power_strip_electric_consumption_w_2";
+    public const string 
+        TEMP = Sensor.KazulTempHumidityAirTemperature,
+        TEMP_BATTERY = Sensor.KazulTempHumidityBatteryLevel,
+        CERAMIC_SWITCH = Switch.KazulPowerStrip1,
+        CERAMIC_POWER = Sensor.KazulPowerStripElectricConsumptionW,
+        HALOGEN_SWITCH = Switch.KazulPowerStrip2,
+        HALOGEN_POWER = Sensor.KazulPowerStripElectricConsumptionW2;
 
     Dictionary<string, (string id, string name)> _powerToSwitchMapping = new()
     {
         {CERAMIC_POWER, (CERAMIC_SWITCH, "ceramic heater")},
         {HALOGEN_POWER, (HALOGEN_SWITCH, "halogen lamp")}
     };
-    private readonly IHaApiProvider _api;
     private readonly IHaEntityProvider _entities;
     private readonly NotificationSender _notifyCritical;
     private readonly NotificationSender _notifyInformational;
     private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
 
-    public KazulAlerts(IHaApiProvider api, IHaEntityProvider entities, INotificationService notificationService, IStartupHelpers startupHelpers)
+    public KazulAlerts(IHaEntityProvider entities, INotificationService notificationService, IUpdatingEntityProvider updatingEntityProvider)
     {
-        _api = api;
         _entities = entities;
         _notifyCritical = notificationService.GetCritical();
         _notifyInformational = notificationService.CreateInformationalSender();
-        this._maintenanceMode = startupHelpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
+        this._maintenanceMode = updatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
     }
 
 

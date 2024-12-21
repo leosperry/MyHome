@@ -1,4 +1,8 @@
-﻿namespace MyHome.Tests;
+﻿using Castle.Core.Logging;
+using Microsoft.Extensions.Logging;
+using Moq;
+
+namespace MyHome.Tests;
 
 public class DynamicLightAdjusterTests
 {
@@ -11,11 +15,13 @@ public class DynamicLightAdjusterTests
             MaxLightBrightness = 100
         };
 
+    Mock<ILogger<DynamicLightAdjuster>> _logger = new();
+
     [Fact]
     public void WhenIlluminationIsMoreThanMax_Return0()
     {
         //arrange
-        var adjusterUnderTest = new DynamicLightAdjuster(_model);
+        var adjusterUnderTest = new DynamicLightAdjuster(_model, _logger.Object);
 
         //act
         var result = adjusterUnderTest.GetAppropriateBrightness(200, 0);
@@ -28,7 +34,7 @@ public class DynamicLightAdjusterTests
     public void WhenIlluminationIsZero_ReturnMax()
     {
         //arrange
-        var adjusterUnderTest = new DynamicLightAdjuster(_model);
+        var adjusterUnderTest = new DynamicLightAdjuster(_model, _logger.Object);
 
         //act
         var result = adjusterUnderTest.GetAppropriateBrightness(0, 0);
@@ -40,7 +46,7 @@ public class DynamicLightAdjusterTests
     public void WhenHalfNeeded_AddsHalf()
     {
         //arrange
-        var adjusterUnderTest = new DynamicLightAdjuster(_model);
+        var adjusterUnderTest = new DynamicLightAdjuster(_model, _logger.Object);
 
         //act
         var result = adjusterUnderTest.GetAppropriateBrightness(75, 0);
@@ -53,7 +59,7 @@ public class DynamicLightAdjusterTests
     public void WhenALittleNeeded_AddsALittle()
     {
         //arrange
-        var adjusterUnderTest = new DynamicLightAdjuster(_model);
+        var adjusterUnderTest = new DynamicLightAdjuster(_model, _logger.Object);
 
         //act
         var result = adjusterUnderTest.GetAppropriateBrightness(99, 40);
@@ -65,7 +71,7 @@ public class DynamicLightAdjusterTests
     [Fact]
     public void WhenPlenty_Returns0()
     {
-        var adjusterUnderTest = new DynamicLightAdjuster(_model);
+        var adjusterUnderTest = new DynamicLightAdjuster(_model, _logger.Object);
 
         //act
         var result = adjusterUnderTest.GetAppropriateBrightness(200, 100);

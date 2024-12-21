@@ -9,7 +9,7 @@ public static class NotificationServiceExtension
     static NotificationSender _critical;
 
     public static NotificationSender GetCritical(this INotificationService service)
-        => _critical ??= MakeCritical(service);
+        => MakeCritical(service);
 
     private static NotificationSender MakeCritical(INotificationService service)
     {

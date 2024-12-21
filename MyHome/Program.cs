@@ -132,3 +132,6 @@ catch (System.Exception ex)
 
 app.Logger.LogCritical("applicatin has shut down");
 
+
+
+public partial class Program { }

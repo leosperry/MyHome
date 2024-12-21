@@ -223,7 +223,7 @@ public class LightAlertModule : IDisposable
     public void Dispose()
     {
         _cancelSource.Cancel();
-        if (_timerTask is not null)
+        if (_timerTask is not null  && !_timerTask.IsFaulted)
         {
             _timerTask.Wait();
         }

@@ -31,28 +31,25 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
 
     public void Register(IRegistrar reg)
     {
-        // var simpleAutomation = _builder.CreateSimple()
-        //     .WithTriggers("switch.my_switch")
-        //     .WithName("This is my simple automation")
-        //     .WithExecution(async (sc, ct) => {
-        //         // do work
-        //         return;
-        //     })
-        //     .Build();
+        reg.TryRegister(NoOccupancy_for5min_TurnOff);
+    }
 
-        //reg.Register(simpleAutomation);
 
-        var typedDurable = _builder.CreateSchedulable<OnOff>()
-            .WithTriggers("input_boolean.my_motion_sensor")
-            .WithName("Turn off the lights when no one is around")
-            .WithDescription("an optional description")
-            .While(sc => sc.IsOff())
-            .ForMinutes(30)  
-            .WithExecution(ct => _services.Api.TurnOffByLabel("my_label", ct))
+    IAutomationBase NoOccupancy_for5min_TurnOff()
+    {
+        var minutesToLeaveOn = 5;
+
+        return _builder.CreateSchedulable<int?>()
+            .WithName("Turn off the kitchen lights")
+            .WithDescription($"Turn off the kitchen lights when unoccupied for {minutesToLeaveOn} minutes")
             .MakeDurable()
+            .WithTriggers(Sensor.EsphomekitchenmotionPresenceTargetCount)
+            .While(sc => sc.New.State == 0)
+            .For(TimeSpan.FromMinutes(minutesToLeaveOn))
+            .WithExecution(ct => {
+                return _services.Api.TurnOff(Light.KitchenLights);
+            })
             .Build();
-
-        reg.TryRegister(typedDurable);
     }
 
     // IAutomationBase Simple()
