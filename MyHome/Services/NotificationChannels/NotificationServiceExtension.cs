@@ -5,9 +5,6 @@ namespace MyHome;
 
 public static class NotificationServiceExtension
 {
-    [AllowNull]
-    static NotificationSender _critical;
-
     public static NotificationSender GetCritical(this INotificationService service)
         => MakeCritical(service);
 

@@ -27,55 +27,75 @@ public class KazulRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        var kazulSunset = _factory.SunSetAutomation(async ct => {
+        reg.TryRegister(
+            SunSet,
+            SunRise,
+            UVB_8_to_8,
+            Ensure1isOn
+            ); 
+    }
+
+    IAutomationBase SunSet()
+    {
+        return _factory.SunSetAutomation(async ct => {
             var turnOnVerification = await _services.Api.TurnOnAndVerify(KazulAlerts.CERAMIC_SWITCH, ct);
-            
-            if(!turnOnVerification)
+
+            if (!turnOnVerification)
             {
                 await _notifyCritical("Failed to turn on Kazul Ceramic");
                 return;
             }
-            
-            var turnOffVerification  = await _services.Api.TurnOffAndVerify(KazulAlerts.HALOGEN_SWITCH, ct);
-            if(!turnOffVerification)
+
+            var turnOffVerification = await _services.Api.TurnOffAndVerify(KazulAlerts.HALOGEN_SWITCH, ct);
+            if (!turnOffVerification)
             {
                 await _notifyCritical("Failed to turn off Kazul Halogen");
             }
-            
-        }).WithMeta(new AutomationMetaData(){
+
+        }).WithMeta(new AutomationMetaData()
+        {
             Name = "Kazul sunset",
             Description = "Turn on Ceramic. Turn off Halogen",
             AdditionalEntitiesToTrack = [KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH],
         });
+    }
 
-        var kazulSunrise = _factory.SunRiseAutomation(async ct => {
+    IAutomationBase SunRise()
+    {
+        return _factory.SunRiseAutomation(async ct => {
             bool turnOnVerification = await _services.Api.TurnOnAndVerify(KazulAlerts.HALOGEN_SWITCH, ct);
 
-            if(!turnOnVerification)
+            if (!turnOnVerification)
             {
                 await _notifyCritical("Failed to turn on Kazul Halogen");
                 return;
-            }            
+            }
             bool turnOffVerification = await _services.Api.TurnOffAndVerify(KazulAlerts.CERAMIC_SWITCH, ct);
-            if(!turnOnVerification)
+            if (!turnOnVerification)
             {
                 await _notifyCritical("Failed to turn off Kazul Ceramic");
                 return;
             }
         }).WithMeta("Kazul sunrise", "Turn off Ceramic. Turn on Halogen");
+    }
 
-        var kazulUVB =_factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", KAZUL_UVB)
+    IAutomationBase UVB_8_to_8()
+    {
+        return _factory.EntityOnOffWithAnother("binary_sensor.kazul_light_time_sensor", KAZUL_UVB)
             .WithMeta("Kazul UVB", "On at 8am. Off at 8pm");
+    }
 
-        var ensureOneIsOn = _builder.CreateSimple()
+    IAutomationBase Ensure1isOn()
+    {
+        return _builder.CreateSimple()
             .WithName("Kazul - ensure 1 is on")
             .WithDescription("when either the ceramic or halogen change state, ensure at least 1 is on")
             .WithTriggers(KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH)
             .TriggerOnBadState()
-            .WithExecution(async (sc, ct) =>{
-                if(_mainenanceMode.IsOn()) return;
+            .WithExecution(async (sc, ct) => {
+                if (_mainenanceMode.IsOn()) return;
 
-                if(sc.New.Bad())
+                if (sc.New.Bad())
                 {
                     await _notifyCritical("Kazul power strip in bad state");
                 }
@@ -85,8 +105,8 @@ public class KazulRegistry : IAutomationRegistry
                         _services.EntityProvider.GetOnOffEntity(KazulAlerts.CERAMIC_SWITCH),
                         _services.EntityProvider.GetOnOffEntity(KazulAlerts.HALOGEN_SWITCH)
                     );
-                    bool noneOn = 
-                        swithcStates[0]?.State != OnOff.On && 
+                    bool noneOn =
+                        swithcStates[0]?.State != OnOff.On &&
                         swithcStates[1]?.State != OnOff.On;
                     if (noneOn)
                     {
@@ -100,8 +120,6 @@ public class KazulRegistry : IAutomationRegistry
                 }
             })
             .Build();
-        
-        reg.RegisterDelayed(kazulSunrise, kazulSunset);
-        reg.Register(kazulUVB, ensureOneIsOn);
     }
+
 }

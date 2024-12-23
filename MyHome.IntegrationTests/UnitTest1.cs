@@ -1,4 +1,5 @@
 using HaKafkaNet;
+using HaKafkaNet.Testing;
 using Moq;
 using System.Text.Json;
 
@@ -16,14 +17,12 @@ namespace MyHome.IntegrationTests
         [Fact]
         public async Task Test1()
         {
-            await _fixture.SendState(new HaEntityState<OnOff, object>()
-            {
-                EntityId = Binary_Sensor.BackHallCoatClosetContactOpening,
-                State = OnOff.On,
-                Attributes = new { },
-            });
+            await _fixture.Services.SendState(TestHelper.Make<OnOff>(Binary_Sensor.BackHallCoatClosetContactOpening, OnOff.On));
+            //await _fixture.Services.SendState(state);
 
-            _fixture.API.Verify(api => api.CallService("light", "turn_on", It.IsAny<object>(), It.IsAny<CancellationToken>()));
+            await Task.Delay(300);
+
+            _fixture.API.Verify(api => api.TurnOn(Switch.BackHallLight, default));
         }
     }
 }

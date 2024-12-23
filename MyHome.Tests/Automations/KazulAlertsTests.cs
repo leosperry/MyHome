@@ -34,7 +34,6 @@ public class KazulAlertsTests
         await sut.Execute(fakeState, default);
     
         // Then
-        //api.Verify(a => a.NotifyGroupOrDevice(NotificationGroups.Critical, It.IsAny<string>(), default));
         Assert.True(called);
     }
 
