@@ -130,7 +130,7 @@ catch (System.Exception ex)
     throw;
 }
 
-app.Logger.LogCritical("applicatin has shut down");
+app.Logger.LogCritical("application has shut down");
 
 
 

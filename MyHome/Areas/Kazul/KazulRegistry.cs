@@ -14,7 +14,7 @@ public class KazulRegistry : IAutomationRegistry
     string[] KAZUL_UVB = ["switch.kazul_power_strip_3", "switch.kazul_power_strip_4"];
 
     NotificationSender _notifyCritical;
-    private readonly IHaEntity<OnOff, JsonElement> _mainenanceMode;
+    private readonly IHaEntity<OnOff, JsonElement> _maintenanceMode;
 
     public KazulRegistry(IHaServices services, IStartupHelpers helpers, INotificationService notificationService)
     {
@@ -22,7 +22,7 @@ public class KazulRegistry : IAutomationRegistry
         _factory = helpers.Factory;
         _builder = helpers.Builder;
         _notifyCritical = notificationService.GetCritical();
-        this._mainenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
+        this._maintenanceMode = helpers.UpdatingEntityProvider.GetOnOffEntity(Input_Boolean.MaintenanceMode);
     }
 
     public void Register(IRegistrar reg)
@@ -93,7 +93,7 @@ public class KazulRegistry : IAutomationRegistry
             .WithTriggers(KazulAlerts.CERAMIC_SWITCH, KazulAlerts.HALOGEN_SWITCH)
             .TriggerOnBadState()
             .WithExecution(async (sc, ct) => {
-                if (_mainenanceMode.IsOn()) return;
+                if (_maintenanceMode.IsOn()) return;
 
                 if (sc.New.Bad())
                 {
@@ -101,13 +101,13 @@ public class KazulRegistry : IAutomationRegistry
                 }
                 try
                 {
-                    var swithcStates = await Task.WhenAll(
+                    var switchStates = await Task.WhenAll(
                         _services.EntityProvider.GetOnOffEntity(KazulAlerts.CERAMIC_SWITCH),
                         _services.EntityProvider.GetOnOffEntity(KazulAlerts.HALOGEN_SWITCH)
                     );
                     bool noneOn =
-                        swithcStates[0]?.State != OnOff.On &&
-                        swithcStates[1]?.State != OnOff.On;
+                        switchStates[0]?.State != OnOff.On &&
+                        switchStates[1]?.State != OnOff.On;
                     if (noneOn)
                     {
                         await _notifyCritical("Kazul - Neither the ceramic nor halogen are on");
@@ -115,7 +115,7 @@ public class KazulRegistry : IAutomationRegistry
                 }
                 catch (System.Exception)
                 {
-                    await _notifyCritical("Could not verify Kazul power swites");
+                    await _notifyCritical("Could not verify Kazul power switches");
                     throw;
                 }
             })
