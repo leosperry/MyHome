@@ -18,11 +18,10 @@ namespace MyHome.IntegrationTests
         public async Task Test1()
         {
             await _fixture.Services.SendState(TestHelper.Make<OnOff>(Binary_Sensor.BackHallCoatClosetContactOpening, OnOff.On));
-            //await _fixture.Services.SendState(state);
 
             await Task.Delay(300);
 
-            _fixture.API.Verify(api => api.TurnOn(Switch.BackHallLight, default));
+            _fixture.API.Verify(api => api.TurnOn(Switch.BackHallLight, default), Times.Exactly(1));
         }
     }
 }
