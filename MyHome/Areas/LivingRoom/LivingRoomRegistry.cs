@@ -35,7 +35,7 @@ public class LivingRoomRegistry : IAutomationRegistry
             SolarPowerChange,
             OverrideTurnedOff_SetLights,
             SomeoneInLivingRoom,
-            NoOneDownstairs_for20min_PauseRoku,
+            NoOneDownstairs_forXmin_PauseRoku,
             NoOneInLivingRoom_forXmin_TurnOffLights,
             FindRokuFromDashboard
         );
@@ -59,7 +59,7 @@ public class LivingRoomRegistry : IAutomationRegistry
     private IAutomation SolarPowerChange()
     {
         return _builder.CreateSimple()
-            .WithTriggers("sensor.solaredge_current_power")
+            .WithTriggers(Sensor.SolaredgeCurrentPower)
             .WithName("Living Room lights")
             .WithDescription("Set living room lights based on solar power")
             .WithExecution((sc, ct) => _livingRoomService.SetLights(ct))
@@ -104,15 +104,16 @@ public class LivingRoomRegistry : IAutomationRegistry
             .Build();
     }
 
-    IDelayableAutomation<float, JsonElement> NoOneDownstairs_for20min_PauseRoku()
+    IDelayableAutomation<float, JsonElement> NoOneDownstairs_forXmin_PauseRoku()
     {
+        int minutes = 30;
         return _builder.CreateSchedulable<float>()
             .MakeDurable()
             .WithName("Living Room All zones empty")
-            .WithDescription("after 30 min, pause the roku and turn off dining room")
+            .WithDescription($"after {minutes} min, pause the roku and turn off dining room")
             .WithTriggers(Sensor.Livingroomandkitchenpresencecount)
             .While(sc => sc.New.State == 0)
-            .ForMinutes(20)
+            .ForMinutes(minutes)
             .WithExecution(async ct => {
                 if(_rokuMediaPlayer.State == MediaPlayerState.Playing)
                 {
@@ -135,7 +136,7 @@ public class LivingRoomRegistry : IAutomationRegistry
                 if (occupied)
                 {
                     await _livingRoomService.SetLights(ct);
-                    // this code is to set the monkeylight
+                    // this code is to set the monkey light
                     var sun = await _services.EntityProvider.GetSun();
                     // figure out what it should be 
                     // at sunrise   9%

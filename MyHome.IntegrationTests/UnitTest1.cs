@@ -5,6 +5,7 @@ using System.Text.Json;
 
 namespace MyHome.IntegrationTests
 {
+[Collection("HomeAutomation")]
     public class UnitTest1 : IClassFixture<HaKafkaNetFixture>
     {
         private readonly HaKafkaNetFixture _fixture;
@@ -17,9 +18,7 @@ namespace MyHome.IntegrationTests
         [Fact]
         public async Task Test1()
         {
-            await _fixture.Services.SendState(TestHelper.Make<OnOff>(Binary_Sensor.BackHallCoatClosetContactOpening, OnOff.On));
-
-            await Task.Delay(300);
+            await _fixture.Helpers.SendState(_fixture.Helpers.Make<OnOff>(Binary_Sensor.BackHallCoatClosetContactOpening, OnOff.On));
 
             _fixture.API.Verify(api => api.TurnOn(Switch.BackHallLight, default), Times.Exactly(1));
         }

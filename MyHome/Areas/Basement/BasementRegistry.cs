@@ -54,12 +54,12 @@ public class BasementRegistry : IAutomationRegistry
         return _builder.CreateSimple<OnOff>()
             .WithName("Basement Motion")
             .WithDescription("turn on basement lights")
-            .WithTriggers("binary_sensor.basement_motion_motion_detection")
+            .WithTriggers(Binary_Sensor.BasementMotionMotionDetection)
             .WithExecution(async (sc, ct) =>{
                 // if no motion or override is on , do nothing
                 if (!sc.New.IsOn() || _override.IsOn()) return;
 
-                if (await GetBasementAverageBrighness(ct) < Bytes._70pct)
+                if (await GetBasementAverageBrightness(ct) < Bytes._70pct)
                 {
                     await _services.Api.LightSetBrightnessByLabel(Labels.BasementLights, Bytes._75pct);
                 }
@@ -84,7 +84,7 @@ public class BasementRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple<DateTime?>()
             .WithName("Call Asher from dashboard")
-            .WithDescription("Uses a helpert to trigger random message to play to call Asher")
+            .WithDescription("Uses a helper to trigger random message to play to call Asher")
             .WithTriggers(Input_Button.AsherButton)
             .WithExecution(async (sc, ct) =>
             {
@@ -96,18 +96,10 @@ public class BasementRegistry : IAutomationRegistry
             .Build();
     }
 
-    async Task<byte> GetBasementAverageBrighness(CancellationToken ct)
+    async Task<byte> GetBasementAverageBrightness(CancellationToken ct)
     {
         var group = await _services.EntityProvider.GetLightEntity(Light.BasementLightGroup);
         return group?.Attributes?.Brightness ?? throw new Exception("could not get basement group brightness");
-        // var lights = await Task.WhenAll(
-        //     _services.EntityProvider.GetLightEntity(Lights.Basement1, ct),
-        //     _services.EntityProvider.GetLightEntity(Lights.Basement2, ct),
-        //     _services.EntityProvider.GetLightEntity(Lights.BasementWork, ct)
-        // );
-
-        // var average = lights.Sum(l => (int)(l?.Attributes?.Brightness ?? 0)) / lights.Length;
-        // return (byte)average;
     }
 
     private async Task DimOverTime(CancellationToken ct)
@@ -116,7 +108,7 @@ public class BasementRegistry : IAutomationRegistry
         
         try
         {
-            var average = await GetBasementAverageBrighness(ct);
+            var average = await GetBasementAverageBrightness(ct);
             await _services.Api.LightSetBrightnessByLabel(Labels.BasementLights, average);
             while (average > Bytes._25pct && !ct.IsCancellationRequested)
             {
@@ -125,7 +117,7 @@ public class BasementRegistry : IAutomationRegistry
 
                 // var newB = (byte)(average - Bytes._10pct);
                 // await _services.Api.LightSetBrightnessByLabel(Labels.BasementLights, newB, ct);
-                average = await GetBasementAverageBrighness(ct);
+                average = await GetBasementAverageBrightness(ct);
             }
         }
         catch (Exception ex) when (ex is TaskCanceledException || ex is OperationCanceledException)

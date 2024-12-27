@@ -34,7 +34,7 @@ public class SystemMonitor : ISystemMonitor
         }
         catch (System.Exception)
         {
-            _logger.LogInformation("maintenance mode was not initialilzed");
+            _logger.LogInformation("maintenance mode was not initialized");
         }
         if (badStates.EntityId.StartsWith("event") || maintenanceModeIsOn)
         {
@@ -104,13 +104,13 @@ public class SystemMonitor : ISystemMonitor
 
         if(!(args.Domain == "notify" && args.Service == "persistent_notification"))
         {
-            // dont send persistent if failure was on persistent
+            // don't send persistent if failure was on persistent
             await _services.Api.PersistentNotificationDetail(message, title);
         }
 
         if (!(args.Domain == "notify" && args.Service == "mobile_app_leonard_phone"))
         {
-            // dont send to leonard if failure was to leonard
+            // don't send to leonard if failure was to leonard
             await _services.Api.NotifyGroupOrDevice(Phones.LeonardPhone, message, title);
         }
     }
