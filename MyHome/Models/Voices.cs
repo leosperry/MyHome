@@ -4,7 +4,7 @@ namespace MyHome;
 
 public class Voices
 {
-    public static readonly PiperSettings Buttler = new(){
+    public static readonly PiperSettings Butler = new(){
         Voice = "en_GB-semaine-medium",
         Speaker = 1 //spike
     };

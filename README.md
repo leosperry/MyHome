@@ -19,8 +19,8 @@ These are some of the things I use in my set up
 * Home Assistant Yellow
 
 Some key features
-* Traefik is a reverse proxy that allow all my services to run http, and be exposed with domain names as https. This allows me to easily serve the HaKafkaNet dashboard up via my Home Assistent dashboard
-* HaKafkaNet [open telemetry intstrumentation](https://github.com/leosperry/ha-kafka-net/wiki/Open-Telemetry-Instrumentation) sends data to the OTEL collector, which in turn sends datat to the Grafana stack. Grafana itself is served up by Home Assistent on the Yellow.
+* Traefik is a reverse proxy that allow all my services to run http, and be exposed with domain names as https. This allows me to easily serve the HaKafkaNet dashboard up via my Home Assistant dashboard
+* HaKafkaNet [open telemetry instrumentation](https://github.com/leosperry/ha-kafka-net/wiki/Open-Telemetry-Instrumentation) sends data to the OTEL collector, which in turn sends data to the Grafana stack. Grafana itself is served up by Home Assistant on the Yellow.
 
 Join me on the new [Discord Server](https://discord.gg/RaGu72RbCt) for HaKafkaNet.
 

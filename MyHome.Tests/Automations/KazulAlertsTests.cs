@@ -4,7 +4,6 @@ using Moq;
 using System.Text.Json;
 
 namespace MyHome.Tests;
-
 public class KazulAlertsTests
 {
     Mock<IUpdatingEntityProvider> startup = new();
@@ -13,6 +12,7 @@ public class KazulAlertsTests
     public async Task WhenBatteryReports_andBatteryLevelLow_ShouldReport()
     {
         // Given
+
         
         Mock<IHaEntityProvider> entities = new();
         Mock<INotificationService> notify = new();
@@ -38,7 +38,7 @@ public class KazulAlertsTests
     }
 
     [Fact]
-    public async Task WhenBatteryReports_andBatteryLevelOk_ShouldNotdReport()
+    public async Task WhenBatteryReports_andBatteryLevelOk_ShouldNotReport()
     {
         // Given
         Mock<IHaEntityProvider> entities = new();

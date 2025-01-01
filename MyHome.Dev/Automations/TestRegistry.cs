@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using HaKafkaNet;
+using HaKafkaNet.Implementations.AutomationBuilder;
 
 namespace MyHome.Dev;
 
@@ -8,6 +9,7 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
     IHaServices _services;
     IAutomationFactory _factory;
     IAutomationBuilder _builder;
+    private TimeProvider _time;
     ILogger<TestRegistry> _logger;
 
     const string 
@@ -15,23 +17,24 @@ public class TestRegistry : IAutomationRegistry, IInitializeOnStartup
         LEDS = "light.office_led_light",
         Light_Bars = "light.office_light_bars";
 
-    public TestRegistry(IStartupHelpers startupHelpers, IHaServices services, ILogger<TestRegistry> logger) 
+    public TestRegistry(IStartupHelpers startupHelpers, IHaServices services, TimeProvider time, ILogger<TestRegistry> logger) 
     {
         _services = services;
         _factory = startupHelpers.Factory;
         _builder = startupHelpers.Builder;
+        this._time = time;
         _logger = logger;
     }
 
     public Task Initialize()
     {
-        _logger.LogInformation("Registry Initialize");
+        //_logger.LogInformation("Registry Initialize");
         return Task.CompletedTask;
     }
 
     public void Register(IRegistrar reg)
     {
-        reg.TryRegister(NoOccupancy_for5min_TurnOff);
+        //reg.TryRegister(TestNewTimeHelper);
     }
 
 

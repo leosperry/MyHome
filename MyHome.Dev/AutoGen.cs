@@ -1,3 +1,5 @@
+/* cSpell:disable */
+
 public class Labels
 { 
     public const string Bedtimeoff = "bedtimeoff";

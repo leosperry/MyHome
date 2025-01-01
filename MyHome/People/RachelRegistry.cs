@@ -1,5 +1,6 @@
 using System;
 using HaKafkaNet;
+using HaKafkaNet.Implementations.AutomationBuilder;
 
 namespace MyHome.Registries;
 
@@ -31,10 +32,11 @@ public class RachelRegistry : IAutomationRegistry
 
     public void Register(IRegistrar reg)
     {
-        reg.Register(
-            BarometricPressureAlert(),
-            BrushLyraHair(),
-            RachelPhoneBattery()
+        reg.TryRegister(
+            BarometricPressureAlert,
+            BrushLyraHair,
+            LyraMedicine,
+            RachelPhoneBattery
         );
     }
 
@@ -43,7 +45,7 @@ public class RachelRegistry : IAutomationRegistry
         return _builder.CreateSimple()
             .WithName("Barometric Pressure Alert")
             .WithDescription("Notify when pressure drops by 0.04 over 4 hours")
-            .WithTriggers("sensor.pressure_change_4_hr")
+            .WithTriggers(Sensor.PressureChange4Hr)
             .WithExecution(async (sc, ct) =>{
                 var pressure = sc.ToFloatTyped();
                 if (pressure.BecameLessThanOrEqual(-0.04f))
@@ -58,11 +60,22 @@ public class RachelRegistry : IAutomationRegistry
     {
         return _builder.CreateSimple()
             .WithName("Lyra Brush Hair")
-            .WithTriggers("binary_sensor.lyra_brush_hair")
+            .WithTriggers(Binary_Sensor.LyraBrushHair)
             .WithExecution((sc, ct) => {
                 _notifyDiningAndMainBedroom("Time to brush Lyra's hair");
                 return Task.CompletedTask;
             })
+            .Build();
+    }
+
+    IAutomationBase LyraMedicine()
+    {
+        return _builder.CreateDailyFromTimeHelper(Input_Datetime.LyraMedicine)
+            .WithName("Lyra Medicine")
+            .WithExecution(async ct => 
+                await _services.Api.SpeakPiper([
+                    Media_Player.DiningRoomSpeaker
+                ], "Time for Lyra medicine", true, Voices.Butler))
             .Build();
     }
 
@@ -77,7 +90,7 @@ public class RachelRegistry : IAutomationRegistry
                 var onOff = sc.ToOnOff();
                 if (onOff.IsOn())
                 {
-                    var batteryState = await _services.EntityProvider.GetBatteryStateEntity("sensor.rachel_phone_battery_state");
+                    var batteryState = await _services.EntityProvider.GetBatteryStateEntity(Sensor.RachelPhoneBatteryState);
                     if (batteryState?.State != BatteryState.Charging)
                     {
                         await _notifyDiningAndMainBedroom("Rachel, your phone battery is low");
@@ -86,6 +99,4 @@ public class RachelRegistry : IAutomationRegistry
             })
             .Build();
     }
-
-
 }

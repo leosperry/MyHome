@@ -24,6 +24,10 @@ var otlpEndpoint = "http://172.17.1.3:4317";
 services.AddOpenTelemetry()
     .ConfigureResource(resource => {
         resource.AddService(serviceName: "home-automations");
+        resource.AddEnvironmentVariableDetector();
+        resource.AddAttributes(new Dictionary<string, object>(){
+            {"environment", builder.Environment.EnvironmentName}
+        });
     }).WithTracing(tracing =>{ 
         tracing
             .AddAspNetCoreInstrumentation()

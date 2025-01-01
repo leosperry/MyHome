@@ -41,7 +41,7 @@ public class AsherService
         "Random message to see if you're paying attention" 
     ];
     
-    static readonly PiperSettings[] _voices = [Voices.Buttler, Voices.Female, Voices.Mundane];
+    static readonly PiperSettings[] _voices = [Voices.Butler, Voices.Female, Voices.Mundane];
     static readonly Random _random = new();
 
     public async Task Toggle3Times(CancellationToken ct)

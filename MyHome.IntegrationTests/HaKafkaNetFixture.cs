@@ -20,10 +20,13 @@ public class HaKafkaNetFixture : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.UseEnvironment("Test");
+        
         builder.ConfigureServices(services => {
             // call this method with the fake or mock of your choice
             // optionally pass an IDistributed cache. 
             services.ConfigureForIntegrationTests(API.Object);
         });
+        
     }
 }
